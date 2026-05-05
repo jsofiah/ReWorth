@@ -1,17 +1,27 @@
-// Buat file baru: utils/image_helper.dart
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class ImageHelper {
-  static String getFotoProfilUrl(String? fotoPath) {
-    if (fotoPath == null || fotoPath.isEmpty) return '';
-    
-    // Jika sudah URL lengkap, langsung return
-    if (fotoPath.startsWith('http')) return fotoPath;
-    
-    // Jika tidak, bangun URL lengkap dari Supabase
-    final supabase = Supabase.instance.client;
-    return supabase.storage
-        .from('foto_profil')
-        .getPublicUrl(fotoPath);
+class AppImageHelper {
+  AppImageHelper._();
+
+  static final _supabase = Supabase.instance.client;
+
+  static String getPublicUrl(String bucket, String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
+    return _supabase.storage.from(bucket).getPublicUrl(path);
   }
+
+
+  static String fotoProfil(String? path) =>
+      getPublicUrl('foto_profil', path);
+
+  static String fotoEvent(String? path) =>
+      getPublicUrl('media', path);
+
+  static String fotoProduk(String? path) =>
+      getPublicUrl('media', path);
+
+  /// Foto umum / custom bucket
+  static String custom(String? path) =>
+      getPublicUrl('media', path);
 }
