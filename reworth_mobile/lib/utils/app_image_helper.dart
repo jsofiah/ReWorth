@@ -13,7 +13,7 @@ class AppImageHelper {
 
   // Foto profil LAMA (bucket foto_profil)
   static String fotoProfil(String? path) =>
-      getPublicUrl('foto_profil', path);
+      getPublicUrl('media', path);
 
   // Foto profil dari folder pengguna di bucket media
   static String fotoPengguna(String? path) {
@@ -33,6 +33,9 @@ class AppImageHelper {
       getPublicUrl('media', path);
 
   static String fotoProduk(String? path) =>
+      getPublicUrl('media', path);
+
+  static String fotoPenjual(String? path) =>
       getPublicUrl('media', path);
 
   /// Foto umum / custom bucket

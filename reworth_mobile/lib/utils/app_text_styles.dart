@@ -39,6 +39,14 @@ class AppTextStyles {
     height: 1.25,
   );
 
+  //pakai ini buat tulisan judul nama fitur, contoh event, setor
+  static TextStyle namafitur = GoogleFonts.poppins(
+    fontSize: 26,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+    height: 1.25,
+  );
+
   static TextStyle bodyMedium = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w400,
@@ -47,6 +55,12 @@ class AppTextStyles {
   );
 
   static TextStyle label = GoogleFonts.poppins(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
+
+  static TextStyle namaFitur = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
