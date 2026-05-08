@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'utils/app_theme.dart';
 import 'pages/splash_screen.dart';
+import 'pages/login_page.dart';
+import 'pages/home_page.dart';
+import 'pages/profil_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +26,13 @@ class MyApp extends StatelessWidget {
       title: 'ReWorth',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const SplashScreen(),
+      initialRoute: '/',  
+      routes: {           
+        '/': (context) => const SplashScreen(),
+        '/login': (context) => const LoginPage(),
+        '/home': (context) => const HomePage(),
+        '/profil': (context) => const ProfilPage(),
+      },
     );
   }
 }
