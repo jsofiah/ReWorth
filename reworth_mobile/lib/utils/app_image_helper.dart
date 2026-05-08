@@ -13,7 +13,7 @@ class AppImageHelper {
 
 
   static String fotoProfil(String? path) =>
-      getPublicUrl('foto_profil', path);
+      getPublicUrl('media', path);
 
   static String fotoEvent(String? path) =>
       getPublicUrl('media', path);
