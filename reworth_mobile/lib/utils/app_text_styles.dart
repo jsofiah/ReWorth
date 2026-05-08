@@ -60,6 +60,12 @@ class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
+  static TextStyle namaFitur = GoogleFonts.poppins(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
+
   static TextStyle inputText = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w400,

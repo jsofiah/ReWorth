@@ -11,14 +11,31 @@ class AppImageHelper {
     return _supabase.storage.from(bucket).getPublicUrl(path);
   }
 
-
+  // Foto profil LAMA (bucket foto_profil)
   static String fotoProfil(String? path) =>
-      getPublicUrl('foto_profil', path);
+      getPublicUrl('media', path);
+
+  // Foto profil dari folder pengguna di bucket media
+  static String fotoPengguna(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
+    
+    // Jika path sudah mengandung 'pengguna/', langsung gunakan
+    if (path.startsWith('pengguna/')) {
+      return getPublicUrl('media', path);
+    }
+    
+    // Jika hanya nama file saja
+    return getPublicUrl('media', 'pengguna/$path');
+  }
 
   static String fotoEvent(String? path) =>
       getPublicUrl('media', path);
 
   static String fotoProduk(String? path) =>
+      getPublicUrl('media', path);
+
+  static String fotoPenjual(String? path) =>
       getPublicUrl('media', path);
 
   /// Foto umum / custom bucket

@@ -14,7 +14,8 @@ class EventModel {
   final double? latitude;
   final double? longitude;
   final DateTime? createdAt;
-
+  final List<String> avatarList;
+  final String? namaRole;
   final int jumlahPendaftar;
 
   const EventModel({
@@ -34,12 +35,17 @@ class EventModel {
     this.longitude,
     this.createdAt,
     this.jumlahPendaftar = 0,
+    this.avatarList = const [],
+    this.namaRole,
   });
 
   factory EventModel.fromMap(
     Map<String, dynamic> map, {
     int jumlahPendaftar = 0,
+    List<String>? avatarList,
+    String? namaRole,
   }) {
+
     return EventModel(
       idEvent: map['id_event'] ?? '',
       namaEvent: map['nama_event'],
@@ -71,6 +77,9 @@ class EventModel {
           : null,
 
       jumlahPendaftar: jumlahPendaftar,
+      avatarList: avatarList ?? [],
+
+      namaRole: namaRole ?? map['admin']?['role']?['nama_role']?.toString(),
     );
   }
 
