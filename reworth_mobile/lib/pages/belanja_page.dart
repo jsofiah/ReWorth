@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'belanja_detail_page.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_constants.dart';
 import '../utils/app_text_styles.dart';
 import '../utils/app_image_helper.dart';
 
 class _ProdukItem {
+  final String idProduk;
   final String nama;
   final int harga;
   final String penjual;
@@ -15,6 +17,7 @@ class _ProdukItem {
   final int terjual;
 
   const _ProdukItem({
+    required this.idProduk,
     required this.nama,
     required this.harga,
     required this.penjual,
@@ -69,12 +72,18 @@ class _BelanjaPageState extends State<BelanjaPage> {
         harga,
         stok,
         id_produk,
+
         penjual (
           nama_penjual,
           foto_profil
         ),
+
         foto_produk (
           path_foto
+        ),
+
+        pesanan (
+          status
         )
       ''');
 
@@ -94,16 +103,22 @@ class _BelanjaPageState extends State<BelanjaPage> {
 
         final String fotoPenjual =
             penjualData?['foto_profil'] as String? ?? '';
+            
+        final pesananList = item['pesanan'] as List? ?? [];
+        final jumlahTerjual = pesananList.where((p) {
+              return (p['status'] ?? '').toString().toLowerCase() == 'selesai';
+            }).length;
 
         loaded.add(
           _ProdukItem(
+            idProduk: item['id_produk'] as String? ?? '',
             nama: namaProduk,
             harga: item['harga'] as int? ?? 0,
             penjual: namaPenjual,
             gambarProduk: gambarProduk,
             gambarPenjual: fotoPenjual,
             rating: 4.5 + ((loaded.length % 5) * 0.1),
-            terjual: ((item['stok'] as int? ?? 0) * 2),
+            terjual: jumlahTerjual,
           ),
         );
       }
@@ -214,6 +229,7 @@ class _BelanjaPageState extends State<BelanjaPage> {
                           ),
                           child: _buildSearchBar(),
                         ),
+                        const SizedBox(height: 12),
 
                         Expanded(
                           child: CustomScrollView(
@@ -571,7 +587,19 @@ class _BelanjaPageState extends State<BelanjaPage> {
   }
 
   Widget _buildCard(_ProdukItem item) {
-    return Container(
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BelanjaDetailPage(
+            idProduk: item.idProduk,
+          ),
+        ),
+      );
+    },
+
+    child: Container(
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppConstants.radiusL),
@@ -583,10 +611,10 @@ class _BelanjaPageState extends State<BelanjaPage> {
           ),
         ],
       ),
+
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Gambar produk
           Expanded(
             flex: 6,
             child: ClipRRect(
@@ -594,14 +622,18 @@ class _BelanjaPageState extends State<BelanjaPage> {
                 topLeft: Radius.circular(AppConstants.radiusL),
                 topRight: Radius.circular(AppConstants.radiusL),
               ),
+
               child: Image.network(
                 AppImageHelper.fotoProduk(item.gambarProduk),
                 width: double.infinity,
                 fit: BoxFit.cover,
+
                 loadingBuilder: (context, child, progress) {
                   if (progress == null) return child;
+
                   return Container(
                     color: const Color(0xFFF5F5F5),
+
                     child: const Center(
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
@@ -610,8 +642,10 @@ class _BelanjaPageState extends State<BelanjaPage> {
                     ),
                   );
                 },
+
                 errorBuilder: (_, __, ___) => Container(
                   color: const Color(0xFFF5F5F5),
+
                   child: const Center(
                     child: Icon(
                       Icons.image_not_supported_outlined,
@@ -626,40 +660,52 @@ class _BelanjaPageState extends State<BelanjaPage> {
 
           Expanded(
             flex: 4,
+
             child: Padding(
               padding: const EdgeInsets.all(10),
+
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
                 children: [
                   Text(
                     item.nama,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
+
                     style: AppTextStyles.body.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+
                   Text(
                     _rupiah(item.harga),
                     style: AppTextStyles.label.copyWith(fontSize: 13),
                   ),
+
                   Row(
                     children: [
                       ClipOval(
                         child: Image.network(
-                          AppImageHelper.fotoPenjual(item.gambarPenjual),
+                          AppImageHelper.fotoPenjual(
+                            item.gambarPenjual,
+                          ),
+
                           width: 20,
                           height: 20,
                           fit: BoxFit.cover,
+
                           errorBuilder: (_, __, ___) => Container(
                             width: 20,
                             height: 20,
+
                             decoration: BoxDecoration(
                               color: AppColors.primary.withOpacity(0.3),
                               shape: BoxShape.circle,
                             ),
+
                             child: const Icon(
                               Icons.store,
                               size: 12,
@@ -668,7 +714,9 @@ class _BelanjaPageState extends State<BelanjaPage> {
                           ),
                         ),
                       ),
+
                       const SizedBox(width: 4),
+
                       Expanded(
                         child: Text(
                           item.penjual,
@@ -677,14 +725,18 @@ class _BelanjaPageState extends State<BelanjaPage> {
                           style: AppTextStyles.small,
                         ),
                       ),
+
                       const Icon(
                         Icons.star_rounded,
                         size: 14,
                         color: AppColors.accent,
                       ),
+
                       const SizedBox(width: 2),
+
                       Text(
                         item.rating.toStringAsFixed(1),
+
                         style: AppTextStyles.small.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -697,8 +749,8 @@ class _BelanjaPageState extends State<BelanjaPage> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
 }
 
 String _rupiah(int angka) {
@@ -711,4 +763,5 @@ String _rupiah(int angka) {
     buf.write(s.substring(i, i + 3));
   }
   return buf.toString();
+  }
 }
