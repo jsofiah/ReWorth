@@ -41,4 +41,7 @@ class AppImageHelper {
   /// Foto umum / custom bucket
   static String custom(String? path) =>
       getPublicUrl('media', path);
+
+  static String fotoPenanganan(String? path) =>
+    getPublicUrl('media', path);
 }
