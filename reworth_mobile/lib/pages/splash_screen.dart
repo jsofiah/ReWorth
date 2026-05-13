@@ -23,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen> {
     _StageProps(rotate: 0, scale: 1.0, duration: 800),     // Screen 4
   ];
 
-  static const _delays = [30, 10, 10];
+  static const _delays = [1, 10, 5];
 
   bool _showGradient = false;
   bool _showLogoText = false;

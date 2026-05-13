@@ -10,6 +10,7 @@ import '../pages/reward_page.dart';
 import '../pages/aktivitas_page.dart';
 import '../pages/notification_page.dart';
 import '../pages/syaratketentuan_page.dart';
+import '../pages/edit_page.dart';
 
 class ProfilPage extends StatefulWidget {
   const ProfilPage({super.key});
@@ -46,11 +47,11 @@ class _ProfilPageState extends State<ProfilPage> {
           _errorMessage = 'Data pengguna tidak ditemukan';
         });
       }
-    } catch (e) {
+    } catch (error) {
       setState(() {
-        _errorMessage = 'Gagal memuat data: $e';
+        _errorMessage = 'Gagal memuat data: $error';
       });
-      debugPrint('Error loading user: $e');
+      debugPrint('Error loading user: $error');
     } finally {
       if (mounted) {
         setState(() {
@@ -63,7 +64,7 @@ class _ProfilPageState extends State<ProfilPage> {
   Future<void> _handleLogout() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (BuildContext dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.radiusL),
         ),
@@ -74,7 +75,7 @@ class _ProfilPageState extends State<ProfilPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: Text(
               'Batal',
               style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
@@ -87,7 +88,7 @@ class _ProfilPageState extends State<ProfilPage> {
                 borderRadius: BorderRadius.circular(AppConstants.radiusXL),
               ),
             ),
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(
               'Logout',
               style: AppTextStyles.buttonLabel,
@@ -100,13 +101,13 @@ class _ProfilPageState extends State<ProfilPage> {
     if (confirmed == true) {
       await AuthService.logout();
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (Route route) => false);
       }
     }
   }
 
   void _navigateTo(Widget page) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+    Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => page));
   }
 
   @override
@@ -125,17 +126,17 @@ class _ProfilPageState extends State<ProfilPage> {
               width: 394,
               height: 140,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                width: 394,
-                height: 140,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [AppColors.primary, AppColors.secondary],
-                  ),
-                ),
-              ),
+errorBuilder: (context, error, stackTrace) => Container(
+  width: 394,
+  height: 140,
+  decoration: BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [AppColors.primary, AppColors.secondary],
+    ),
+  ),
+),
             ),
           ),
           
@@ -255,15 +256,19 @@ class _ProfilPageState extends State<ProfilPage> {
                   ),
                 ),
                 
-                // Tombol Edit
+                // Tombol Edit - TERHUBUNG KE EDIT PAGE
                 Positioned(
                   right: 8,
                   top: 8,
                   child: GestureDetector(
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Fitur edit profil akan segera hadir")),
+                    onTap: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (BuildContext context) => const EditPage()),
                       );
+                      if (result == true) {
+                        _loadUser();
+                      }
                     },
                     child: Container(
                       width: 32,
