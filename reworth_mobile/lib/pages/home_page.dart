@@ -471,7 +471,7 @@ class _HomePageState extends State<HomePage> {
       _MenuItem(
           icon: Icons.campaign_outlined,
           label: 'Lapor',
-          onTap: () => _navigate(const LaporPage())),
+          onTap: () => _navigate(const LaporSampahPage())),
       _MenuItem(
           icon: Icons.recycling_rounded,
           label: 'Setor',
