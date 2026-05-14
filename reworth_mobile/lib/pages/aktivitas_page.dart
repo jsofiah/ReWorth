@@ -7,6 +7,7 @@ import '../utils/app_image_helper.dart';
 
 enum AktivitasType { laporan, setor, pesanan, tukarPoin, event, reward }
 enum AktivitasStatus { diproses, selesai, menunggu, berhasil }
+RealtimeChannel? _channel;
 
 class AktivitasItem {
   final AktivitasType type;
@@ -67,15 +68,38 @@ class _AktivitasPageState extends State<AktivitasPage> {
   @override
   void initState() {
     super.initState();
+
     _fetchAktivitas();
-    _searchController.addListener(() {
-      setState(() => _searchQuery = _searchController.text.toLowerCase().trim());
-    });
+
+    final user = Supabase.instance.client.auth.currentUser;
+
+    if (user != null) {
+      _channel = Supabase.instance.client
+          .channel('riwayat_aktivitas_realtime')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'riwayat_aktivitas',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'id_pengguna',
+              value: user.id,
+            ),
+            callback: (payload) async {
+              debugPrint('Realtime update: $payload');
+
+              await _fetchAktivitas();
+            },
+          )
+          .subscribe();
+    }
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    if (_channel != null) {
+      Supabase.instance.client.removeChannel(_channel!);
+    }
     super.dispose();
   }
 
@@ -423,43 +447,64 @@ class _AktivitasPageState extends State<AktivitasPage> {
 
   // ── List builder with empty state ──────────────────────
   Widget _buildList() {
-    // Kumpulkan semua hasil filter dari semua group
     final List<Widget> widgets = [];
 
     for (final entry in _grouped.entries) {
       final filtered = _filter(entry.value);
+
       if (filtered.isEmpty) continue;
+
       widgets.add(_sectionLabel(entry.key));
       widgets.addAll(filtered.map(_buildCard));
     }
 
-    if (widgets.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off_rounded, size: 56, color: AppColors.textHint),
-            const SizedBox(height: 12),
-            Text(
-              _searchQuery.isNotEmpty
-                  ? 'Tidak ada hasil untuk "$_searchQuery"'
-                  : 'Belum ada aktivitas',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
-            ),
-          ],
-        ),
-      );
-    }
+    return RefreshIndicator(
+      color: AppColors.secondary,
+      onRefresh: _fetchAktivitas,
+      child: widgets.isEmpty
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.5,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off_rounded,
+                          size: 56,
+                          color: AppColors.textHint,
+                        ),
 
-    return ListView(
-      physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.only(
-        left: AppConstants.paddingM,
-        right: AppConstants.paddingM,
-        bottom: MediaQuery.of(context).padding.bottom + 16,
-      ),
-      children: widgets,
+                        const SizedBox(height: 12),
+
+                        Text(
+                          _searchQuery.isNotEmpty
+                              ? 'Tidak ada hasil untuk "$_searchQuery"'
+                              : 'Belum ada aktivitas',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : ListView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              padding: EdgeInsets.only(
+                left: AppConstants.paddingM,
+                right: AppConstants.paddingM,
+                bottom: MediaQuery.of(context).padding.bottom + 16,
+              ),
+              children: widgets,
+            ),
     );
   }
 
