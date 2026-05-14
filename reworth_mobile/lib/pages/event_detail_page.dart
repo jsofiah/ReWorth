@@ -140,45 +140,63 @@ class _EventDetailPageState extends State<EventDetailPage> {
                 pinned: true,
                 backgroundColor: AppColors.secondary,
                 systemOverlayStyle: SystemUiOverlayStyle.light,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(32),
+                  ),
+                ),
+
                 leading: Padding(
                   padding: const EdgeInsets.all(8),
                   child: CircleAvatar(
-                    backgroundColor: Colors.white,
+                    backgroundColor: Colors.white.withOpacity(0.75),
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new,
-                          color: Colors.black, size: 18),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.black,
+                        size: 18,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
                 ),
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      if (event.fotoEvent != null && event.fotoEvent!.isNotEmpty)
-                        Image.network(
-                          fotoUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _placeholderImage(),
-                        )
-                      else
-                        _placeholderImage(),
 
-                      const DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.transparent,
-                              AppColors.secondary,
-                            ],
-                            stops: [0.0, 0.6, 1.0],
+                flexibleSpace: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(32),
+                    bottomRight: Radius.circular(32),
+                  ),
+                  child: FlexibleSpaceBar(
+                    background: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (event.fotoEvent != null &&
+                            event.fotoEvent!.isNotEmpty)
+                          Image.network(
+                            fotoUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                _placeholderImage(),
+                          )
+                        else
+                          _placeholderImage(),
+
+                        const DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.transparent,
+                                AppColors.secondary,
+                              ],
+                              stops: [0.0, 0.6, 1.0],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
