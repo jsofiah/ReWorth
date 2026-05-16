@@ -28,6 +28,14 @@ class AppImageHelper {
     // Jika hanya nama file saja
     return getPublicUrl('media', 'pengguna/$path');
   }
+  static String fotoBank(String? namaFile) {
+    if (namaFile == null || namaFile.isEmpty) return '';
+    // Logo bank tersimpan di bucket 'media', folder 'bank/'
+    return getPublicUrl('media', 'bank/$namaFile');
+  }
+
+  static String fotoBuktiPembayaran(String? path) =>
+      getPublicUrl('media', path);
 
   static String fotoEvent(String? path) =>
       getPublicUrl('media', path);
