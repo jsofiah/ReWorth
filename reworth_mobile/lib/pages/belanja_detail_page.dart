@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'pesanan_page.dart';
+import 'belanja_checkout_page.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_constants.dart';
 import '../utils/app_text_styles.dart';
@@ -155,13 +155,12 @@ class _BelanjaDetailPageState extends State<BelanjaDetailPage> {
 
     try {
       await _supabase.from('pesanan').insert({
-        'id_produk': _produk!.idProduk,
-        'id_pengguna': userId,
-        'jumlah': _jumlah,
-        'total_harga': _produk!.harga * _jumlah,
-        'status': 'menunggu',
-        'created_at': DateTime.now().toIso8601String(),
-      });
+      'id_produk': _produk!.idProduk,
+      'id_pengguna': userId,
+      'total_bayar': (_produk!.harga * _jumlah).toString(), 
+      'status': 'menunggu',
+      'created_at': DateTime.now().toIso8601String(),
+    });
 
       if (mounted) {
         _showSnackBar('Pesanan berhasil dibuat!');
@@ -255,7 +254,9 @@ class _BelanjaDetailPageState extends State<BelanjaDetailPage> {
 
                       _buildQuantityPicker(p),
 
-                      const SizedBox(height: 100),
+                      SizedBox(
+                        height: 100 + MediaQuery.of(context).padding.bottom,
+                      ),
                     ],
                   ),
                 ),
@@ -729,7 +730,25 @@ class _BelanjaDetailPageState extends State<BelanjaDetailPage> {
         width: double.infinity,
         height: 52,
         child: ElevatedButton(
-          onPressed: (isEmpty || _isBuying) ? null : _onBeli,
+          onPressed: (isEmpty || _isBuying)
+          ? null
+          : () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BelanjaCheckoutPage(
+                    idProduk: p.idProduk,
+                    namaProduk: p.nama,
+                    namaPenjual: p.namaPenjual,
+                    fotoProduk: p.fotoList.isNotEmpty
+                        ? p.fotoList.first
+                        : '',
+                    harga: p.harga,
+                    jumlah: _jumlah,
+                  ),
+                ),
+              );
+            },
           style: ElevatedButton.styleFrom(
             backgroundColor:
                 isEmpty ? AppColors.inputBorder : AppColors.secondary,
