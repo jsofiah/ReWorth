@@ -464,15 +464,14 @@ class _SetorPageState extends State<SetorPage> {
           
           const SizedBox(height: 16),
           Row(children: [
-            Expanded(flex: 2, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(flex: 1, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Jenis Sampah', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600, color: const Color(0xFF555555))),
               const SizedBox(height: 6),
               Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.secondary, width: 1),
+                  border: Border.all(color: const Color(0xFFD8EAB0), width: 1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: DropdownButton<String>(
                   value: sampah['id_jenis'].toString().isEmpty ? null : sampah['id_jenis'],
                   isExpanded: true,
@@ -490,7 +489,7 @@ class _SetorPageState extends State<SetorPage> {
               const SizedBox(height: 6),
               Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.secondary, width: 1),
+                  border: Border.all(color:const Color(0xFFD8EAB0), width: 1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: TextField(
@@ -502,9 +501,9 @@ class _SetorPageState extends State<SetorPage> {
                     hintStyle: AppTextStyles.caption,
                     border: InputBorder.none,
                     isDense: true,
-                    filled: true,
-                    fillColor: Colors.white,
+                    filled: false,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    suffixIcon: const SizedBox(width: 20),
                   ),
                 ),
               ),
