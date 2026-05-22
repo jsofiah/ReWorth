@@ -6,7 +6,7 @@ import '../utils/app_text_styles.dart';
 import '../utils/app_constants.dart';
 import '../services/auth_service.dart';
 import 'jemput_page.dart';  
-import 'antar_page.dart';  
+import 'setor_antar_page.dart';  
 
 class JenisSampahModel {
   final String idJenis;
@@ -97,7 +97,18 @@ class _SetorPageState extends State<SetorPage> {
         // Antar Sendiri - langsung ke AntarPage
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const AntarPage()),
+          MaterialPageRoute(
+            builder: (_) => SetorAntarPage(
+              sampahList: valid,
+              jenisSampahList: _jenisSampahList
+                  .map<Map<String, dynamic>>((j) => {
+                        'id_jenis': j.idJenis,
+                        'nama_sampah': j.namaSampah,
+                        'harga_per_kg': j.hargaPerKg,
+                      })
+                  .toList(),
+            ),
+          ),
         );
       }
     } else if (_currentStep < 2) {
