@@ -5,7 +5,7 @@ import '../utils/app_colors.dart';
 import '../utils/app_text_styles.dart';
 import '../utils/app_constants.dart';
 import '../services/auth_service.dart';
-import 'jemput_page.dart';  
+import 'setor_jemput_page.dart';  
 import 'setor_antar_page.dart';  
 
 class JenisSampahModel {
@@ -13,7 +13,7 @@ class JenisSampahModel {
   final String namaSampah;
   final int hargaPerKg;
   
-  JenisSampahModel({required this.idJenis, required this.namaSampah, required this.hargaPerKg});
+  JenisSampahModel({required this.idJenis,  required this.namaSampah, required this.hargaPerKg});
   
   factory JenisSampahModel.fromMap(Map<String, dynamic> map) => JenisSampahModel(
     idJenis: map['id_jenis'] ?? '',
@@ -45,7 +45,7 @@ class _SetorPageState extends State<SetorPage> {
   Future<void> _loadData() async {
     await _loadJenisSampah();
     _sampahList = [
-      {'nama': '', 'id_jenis': '', 'berat': 0.0},
+      {'id_jenis': '', 'berat': 0.0}
     ];
     setState(() => _isLoading = false);
   }
@@ -58,15 +58,18 @@ class _SetorPageState extends State<SetorPage> {
     _jenisSampahList = (data as List).map((e) => JenisSampahModel.fromMap(e)).toList();
   }
 
-  String _getJenisNama(String idJenis) => _jenisSampahList.firstWhere(
-    (j) => j.idJenis == idJenis, 
-    orElse: () => JenisSampahModel(idJenis: '', namaSampah: '', hargaPerKg: 0)
-  ).namaSampah;
-  
-  double _getHargaPerKg(String idJenis) => _jenisSampahList.firstWhere(
-    (j) => j.idJenis == idJenis, 
-    orElse: () => JenisSampahModel(idJenis: '', namaSampah: '', hargaPerKg: 0)
-  ).hargaPerKg.toDouble();
+  double _getHargaPerKg(String idJenis) =>
+      _jenisSampahList
+          .firstWhere(
+            (j) => j.idJenis == idJenis,
+            orElse: () => JenisSampahModel(
+              idJenis: '',
+              namaSampah: '',
+              hargaPerKg: 0,
+            ),
+          )
+          .hargaPerKg
+          .toDouble();
   
   double get _totalBerat => _sampahList.fold(0.0, (s, e) => s + (e['berat'] as double));
   int get _totalPoin => (_totalBerat * 10).toInt();
@@ -75,7 +78,6 @@ class _SetorPageState extends State<SetorPage> {
   void _nextStep() {
     if (_currentStep == 0) {
       final valid = _sampahList.where((s) => 
-        s['nama'].toString().isNotEmpty && 
         s['id_jenis'].toString().isNotEmpty && 
         s['berat'] > 0
       ).toList();
@@ -103,7 +105,6 @@ class _SetorPageState extends State<SetorPage> {
               jenisSampahList: _jenisSampahList
                   .map<Map<String, dynamic>>((j) => {
                         'id_jenis': j.idJenis,
-                        'nama_sampah': j.namaSampah,
                         'harga_per_kg': j.hargaPerKg,
                       })
                   .toList(),
@@ -419,9 +420,17 @@ class _SetorPageState extends State<SetorPage> {
         padding: const EdgeInsets.all(AppConstants.paddingM),
         decoration: BoxDecoration(border: Border.all(color: AppColors.inputBorder), borderRadius: BorderRadius.circular(AppConstants.radiusM)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(s['nama'], style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+        Text(
+            'Sampah ${valid.indexOf(s) + 1}',
+            style: AppTextStyles.body.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text('${_getJenisNama(s['id_jenis'])} · ${(s['berat'] as double).toStringAsFixed(1)} kg', style: AppTextStyles.caption),
+          Text(
+            '${(s['berat'] as double).toStringAsFixed(1)} kg',
+            style: AppTextStyles.caption,
+          ),
         ]),
       ))),
       const SizedBox(height: AppConstants.paddingL),
@@ -440,7 +449,7 @@ class _SetorPageState extends State<SetorPage> {
   );
 
   Widget _buildSampahCard({required int index, required Map<String, dynamic> sampah, required bool isLast}) {
-    final bool isEmpty = sampah['nama'].toString().isEmpty && sampah['id_jenis'].toString().isEmpty;
+    final bool isEmpty = sampah['id_jenis'].toString().isEmpty;
     
     Widget cardContent = Padding(
       padding: const EdgeInsets.all(16),
@@ -452,28 +461,7 @@ class _SetorPageState extends State<SetorPage> {
               child: Text('Sampah #$index', style: AppTextStyles.small.copyWith(fontWeight: FontWeight.w700, color: const Color(0xFF013A0C)))),
             if (!isLast) GestureDetector(onTap: () => setState(() => _sampahList.removeAt(index - 1)), child: Container(width: 26, height: 26, decoration: BoxDecoration(color: Colors.white, border: Border.all(color: const Color(0xFFF0D8D8), width: 1), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.close, size: 14, color: Colors.red))),
           ]),
-          const SizedBox(height: 16),
-          Text('Nama Sampah', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600, color: const Color(0xFF555555))),
-          const SizedBox(height: 6),
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.secondary, width: 1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: TextField(
-              onChanged: (v) => setState(() => sampah['nama'] = v),
-              style: AppTextStyles.body,
-              decoration: InputDecoration(
-                hintText: 'Nama sampah yang ingin disetor...',
-                hintStyle: AppTextStyles.caption,
-                border: InputBorder.none,
-                isDense: true,
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              ),
-            ),
-          ),
+          
           const SizedBox(height: 16),
           Row(children: [
             Expanded(flex: 2, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
