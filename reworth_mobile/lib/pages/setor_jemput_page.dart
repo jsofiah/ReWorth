@@ -30,7 +30,7 @@ class _JemputPageState extends State<JemputPage> {
   double _totalBerat = 0;
   int _totalPoin = 0;
   double _totalHarga = 0;
-  int _currentStep = 1; // Step 2: Alamat & Jadwal
+  int _currentStep = 1;
   
   List<Map<String, dynamic>> _jadwalList = [];
   Map<String, dynamic>? _selectedJadwal;
@@ -44,10 +44,10 @@ class _JemputPageState extends State<JemputPage> {
   bool _isSubmitting = false;
 
   // Warna khusus Figma
-  final Color _darkGreen = const Color(0xFF013A0C);
+  final Color _darkGreen = AppColors.secondary;
   final Color _lightGreenBg = const Color(0xFFF8FBF4);
   final Color _borderGreen = const Color(0xFFD8E8C0);
-  final Color _greyAddress = const Color(0xFF777777);
+  final Color _greyAddress = AppColors.textSecondary;
 
   @override
   void initState() {
@@ -82,22 +82,108 @@ class _JemputPageState extends State<JemputPage> {
 
   Future<void> _loadJadwal() async {
     try {
+      final now = DateTime.now();
+      final year = now.year;
+      final month = now.month;
+      
+      final startDate = '$year-$month-01';
+      final nextMonth = month == 12 ? 1 : month + 1;
+      final nextYear = month == 12 ? year + 1 : year;
+      final endDate = '$nextYear-$nextMonth-01';
+      
       final data = await _supabase
           .from('jadwal_ambil')
           .select('id_jadwal, tanggal, waktu_mulai, waktu_selesai, kuota')
+          .gte('tanggal', startDate)
+          .lt('tanggal', endDate)
           .order('tanggal', ascending: true);
       
-      _jadwalList = List<Map<String, dynamic>>.from(data);
-      
-      if (_jadwalList.isNotEmpty) {
-        _selectedJadwal = _jadwalList.first;
-        _selectedTanggal = _formatTanggal(_selectedJadwal!['tanggal']);
-        _selectedWaktuMulai = _selectedJadwal!['waktu_mulai'].toString().substring(0, 5);
-        _selectedWaktuSelesai = _selectedJadwal!['waktu_selesai'].toString().substring(0, 5);
-        _selectedHari = _getHariFromDate(_selectedJadwal!['tanggal']);
+      // Kelompokkan berdasarkan tanggal
+      final Map<String, List<Map<String, dynamic>>> grouped = {};
+      for (var jadwal in data) {
+        final tanggal = jadwal['tanggal'];
+        if (!grouped.containsKey(tanggal)) {
+          grouped[tanggal] = [];
+        }
+        grouped[tanggal]!.add({
+          'id_jadwal': jadwal['id_jadwal'],
+          'waktu_mulai': jadwal['waktu_mulai'],
+          'waktu_selesai': jadwal['waktu_selesai'],
+          'kuota': jadwal['kuota'],
+        });
       }
+      
+      // Buat list semua tanggal di bulan ini
+      _jadwalList = [];
+      final lastDay = DateTime(year, month + 1, 0);
+      
+      for (int day = 1; day <= lastDay.day; day++) {
+        final tanggalStr = '$year-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
+        final hari = _getHariFromDate(tanggalStr);
+        var jamList = grouped[tanggalStr] ?? [];
+        
+        // Jika tidak ada jadwal di database, buat jadwal default
+        if (jamList.isEmpty) {
+          jamList = [
+            {
+              'id_jadwal': 'default_${tanggalStr}_pagi',
+              'waktu_mulai': '08:00:00',
+              'waktu_selesai': '10:00:00',
+              'kuota': 10,
+            },
+            {
+              'id_jadwal': 'default_${tanggalStr}_siang',
+              'waktu_mulai': '13:00:00',
+              'waktu_selesai': '15:00:00',
+              'kuota': 10,
+            },
+            {
+              'id_jadwal': 'default_${tanggalStr}_sore',
+              'waktu_mulai': '15:30:00',
+              'waktu_selesai': '17:30:00',
+              'kuota': 10,
+            },
+          ];
+        }
+        
+        final hasAvailableQuota = jamList.any((jam) => (jam['kuota'] as int) > 0);
+        
+        _jadwalList.add({
+          'tanggal': tanggalStr,
+          'tanggal_display': _formatTanggal(tanggalStr),
+          'hari': hari,
+          'jam_list': jamList,
+          'has_jadwal': true,
+          'has_quota': hasAvailableQuota,
+          'is_full': jamList.isNotEmpty && !hasAvailableQuota,
+        });
+      }
+      
+      // Pilih tanggal pertama yang tersedia
+      _selectFirstAvailableDate();
+      
     } catch (e) {
       debugPrint('Error load jadwal: $e');
+    }
+  }
+
+  void _selectFirstAvailableDate() {
+    for (var jadwal in _jadwalList) {
+      if (jadwal['has_quota']) {
+        _selectedTanggal = jadwal['tanggal_display'];
+        _selectedHari = jadwal['hari'];
+        
+        final jamList = jadwal['jam_list'] as List;
+        for (var jam in jamList) {
+          if ((jam['kuota'] as int) > 0) {
+            _selectedJadwal = jam;
+            _selectedWaktuMulai = jam['waktu_mulai'].toString().substring(0, 5);
+            _selectedWaktuSelesai = jam['waktu_selesai'].toString().substring(0, 5);
+            break;
+          }
+        }
+        break;
+      }
     }
   }
 
@@ -113,8 +199,10 @@ class _JemputPageState extends State<JemputPage> {
     return days[date.weekday - 1];
   }
 
-  String _getJenisNama(String idJenis) {
-    return 'Sampah';
+  String _getCurrentMonth() {
+    final now = DateTime.now();
+    final months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    return '${months[now.month - 1]} ${now.year}';
   }
 
   String _formatRupiah(double value) {
@@ -125,33 +213,167 @@ class _JemputPageState extends State<JemputPage> {
   }
 
   void _nextStep() {
-    if (_currentStep < 2) {
-      setState(() => _currentStep++);
+    if (_currentStep == 1) {
+      // Validasi sebelum pindah ke konfirmasi
+      if (_selectedJadwal == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pilih tanggal dan jam penjemputan terlebih dahulu')),
+        );
+        return;
+      }
+      setState(() => _currentStep = 2);
     }
   }
 
   void _prevStep() {
-    if (_currentStep > 0) {
-      setState(() => _currentStep--);
+    if (_currentStep == 1) {
+      // Di halaman Jemput (step 1) -> kembali ke SetorPage
+      Navigator.pop(context);
+    } else if (_currentStep == 2) {
+      // Di halaman Konfirmasi (step 2) -> kembali ke step 1 (Jemput)
+      setState(() => _currentStep = 1);
     }
   }
 
   Future<void> _submitJemput() async {
     if (_selectedJadwal == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih jadwal penjemputan terlebih dahulu')),
+        const SnackBar(content: Text('Pilih tanggal dan jam penjemputan terlebih dahulu')),
       );
       return;
     }
+    
+    // Validasi kuota
+    final kuota = _selectedJadwal!['kuota'] as int;
+    if (kuota <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Maaf, kuota untuk jam ini sudah penuh. Silahkan pilih jam lain.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Dialog konfirmasi sebelum submit
+    final shouldSubmit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konfirmasi Penjemputan'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Apakah Anda yakin dengan data berikut?'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F9EE),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: _borderGreen),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 16, color: AppColors.secondary),
+                      const SizedBox(width: 8),
+                      Text('$_selectedHari, $_selectedTanggal'),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.access_time, size: 16, color: AppColors.secondary),
+                      const SizedBox(width: 8),
+                      Text('$_selectedWaktuMulai - $_selectedWaktuSelesai WIB'),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 16, color: AppColors.secondary),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(_alamat, maxLines: 2)),
+                    ],
+                  ),
+                  const Divider(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Total Harga:'),
+                      Text('Rp${_formatRupiah(_totalHarga)}', 
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary)),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Poin yang didapat:'),
+                      Text('+$_totalPoin poin', 
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal', style: TextStyle(color: Colors.red)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.secondary,
+            ),
+            child: const Text('Ya, Konfirmasi'),
+          ),
+        ],
+      ),
+    ) ?? false;
+    
+    if (!shouldSubmit) return;
 
     setState(() => _isSubmitting = true);
     try {
       final user = AuthService.getCurrentUser();
       if (user == null) throw Exception('User tidak login');
       
+      String jadwalId = _selectedJadwal!['id_jadwal'];
+      
+      // Jika menggunakan jadwal default (id_jadwal diawali 'default_')
+      if (jadwalId.toString().startsWith('default_')) {
+        // Cek apakah jadwal sudah ada di database
+        final existingJadwal = await _supabase
+            .from('jadwal_ambil')
+            .select('id_jadwal')
+            .eq('tanggal', _selectedTanggal)
+            .eq('waktu_mulai', _selectedJadwal!['waktu_mulai'])
+            .maybeSingle();
+        
+        if (existingJadwal != null) {
+          jadwalId = existingJadwal['id_jadwal'];
+        } else {
+          // Buat jadwal baru di database
+          final newJadwal = await _supabase.from('jadwal_ambil').insert({
+            'tanggal': _selectedTanggal,
+            'waktu_mulai': _selectedJadwal!['waktu_mulai'],
+            'waktu_selesai': _selectedJadwal!['waktu_selesai'],
+            'kuota': _selectedJadwal!['kuota'],
+            'created_at': DateTime.now().toIso8601String(),
+          }).select().single();
+          jadwalId = newJadwal['id_jadwal'];
+        }
+      }
+      
       await _supabase.from('penjemputan').insert({
         'id_pengguna': user.id,
-        'id_jadwal': _selectedJadwal!['id_jadwal'],
+        'id_jadwal': jadwalId,
         'alamat': _alamat,
         'total_berat': _totalBerat,
         'total_poin': _totalPoin,
@@ -235,7 +457,7 @@ class _JemputPageState extends State<JemputPage> {
         ),
         Expanded(
           child: Text(
-            'Alamat & Jadwal',
+            'Setor Sampah',
             style: AppTextStyles.namafitur,
             textAlign: TextAlign.center,
           ),
@@ -381,62 +603,86 @@ class _JemputPageState extends State<JemputPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'JADWAL',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF74942B)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('JADWAL', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF74942B))),
+              Text(_getCurrentMonth(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey)),
+            ],
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Pilih Tanggal',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF555555)),
-          ),
+          const Text('Pilih Tanggal', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF555555))),
           const SizedBox(height: 8),
           SizedBox(
-            height: 58,
+            height: 70,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _jadwalList.length,
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
-                final jadwal = _jadwalList[index];
-                final isSelected = _selectedJadwal?['id_jadwal'] == jadwal['id_jadwal'];
-                final hari = _getHariFromDate(jadwal['tanggal']).substring(0, 3);
-                final tanggal = jadwal['tanggal'].toString().substring(8, 10);
+                final item = _jadwalList[index];
+                final isSelected = _selectedTanggal == item['tanggal_display'];
+                
+                // Semua hari berwarna hijau
+                Color bgColor;
+                if (isSelected) {
+                  bgColor = _darkGreen;
+                } else {
+                  bgColor = _lightGreenBg;
+                }
+                
+                Color borderColor;
+                if (isSelected) {
+                  borderColor = _darkGreen;
+                } else {
+                  borderColor = _borderGreen;
+                }
+                
+                Color textColor;
+                if (isSelected) {
+                  textColor = Colors.white;
+                } else {
+                  textColor = const Color(0xFF555555);
+                }
                 
                 return GestureDetector(
-                  onTap: () => setState(() {
-                    _selectedJadwal = jadwal;
-                    _selectedTanggal = _formatTanggal(jadwal['tanggal']);
-                    _selectedWaktuMulai = jadwal['waktu_mulai'].toString().substring(0, 5);
-                    _selectedWaktuSelesai = jadwal['waktu_selesai'].toString().substring(0, 5);
-                    _selectedHari = _getHariFromDate(jadwal['tanggal']);
-                  }),
+                  onTap: () {
+                    setState(() {
+                      _selectedTanggal = item['tanggal_display'];
+                      _selectedHari = item['hari'];
+                      
+                      final jamList = item['jam_list'] as List;
+                      if (jamList.isNotEmpty) {
+                        // Pilih jam pertama yang tersedia
+                        for (var jam in jamList) {
+                          if ((jam['kuota'] as int) > 0) {
+                            _selectedJadwal = jam;
+                            _selectedWaktuMulai = jam['waktu_mulai'].toString().substring(0, 5);
+                            _selectedWaktuSelesai = jam['waktu_selesai'].toString().substring(0, 5);
+                            break;
+                          }
+                        }
+                      } else {
+                        _selectedJadwal = null;
+                        _selectedWaktuMulai = '';
+                        _selectedWaktuSelesai = '';
+                      }
+                    });
+                  },
                   child: Container(
                     width: 52,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
-                      color: isSelected ? _darkGreen : _lightGreenBg,
-                      border: Border.all(color: _borderGreen, width: 1),
+                      color: bgColor,
+                      border: Border.all(color: borderColor, width: 1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(
                       children: [
-                        Text(
-                          hari,
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            color: isSelected ? Colors.white : const Color(0xFF888888),
-                          ),
-                        ),
-                        Text(
-                          tanggal,
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            color: isSelected ? Colors.white : const Color(0xFF888888),
-                          ),
-                        ),
+                        Text(item['hari'].substring(0, 3), 
+                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: textColor)),
+                        Text(item['tanggal'].substring(8, 10), 
+                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: textColor)),
                       ],
                     ),
                   ),
@@ -445,55 +691,94 @@ class _JemputPageState extends State<JemputPage> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Pilih Waktu Penjemputan',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF555555)),
-          ),
+          const Text('Pilih Waktu Penjemputan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF555555))),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              _buildWaktuOption('07:00 - 09:00', _selectedWaktuMulai == '07:00'),
-              const SizedBox(width: 8),
-              _buildWaktuOption('09:00 - 11:00', _selectedWaktuMulai == '09:00'),
-              const SizedBox(width: 8),
-              _buildWaktuOption('13:00 - 15:00', _selectedWaktuMulai == '13:00'),
-              const SizedBox(width: 8),
-              _buildWaktuOption('15:00 - 17:00', _selectedWaktuMulai == '15:00'),
-            ],
-          ),
+          _buildJamOptions(),
         ],
       ),
     ),
   );
 
-  Widget _buildWaktuOption(String waktu, bool isSelected) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedWaktuMulai = waktu.substring(0, 5);
-            _selectedWaktuSelesai = waktu.substring(8, 13);
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? _darkGreen : _lightGreenBg,
-            border: Border.all(color: _borderGreen, width: 1),
-            borderRadius: BorderRadius.circular(100),
-          ),
-          child: Center(
-            child: Text(
-              waktu,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF555555),
+  Widget _buildJamOptions() {
+    final selectedDateData = _jadwalList.firstWhere(
+      (item) => item['tanggal_display'] == _selectedTanggal,
+      orElse: () => {},
+    );
+    
+    if (selectedDateData.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Center(
+          child: Text('Pilih tanggal terlebih dahulu', style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
+    
+    final jamList = selectedDateData['jam_list'] as List;
+    
+    if (jamList.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Center(
+          child: Text('Tidak ada jadwal untuk tanggal ini', style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
+    
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: jamList.map((jam) {
+        final waktuMulai = jam['waktu_mulai'].toString().substring(0, 5);
+        final waktuSelesai = jam['waktu_selesai'].toString().substring(0, 5);
+        final kuota = jam['kuota'] as int;
+        final isSelected = _selectedWaktuMulai == waktuMulai;
+        final isPenuh = kuota <= 0;
+        
+        return GestureDetector(
+          onTap: isPenuh ? null : () {
+            setState(() {
+              _selectedJadwal = jam;
+              _selectedWaktuMulai = waktuMulai;
+              _selectedWaktuSelesai = waktuSelesai;
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: isPenuh 
+                  ? Colors.grey[300] 
+                  : (isSelected ? _darkGreen : _lightGreenBg),
+              border: Border.all(
+                color: isPenuh 
+                    ? Colors.grey 
+                    : (isSelected ? _darkGreen : _borderGreen),
+                width: 1,
               ),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  '$waktuMulai - $waktuSelesai',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isPenuh 
+                        ? Colors.grey 
+                        : (isSelected ? Colors.white : const Color(0xFF555555)),
+                  ),
+                ),
+                if (isPenuh)
+                  const Text(
+                    'Kuota habis',
+                    style: TextStyle(fontSize: 8, color: Colors.red),
+                  ),
+              ],
             ),
           ),
-        ),
-      ),
+        );
+      }).toList(),
     );
   }
 
@@ -586,7 +871,7 @@ class _JemputPageState extends State<JemputPage> {
         const SizedBox(height: AppConstants.paddingL),
         _buildInfoPenjemputanCard(),
         const SizedBox(height: AppConstants.paddingXL),
-        _buildSubmitButton(),
+        _buildKonfirmasiButtons(),
         const SizedBox(height: AppConstants.paddingXL),
       ],
     ),
@@ -634,9 +919,9 @@ class _JemputPageState extends State<JemputPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(s['nama'], style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+              Text(s['nama'] ?? 'Sampah', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
-              Text('${_getJenisNama(s['id_jenis'])} · ${(s['berat'] as double).toStringAsFixed(1)} kg', style: AppTextStyles.caption),
+              Text('${(s['berat'] as double).toStringAsFixed(1)} kg', style: AppTextStyles.caption),
             ],
           ),
         ),
@@ -684,19 +969,33 @@ class _JemputPageState extends State<JemputPage> {
     ],
   );
 
-  Widget _buildSubmitButton() => SizedBox(
-    width: double.infinity,
-    height: 51,
-    child: ElevatedButton(
-      onPressed: _isSubmitting ? null : _submitJemput,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF7CA73B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+  Widget _buildKonfirmasiButtons() => Row(
+    children: [
+      Expanded(
+        child: OutlinedButton(
+          onPressed: () => setState(() => _currentStep = 1),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: AppColors.secondary),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusXL)),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+          child: Text('Kembali', style: AppTextStyles.body.copyWith(color: AppColors.secondary, fontWeight: FontWeight.w600)),
+        ),
       ),
-      child: _isSubmitting
-          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-          : const Text('Konfirmasi', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
-    ),
+      const SizedBox(width: AppConstants.paddingM),
+      Expanded(
+        child: ElevatedButton(
+          onPressed: _isSubmitting ? null : _submitJemput,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF7CA73B),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+          ),
+          child: _isSubmitting
+              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Text('Konfirmasi', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+        ),
+      ),
+    ],
   );
 
   Widget _buildInfoRow(String l, String v) => Padding(
