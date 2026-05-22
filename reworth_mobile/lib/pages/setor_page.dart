@@ -13,7 +13,7 @@ class JenisSampahModel {
   final String namaSampah;
   final int hargaPerKg;
   
-  JenisSampahModel({required this.idJenis,  required this.namaSampah, required this.hargaPerKg});
+  JenisSampahModel({required this.idJenis, required this.namaSampah, required this.hargaPerKg});
   
   factory JenisSampahModel.fromMap(Map<String, dynamic> map) => JenisSampahModel(
     idJenis: map['id_jenis'] ?? '',
@@ -77,23 +77,44 @@ class _SetorPageState extends State<SetorPage> {
 
   void _nextStep() {
     if (_currentStep == 0) {
-      final valid = _sampahList.where((s) => 
+      // Filter data yang valid
+      final filtered = _sampahList.where((s) => 
         s['id_jenis'].toString().isNotEmpty && 
         s['berat'] > 0
       ).toList();
       
-      if (valid.isEmpty) {
+      if (filtered.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Minimal isi 1 sampah'))
         );
         return;
       }
       
+      // Tambahkan field 'nama' ke setiap item
+      final valid = filtered.map((s) {
+        final jenis = _jenisSampahList.firstWhere(
+          (j) => j.idJenis == s['id_jenis'],
+          orElse: () => JenisSampahModel(idJenis: '', namaSampah: 'Sampah', hargaPerKg: 0),
+        );
+        return {
+          'id_jenis': s['id_jenis'],
+          'berat': s['berat'],
+          'nama': jenis.namaSampah,
+        };
+      }).toList();
+      
       // Navigasi berdasarkan metode yang dipilih
       if (_selectedMetode == 'Dijemput Petugas') {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const JemputPage()),
+          MaterialPageRoute(
+            builder: (_) => JemputPage(
+              sampahList: valid,
+              totalBerat: _totalBerat,
+              totalPoin: _totalPoin,
+              totalHarga: _totalHarga,
+            ),
+          ),
         );
       } else {
         // Antar Sendiri - langsung ke AntarPage
@@ -106,6 +127,7 @@ class _SetorPageState extends State<SetorPage> {
                   .map<Map<String, dynamic>>((j) => {
                         'id_jenis': j.idJenis,
                         'harga_per_kg': j.hargaPerKg,
+                        'nama': j.namaSampah,
                       })
                   .toList(),
             ),
@@ -116,9 +138,10 @@ class _SetorPageState extends State<SetorPage> {
       setState(() => _currentStep++);
     }
   }
-  // ========== END ==========
 
-  void _prevStep() { if (_currentStep > 0) setState(() => _currentStep--); }
+  void _prevStep() { 
+    if (_currentStep > 0) setState(() => _currentStep--); 
+  }
 
   Future<void> _submitSetor() async {
     final valid = _sampahList.where((s) => s['nama'].toString().isNotEmpty && s['id_jenis'].toString().isNotEmpty && s['berat'] > 0).toList();
@@ -161,7 +184,9 @@ class _SetorPageState extends State<SetorPage> {
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal: $e'), backgroundColor: Colors.red));
-    } finally { if (mounted) setState(() => _isLoading = false); }
+    } finally { 
+      if (mounted) setState(() => _isLoading = false); 
+    }
   }
 
   @override
@@ -420,11 +445,9 @@ class _SetorPageState extends State<SetorPage> {
         padding: const EdgeInsets.all(AppConstants.paddingM),
         decoration: BoxDecoration(border: Border.all(color: AppColors.inputBorder), borderRadius: BorderRadius.circular(AppConstants.radiusM)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(
+          Text(
             'Sampah ${valid.indexOf(s) + 1}',
-            style: AppTextStyles.body.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
           Text(
