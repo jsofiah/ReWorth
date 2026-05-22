@@ -31,7 +31,8 @@ dependencies:
   image: ^4.0.14
   flutter_image_compress: ^2.3.0
   path_provider: ^2.0.11
-
+  dotted_border: ^2.1.0
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
