@@ -1,0 +1,459 @@
+<?php
+session_start();
+
+if (!isset($_SESSION['role'])) {
+    header("Location: ../login.php");
+    exit;
+}
+
+$supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
+$supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
+
+function getSupabaseImageUrl($path) {
+    if (empty($path)) return null;
+    $bucketUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/";
+    return $bucketUrl . ltrim($path, '/');
+}
+
+$userName = $_SESSION['nama_admin'] ?? 'User';
+$userEmail = $_SESSION['email'] ?? 'user@example.com';
+$userFoto = $_SESSION['foto_profil'] ?? '';
+
+// Proses tambah penjual
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    
+    $nama = $_POST['nama_penjual'] ?? '';
+    $email = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
+    $password_ulang = $_POST['password_ulang'] ?? '';
+    
+    // Validasi
+    if (empty($nama) || empty($email) || empty($password)) {
+        echo json_encode(['success' => false, 'message' => 'Data wajib tidak lengkap']);
+        exit;
+    }
+    
+    if ($password !== $password_ulang) {
+        echo json_encode(['success' => false, 'message' => 'Konfirmasi password tidak sama']);
+        exit;
+    }
+    
+    if (strlen($password) < 6) {
+        echo json_encode(['success' => false, 'message' => 'Password minimal 6 karakter']);
+        exit;
+    }
+    
+    // Upload foto profil jika ada
+    $foto_path = '';
+    if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['foto_profil'];
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = 'penjual/' . time() . '_' . uniqid() . '.' . $extension;
+        $storageUrl = $supabaseUrl . "/storage/v1/object/media/" . $filename;
+        
+        $fileData = file_get_contents($file['tmp_name']);
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $storageUrl);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $fileData);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "apikey: $supabaseKey",
+            "Authorization: Bearer $supabaseKey",
+            "Content-Type: " . $file['type'],
+            "x-upsert: true"
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode == 200 || $httpCode == 201) {
+            $foto_path = $filename;
+        }
+    }
+    
+    // Buat akun di Auth Supabase
+    $authUrl = $supabaseUrl . "/auth/v1/signup";
+    $authData = [
+        'email' => $email,
+        'password' => $password,
+        'data' => [
+            'nama_penjual' => $nama,
+            'role' => 'penjual'
+        ]
+    ];
+    
+    $ch = curl_init($authUrl);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($authData));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "apikey: $supabaseKey",
+        "Authorization: Bearer $supabaseKey",
+        "Content-Type: application/json"
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $authResponse = curl_exec($ch);
+    $authHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    $authResult = json_decode($authResponse, true);
+    
+    if ($authHttpCode !== 200) {
+        $errorMsg = 'Gagal membuat akun';
+        if (isset($authResult['msg'])) {
+            $errorMsg = $authResult['msg'];
+        } elseif (isset($authResult['error_description'])) {
+            $errorMsg = $authResult['error_description'];
+        }
+        echo json_encode(['success' => false, 'message' => $errorMsg]);
+        exit;
+    }
+    
+    $penjualId = $authResult['user']['id'] ?? null;
+    
+    if (!$penjualId) {
+        echo json_encode(['success' => false, 'message' => 'Gagal mendapatkan ID penjual']);
+        exit;
+    }
+    
+    // Simpan data ke tabel penjual
+    $data = [
+        'id_penjual' => $penjualId,
+        'nama_penjual' => $nama,
+        'email' => $email,
+        'password' => md5($password),
+        'foto_profil' => $foto_path,
+        'status' => 'menunggu_verifikasi'  // Status awal menunggu verifikasi
+    ];
+    
+    $ch = curl_init($supabaseUrl . "/rest/v1/penjual");
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "apikey: $supabaseKey",
+        "Authorization: Bearer $supabaseKey",
+        "Content-Type: application/json",
+        "Prefer: return=minimal"
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode === 201 || $httpCode === 200 || $httpCode === 204) {
+        // Catat ke log aktivitas
+        $logData = [
+            'id_admin' => $_SESSION['id_admin'],
+            'aktivitas' => 'Menambahkan penjual baru: ' . $nama,
+            'tabel_terkait' => 'penjual',
+            'id_data' => $penjualId,
+        ];
+        
+        $logCh = curl_init($supabaseUrl . "/rest/v1/log_admin");
+        curl_setopt($logCh, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($logCh, CURLOPT_POSTFIELDS, json_encode($logData));
+        curl_setopt($logCh, CURLOPT_HTTPHEADER, [
+            "apikey: $supabaseKey",
+            "Authorization: Bearer $supabaseKey",
+            "Content-Type: application/json"
+        ]);
+        curl_setopt($logCh, CURLOPT_RETURNTRANSFER, true);
+        curl_exec($logCh);
+        curl_close($logCh);
+        
+        echo json_encode(['success' => true, 'message' => 'Penjual berhasil ditambahkan']);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Akun Auth berhasil, tapi gagal menyimpan data penjual'
+        ]);
+    }
+    exit;
+}
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin – Tambah Penjual</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style/root.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style/form.css">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="img/logo.png" alt="Logo ReWorth" title="Admin Kota Malang">
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a href="dashboard.php" class="nav-link-custom">
+                    <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="kelola_akun.php" class="nav-link-custom active">
+                    <i class="bi bi-people-fill"></i> Kelola Akun
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="kelola_data_master.php" class="nav-link-custom">
+                    <i class="bi bi-database-fill-gear"></i> Kelola Data Master
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="monitor_transaksi.php" class="nav-link-custom">
+                    <i class="bi bi-arrow-left-right"></i> Monitor Transaksi
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="pembayaran_komisi.php" class="nav-link-custom">
+                    <i class="bi bi-cash-coin"></i> Pembayaran Komisi
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="aktivitas.php" class="nav-link-custom">
+                    <i class="bi bi-activity"></i> Aktivitas
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="sponsor.php" class="nav-link-custom">
+                    <i class="bi bi-megaphone-fill"></i> Sponsor
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="laporan_keuangan.php" class="nav-link-custom">
+                    <i class="bi bi-bar-chart-line-fill"></i> Laporan dan Keuangan
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="pengaturan_akun.php" class="nav-link-custom">
+                    <i class="bi bi-gear-fill"></i> Pengaturan Akun
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-logout">
+            <a class="logout-btn" href="../logout.php">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <div class="main-wrap">
+        <div class="topbar">
+            <div class="topbar-inner">
+                <h1 class="topbar-title">Tambah Penjual</h1>
+                <div class="topbar-user">
+                    <div class="topbar-user-info">
+                        <div class="topbar-user-name"><?= htmlspecialchars($userName) ?></div>
+                        <div class="topbar-user-email"><?= htmlspecialchars($userEmail) ?></div>
+                    </div>
+                    <div class="topbar-avatar">
+                        <?php if (!empty($userFoto)): ?>
+                            <img src="<?= htmlspecialchars(getSupabaseImageUrl($userFoto)) ?>" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+                        <?php else: ?>
+                            <i class="bi bi-person-fill"></i>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content-area">
+            <div class="form-container">
+                <div class="form-section">
+                    <div class="inside-header">
+                        <h2>Tambah Penjual</h2>
+                    </div>
+                    <form id="penjualForm" enctype="multipart/form-data">
+                        <div class="row-2cols">
+                            <div class="form-group">
+                                <label class="form-label">Nama Penjual <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control-custom" id="nama_penjual" placeholder="Masukkan nama penjual/toko" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control-custom" id="email" placeholder="contoh@email.com" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row-2cols">
+                            <div class="form-group">
+                                <label class="form-label">Password <span class="text-danger">*</span></label>
+                                <div class="input-password-wrap">
+                                    <input type="password" class="form-control-custom" id="password" placeholder="Minimal 6 karakter" required>
+                                    <button type="button" class="toggle-pw" data-target="password">
+                                        <i class="bi bi-eye-slash-fill"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted" style="font-size: 11px;">Minimal 6 karakter</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Ulangi Password <span class="text-danger">*</span></label>
+                                <div class="input-password-wrap">
+                                    <input type="password" class="form-control-custom" id="password_ulang" placeholder="Ulangi password" required>
+                                    <button type="button" class="toggle-pw" data-target="password_ulang">
+                                        <i class="bi bi-eye-slash-fill"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Foto Profil</label>
+                            <div class="file-upload-wrapper">
+                                <label class="file-upload-label">
+                                    <i class="bi bi-cloud-upload"></i>
+                                    <span id="fileName">Pilih file foto</span>
+                                    <input type="file" class="file-upload-input" id="foto_profil" accept="image/*" onchange="previewImage(this)">
+                                </label>
+                            </div>
+                            <div class="image-preview" id="imagePreview"></div>
+                            <small class="text-muted" style="font-size: 11px;">Format: JPG, PNG, GIF. Maksimal 2MB</small>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn-cancel" onclick="window.location.href='kelola_akun.php?tab=penjual'">Batal</button>
+                            <button type="submit" class="btn-submit">Simpan Data</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <script>
+        function previewImage(input) {
+            const fileName = input.files[0]?.name || 'Pilih file foto';
+            document.getElementById('fileName').textContent = fileName;
+            
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = '';
+            
+            if (input.files && input.files[0]) {
+                // Validasi ukuran file (max 2MB)
+                if (input.files[0].size > 2 * 1024 * 1024) {
+                    showToast('Ukuran file terlalu besar! Maksimal 2MB', 'error');
+                    input.value = '';
+                    document.getElementById('fileName').textContent = 'Pilih file foto';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'preview-item';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview">
+                        <button type="button" class="remove-image" onclick="removeImage(this)"><i class="bi bi-x"></i></button>
+                    `;
+                    preview.appendChild(div);
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        function removeImage(btn) {
+            const previewItem = btn.closest('.preview-item');
+            previewItem.remove();
+            document.getElementById('foto_profil').value = '';
+            document.getElementById('fileName').textContent = 'Pilih file foto';
+        }
+        
+        // Toggle password visibility
+        document.querySelectorAll('.toggle-pw').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.dataset.target;
+                const input = document.getElementById(targetId);
+                const icon = this.querySelector('i');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('bi-eye-slash-fill');
+                    icon.classList.add('bi-eye-fill');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('bi-eye-fill');
+                    icon.classList.add('bi-eye-slash-fill');
+                }
+            });
+        });
+        
+        document.getElementById('penjualForm').onsubmit = async function(e) {
+            e.preventDefault();
+            
+            const nama = document.getElementById('nama_penjual').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const passwordUlang = document.getElementById('password_ulang').value;
+            
+            if (!nama || !email || !password || !passwordUlang) {
+                showToast('Data wajib tidak lengkap!', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showToast('Password minimal 6 karakter!', 'error');
+                return;
+            }
+            
+            if (password !== passwordUlang) {
+                showToast('Konfirmasi password tidak sama!', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('nama_penjual', nama);
+            formData.append('email', email);
+            formData.append('password', password);
+            formData.append('password_ulang', passwordUlang);
+            
+            const fotoFile = document.getElementById('foto_profil').files[0];
+            if (fotoFile) {
+                formData.append('foto_profil', fotoFile);
+            }
+            
+            // Disable submit button
+            const submitBtn = document.querySelector('.btn-submit');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="btn-spinner"><i class="bi bi-arrow-repeat spin"></i></span> Menyimpan...';
+            
+            try {
+                const res = await fetch(window.location.href, { method: 'POST', body: formData });
+                const data = await res.json();
+                showToast(data.message, data.success ? 'success' : 'error');
+                if (data.success) {
+                    setTimeout(() => {
+                        window.location.href = 'kelola_akun.php?tab=penjual';
+                    }, 2000);
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Simpan Data';
+                }
+            } catch (error) {
+                showToast('Terjadi kesalahan pada server', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Simpan Data';
+            }
+        };
+        
+        function showToast(msg, type = 'success') {
+            const icons = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill', info: 'bi-info-circle-fill' };
+            const div = document.createElement('div');
+            div.className = `toast-item ${type}`;
+            div.innerHTML = `<i class="bi ${icons[type]} toast-icon"></i><span>${msg}</span>`;
+            document.getElementById('toastContainer').appendChild(div);
+            setTimeout(() => div.remove(), 3500);
+        }
+    </script>
+</body>
+</html>
