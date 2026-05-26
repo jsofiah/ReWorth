@@ -987,12 +987,13 @@ class _JemputPageState extends State<JemputPage> {
         child: ElevatedButton(
           onPressed: _isSubmitting ? null : _submitJemput,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF7CA73B),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+            backgroundColor: AppColors.secondary,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusXL)),
+            padding: const EdgeInsets.symmetric(vertical: 14),
           ),
           child: _isSubmitting
               ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Text('Konfirmasi', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+              : Text('Konfirmasi', style: AppTextStyles.buttonLabel.copyWith(color: Colors.white)),
         ),
       ),
     ],

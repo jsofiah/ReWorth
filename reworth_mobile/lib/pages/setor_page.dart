@@ -265,7 +265,12 @@ class _SetorPageState extends State<SetorPage> {
   ]);
 
   Widget _buildBottomButtons() => Padding(
-    padding: const EdgeInsets.all(AppConstants.paddingL),
+    padding: EdgeInsets.fromLTRB(
+      AppConstants.paddingL,
+      AppConstants.paddingL,
+      AppConstants.paddingL,
+      MediaQuery.of(context).padding.bottom + AppConstants.paddingL, // Tambahkan bottom safe area
+    ),
     child: Row(children: [
       if (_currentStep > 0)
         Expanded(child: OutlinedButton(
