@@ -11,6 +11,7 @@ import '../pages/aktivitas_page.dart';
 import '../pages/notification_page.dart';
 import '../pages/syaratketentuan_page.dart';
 import '../pages/edit_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfilPage extends StatefulWidget {
   const ProfilPage({super.key});
@@ -110,6 +111,12 @@ class _ProfilPageState extends State<ProfilPage> {
     Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => page));
   }
 
+  void _openWebToko() async {
+    final Uri url = Uri.parse('https://reworth-penjual.netlify.app/');
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('Tidak bisa membuka $url');
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -126,17 +133,17 @@ class _ProfilPageState extends State<ProfilPage> {
               width: 394,
               height: 140,
               fit: BoxFit.cover,
-errorBuilder: (context, error, stackTrace) => Container(
-  width: 394,
-  height: 140,
-  decoration: BoxDecoration(
-    gradient: LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [AppColors.primary, AppColors.secondary],
-    ),
-  ),
-),
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 394,
+                height: 140,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [AppColors.primary, AppColors.secondary],
+                  ),
+                ),
+              ),
             ),
           ),
           
@@ -363,7 +370,7 @@ errorBuilder: (context, error, stackTrace) => Container(
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-                  _buildMenuItem(Icons.storefront_outlined, 'Toko Saya', () => _navigateTo(const BelanjaPage())),
+                  _buildMenuItem(Icons.storefront_outlined, 'Toko Saya', () => _openWebToko()),
                   const SizedBox(height: 10),
                   _buildDivider(),
                   const SizedBox(height: 10),
