@@ -182,7 +182,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank Sampah – Event Lingkungan</title>
+    <title>DLH – Event Lingkungan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style/root.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -198,43 +198,43 @@
             <div class="nav-item">
                 <a href="dashboard.php" class="nav-link-custom">
                     <i class="bi bi-grid-1x2-fill"></i>
-                    Dashboard
+                    <span>Dashboard</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="laporan_sampah.php" class="nav-link-custom">
                     <i class="bi bi-exclamation-diamond-fill"></i>
-                    Laporan Sampah
+                    <span>Laporan Sampah</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="apresiasi_rw.php" class="nav-link-custom">
                     <i class="bi bi-award-fill"></i>
-                    Apresiasi RW
+                    <span>Apresiasi RW</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="event_lingkungan.php" class="nav-link-custom active">
                     <i class="bi bi-calendar-event-fill"></i>
-                    Event Lingkungan
+                    <span>Event Lingkungan</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="laporan_analitik.php" class="nav-link-custom">
                     <i class="bi bi-bar-chart-line-fill"></i>
-                    Laporan dan Analitik
+                    <span>Laporan dan Analitik</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="data_petugas.php" class="nav-link-custom">
                     <i class="bi bi-people-fill"></i>
-                    Data Petugas
+                    <span>Data Petugas</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pengaturan_akun.php" class="nav-link-custom">
                     <i class="bi bi-gear-fill"></i>
-                    Pengaturan Akun
+                    <span>Pengaturan Akun</span>
                 </a>
             </div>
         </nav>
@@ -242,7 +242,7 @@
         <div class="sidebar-logout">
             <a class="logout-btn" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
-                Logout
+                <span>Logout</span>
             </a>
         </div>
     </aside>

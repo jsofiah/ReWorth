@@ -1,51 +1,51 @@
 <?php
-session_start();
+    session_start();
 
-if (!isset($_SESSION['role'])) {
-    header("Location: ../login.php");
-    exit;
-}
+    if (!isset($_SESSION['role'])) {
+        header("Location: ../login.php");
+        exit;
+    }
 
-$supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
-$supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
+    $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
+    $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 
-$eventId = $_GET['id'] ?? '';
-if (empty($eventId)) {
-    header("Location: event_lingkungan.php");
-    exit;
-}
+    $eventId = $_GET['id'] ?? '';
+    if (empty($eventId)) {
+        header("Location: event_lingkungan.php");
+        exit;
+    }
 
-function getEventDetail($supabaseUrl, $supabaseKey, $eventId) {
-    $url = $supabaseUrl . "/rest/v1/event?id_event=eq." . $eventId . "&select=*";
-    $headers = ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"];
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    $response = curl_exec($ch);
-    curl_close($ch);
-    $data = json_decode($response, true);
-    return !empty($data) ? $data[0] : null;
-}
+    function getEventDetail($supabaseUrl, $supabaseKey, $eventId) {
+        $url = $supabaseUrl . "/rest/v1/event?id_event=eq." . $eventId . "&select=*";
+        $headers = ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"];
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $response = curl_exec($ch);
+        curl_close($ch);
+        $data = json_decode($response, true);
+        return !empty($data) ? $data[0] : null;
+    }
 
-$event = getEventDetail($supabaseUrl, $supabaseKey, $eventId);
-if (!$event) {
-    header("Location: event_lingkungan.php");
-    exit;
-}
+    $event = getEventDetail($supabaseUrl, $supabaseKey, $eventId);
+    if (!$event) {
+        header("Location: event_lingkungan.php");
+        exit;
+    }
 
-$userName = $_SESSION['nama_admin'] ?? 'User';
-$userEmail = $_SESSION['email'] ?? 'user@example.com';
-$userFoto = $_SESSION['foto_profil'] ?? '';
+    $userName = $_SESSION['nama_admin'] ?? 'User';
+    $userEmail = $_SESSION['email'] ?? 'user@example.com';
+    $userFoto = $_SESSION['foto_profil'] ?? '';
 
-function getSupabaseImageUrl($path) {
-    if (empty($path)) return null;
-    return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
-}
+    function getSupabaseImageUrl($path) {
+        if (empty($path)) return null;
+        return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
+    }
 
-$statusMap = ['akan_datang' => 'Akan Datang', 'berlangsung' => 'Berlangsung', 'selesai' => 'Selesai'];
-$statusText = $statusMap[$event['status'] ?? 'akan_datang'] ?? 'Akan Datang';
-$statusClass = $event['status'] ?? 'akan_datang';
+    $statusMap = ['akan_datang' => 'Akan Datang', 'berlangsung' => 'Berlangsung', 'selesai' => 'Selesai'];
+    $statusText = $statusMap[$event['status'] ?? 'akan_datang'] ?? 'Akan Datang';
+    $statusClass = $event['status'] ?? 'akan_datang';
 ?>
 
 <!DOCTYPE html>
@@ -53,7 +53,7 @@ $statusClass = $event['status'] ?? 'akan_datang';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Event - Bank Sampah</title>
+    <title>Detail Event - DLH</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style/root.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -70,43 +70,43 @@ $statusClass = $event['status'] ?? 'akan_datang';
             <div class="nav-item">
                 <a href="dashboard.php" class="nav-link-custom">
                     <i class="bi bi-grid-1x2-fill"></i>
-                    Dashboard
+                    <span>Dashboard</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="laporan_sampah.php" class="nav-link-custom">
                     <i class="bi bi-exclamation-diamond-fill"></i>
-                    Laporan Sampah
+                    <span>Laporan Sampah</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="apresiasi_rw.php" class="nav-link-custom">
                     <i class="bi bi-award-fill"></i>
-                    Apresiasi RW
+                    <span>Apresiasi RW</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="event_lingkungan.php" class="nav-link-custom active">
                     <i class="bi bi-calendar-event-fill"></i>
-                    Event Lingkungan
+                    <span>Event Lingkungan</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="laporan_analitik.php" class="nav-link-custom">
                     <i class="bi bi-bar-chart-line-fill"></i>
-                    Laporan dan Analitik
+                    <span>Laporan dan Analitik</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="data_petugas.php" class="nav-link-custom">
                     <i class="bi bi-people-fill"></i>
-                    Data Petugas
+                    <span>Data Petugas</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pengaturan_akun.php" class="nav-link-custom">
                     <i class="bi bi-gear-fill"></i>
-                    Pengaturan Akun
+                    <span>Pengaturan Akun</span>
                 </a>
             </div>
         </nav>
@@ -114,7 +114,7 @@ $statusClass = $event['status'] ?? 'akan_datang';
         <div class="sidebar-logout">
             <a class="logout-btn" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
-                Logout
+                <span>Logout</span>
             </a>
         </div>
     </aside>
