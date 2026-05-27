@@ -987,6 +987,7 @@ tbody td {
 
     .settings-card{
         padding: 18px;
+        top: 20px
     }
 
     .card-accent{
@@ -1224,6 +1225,7 @@ tbody td {
     .content-area {
         padding-left: 15px;
         padding-right: 15px;
+        padding-top: 20px;
     }
     
     .action-bar {
