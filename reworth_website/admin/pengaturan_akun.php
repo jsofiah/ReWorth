@@ -297,55 +297,55 @@
             <div class="nav-item">
                 <a href="dashboard.php" class="nav-link-custom">
                     <i class="bi bi-grid-1x2-fill"></i>
-                    Dashboard
+                    <span>Dashboard</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="kelola_akun.php" class="nav-link-custom">
                     <i class="bi bi-people-fill"></i>
-                    Kelola Akun
+                    <span>Kelola Akun</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="kelola_data_master.php" class="nav-link-custom">
                     <i class="bi bi-database-fill-gear"></i>
-                    Kelola Data Master
+                    <span>Kelola Data Master</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="monitor_transaksi.php" class="nav-link-custom">
                     <i class="bi bi-arrow-left-right"></i>
-                    Monitor Transaksi
+                    <span>Monitor Transaksi</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pembayaran_komisi.php" class="nav-link-custom">
                     <i class="bi bi-cash-coin"></i>
-                    Pembayaran Komisi
+                    <span>Pembayaran Komisi</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="aktivitas.php" class="nav-link-custom">
                     <i class="bi bi-activity"></i>
-                    Aktivitas
+                    <span>Aktivitas</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="sponsor.php" class="nav-link-custom">
                     <i class="bi bi-megaphone-fill"></i>
-                    Sponsor
+                    <span>Sponsor</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="laporan_keuangan.php" class="nav-link-custom">
                     <i class="bi bi-bar-chart-line-fill"></i>
-                    Laporan dan Keuangan
+                    <span>Laporan dan Keuangan</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pengaturan_akun.php" class="nav-link-custom active">
                     <i class="bi bi-gear-fill"></i>
-                    Pengaturan Akun
+                    <span>Pengaturan Akun</span>
                 </a>
             </div>
         </nav>
@@ -353,7 +353,7 @@
         <div class="sidebar-logout">
             <a class="logout-btn" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
-                Logout
+                <span>Logout</span>
             </a>
         </div>
     </aside>

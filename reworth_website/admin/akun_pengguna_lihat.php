@@ -1,94 +1,91 @@
 <?php
-session_start();
+    session_start();
 
-if (!isset($_SESSION['role'])) {
-    header("Location: ../login.php");
-    exit;
-}
+    if (!isset($_SESSION['role'])) {
+        header("Location: ../login.php");
+        exit;
+    }
 
-$supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
-$supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
+    $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
+    $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 
-$userName = $_SESSION['nama_admin'] ?? 'User';
-$userEmail = $_SESSION['email'] ?? 'user@example.com';
-$userRole = $_SESSION['role'] ?? '';
-$userFoto = $_SESSION['foto_profil'] ?? '';
-$userId = $_SESSION['id_admin'] ?? '';
+    $userName = $_SESSION['nama_admin'] ?? 'User';
+    $userEmail = $_SESSION['email'] ?? 'user@example.com';
+    $userRole = $_SESSION['role'] ?? '';
+    $userFoto = $_SESSION['foto_profil'] ?? '';
+    $userId = $_SESSION['id_admin'] ?? '';
 
-function getSupabaseImageUrl($path) {
-    if (empty($path)) {
+    function getSupabaseImageUrl($path) {
+        if (empty($path)) {
+            return null;
+        }
+        $bucketUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/";
+        return $bucketUrl . ltrim($path, '/');
+    }
+
+    $idPengguna = $_GET['id'] ?? '';
+    if (empty($idPengguna)) {
+        header("Location: kelola_akun.php?tab=pengguna");
+        exit;
+    }
+
+    function getPenggunaById($supabaseUrl, $supabaseKey, $id) {
+        $url = $supabaseUrl . "/rest/v1/pengguna?id_pengguna=eq." . $id . "&select=*";
+        $headers = [
+            "apikey: $supabaseKey",
+            "Authorization: Bearer $supabaseKey",
+            "Content-Type: application/json"
+        ];
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode === 200 && $response !== false) {
+            $data = json_decode($response, true);
+            return !empty($data) ? $data[0] : null;
+        }
         return null;
     }
-    $bucketUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/";
-    return $bucketUrl . ltrim($path, '/');
-}
 
-// Ambil ID pengguna dari URL
-$idPengguna = $_GET['id'] ?? '';
-if (empty($idPengguna)) {
-    header("Location: kelola_akun.php?tab=pengguna");
-    exit;
-}
-
-// Ambil data pengguna
-function getPenggunaById($supabaseUrl, $supabaseKey, $id) {
-    $url = $supabaseUrl . "/rest/v1/pengguna?id_pengguna=eq." . $id . "&select=*";
-    $headers = [
-        "apikey: $supabaseKey",
-        "Authorization: Bearer $supabaseKey",
-        "Content-Type: application/json"
-    ];
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    if ($httpCode === 200 && $response !== false) {
-        $data = json_decode($response, true);
-        return !empty($data) ? $data[0] : null;
+    function getWilayahById($supabaseUrl, $supabaseKey, $idWilayah) {
+        if (empty($idWilayah)) return null;
+        
+        $url = $supabaseUrl . "/rest/v1/wilayah?id_wilayah=eq." . $idWilayah . "&select=*";
+        $headers = [
+            "apikey: $supabaseKey",
+            "Authorization: Bearer $supabaseKey",
+            "Content-Type: application/json"
+        ];
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode === 200 && $response !== false) {
+            $data = json_decode($response, true);
+            return !empty($data) ? $data[0] : null;
+        }
+        return null;
     }
-    return null;
-}
 
-// Ambil data wilayah
-function getWilayahById($supabaseUrl, $supabaseKey, $idWilayah) {
-    if (empty($idWilayah)) return null;
-    
-    $url = $supabaseUrl . "/rest/v1/wilayah?id_wilayah=eq." . $idWilayah . "&select=*";
-    $headers = [
-        "apikey: $supabaseKey",
-        "Authorization: Bearer $supabaseKey",
-        "Content-Type: application/json"
-    ];
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    if ($httpCode === 200 && $response !== false) {
-        $data = json_decode($response, true);
-        return !empty($data) ? $data[0] : null;
+    $pengguna = getPenggunaById($supabaseUrl, $supabaseKey, $idPengguna);
+    if (!$pengguna) {
+        header("Location: kelola_akun.php?tab=pengguna&error=notfound");
+        exit;
     }
-    return null;
-}
 
-$pengguna = getPenggunaById($supabaseUrl, $supabaseKey, $idPengguna);
-if (!$pengguna) {
-    header("Location: kelola_akun.php?tab=pengguna&error=notfound");
-    exit;
-}
-
-$wilayah = getWilayahById($supabaseUrl, $supabaseKey, $pengguna['id_wilayah'] ?? '');
+    $wilayah = getWilayahById($supabaseUrl, $supabaseKey, $pengguna['id_wilayah'] ?? '');
 ?>
 
 <!DOCTYPE html>
@@ -113,55 +110,55 @@ $wilayah = getWilayahById($supabaseUrl, $supabaseKey, $pengguna['id_wilayah'] ??
             <div class="nav-item">
                 <a href="dashboard.php" class="nav-link-custom">
                     <i class="bi bi-grid-1x2-fill"></i>
-                    Dashboard
+                    <span>Dashboard</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="kelola_akun.php" class="nav-link-custom active">
                     <i class="bi bi-people-fill"></i>
-                    Kelola Akun
+                    <span>Kelola Akun</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="kelola_data_master.php" class="nav-link-custom">
                     <i class="bi bi-database-fill-gear"></i>
-                    Kelola Data Master
+                    <span>Kelola Data Master</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="monitor_transaksi.php" class="nav-link-custom">
                     <i class="bi bi-arrow-left-right"></i>
-                    Monitor Transaksi
+                    <span>Monitor Transaksi</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pembayaran_komisi.php" class="nav-link-custom">
                     <i class="bi bi-cash-coin"></i>
-                    Pembayaran Komisi
+                    <span>Pembayaran Komisi</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="aktivitas.php" class="nav-link-custom">
                     <i class="bi bi-activity"></i>
-                    Aktivitas
+                    <span>Aktivitas</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="sponsor.php" class="nav-link-custom">
                     <i class="bi bi-megaphone-fill"></i>
-                    Sponsor
+                    <span>Sponsor</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="laporan_keuangan.php" class="nav-link-custom">
                     <i class="bi bi-bar-chart-line-fill"></i>
-                    Laporan dan Keuangan
+                    <span>Laporan dan Keuangan</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pengaturan_akun.php" class="nav-link-custom">
                     <i class="bi bi-gear-fill"></i>
-                    Pengaturan Akun
+                    <span>Pengaturan Akun</span>
                 </a>
             </div>
         </nav>
@@ -169,7 +166,7 @@ $wilayah = getWilayahById($supabaseUrl, $supabaseKey, $pengguna['id_wilayah'] ??
         <div class="sidebar-logout">
             <a class="logout-btn" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
-                Logout
+                <span>Logout</span>
             </a>
         </div>
     </aside>
@@ -199,7 +196,6 @@ $wilayah = getWilayahById($supabaseUrl, $supabaseKey, $pengguna['id_wilayah'] ??
             </div>
         </div>
 
-        <!-- CARD 1: Foto Profil, Nama, Email, Poin, Saldo -->
         <div class="setting-bar-wrap">
             <div class="settings-card">
                 <div class="card-accent"></div>
@@ -249,7 +245,6 @@ $wilayah = getWilayahById($supabaseUrl, $supabaseKey, $pengguna['id_wilayah'] ??
             </div>
         </div>
 
-        <!-- CARD 2: Profil Detail (Nama Lengkap, Email, No Telp, Alamat, Kecamatan, Kelurahan, RW) -->
         <div class="setting-content-area">
             <div class="settings-card password-card">
                 <div class="card-accent"></div>

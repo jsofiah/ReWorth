@@ -1,202 +1,192 @@
 <?php
-session_start();
+    session_start();
 
-if (!isset($_SESSION['role'])) {
-    header("Location: ../login.php");
-    exit;
-}
-
-$supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
-$supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
-
-function getSupabaseImageUrl($path) {
-    if (empty($path)) return null;
-    $bucketUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/";
-    return $bucketUrl . ltrim($path, '/');
-}
-
-// Ambil role dari URL parameter
-$role = $_GET['role'] ?? 'admin';
-$roleTitle = '';
-switch($role) {
-    case 'admin':
-        $roleTitle = 'Admin';
-        break;
-    case 'bank_sampah':
-        $roleTitle = 'Bank Sampah';
-        break;
-    case 'dlh':
-        $roleTitle = 'DLH';
-        break;
-    default:
-        $roleTitle = 'Admin';
-        $role = 'admin';
-}
-
-// Ambil ID admin dari URL
-$idAdmin = $_GET['id'] ?? '';
-if (empty($idAdmin)) {
-    header("Location: kelola_akun.php?tab=" . $role);
-    exit;
-}
-
-// Ambil data admin yang akan diedit
-function getAdminById($supabaseUrl, $supabaseKey, $id) {
-    $url = $supabaseUrl . "/rest/v1/admin?id_admin=eq." . $id . "&select=*";
-    $headers = [
-        "apikey: $supabaseKey",
-        "Authorization: Bearer $supabaseKey",
-        "Content-Type: application/json"
-    ];
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    if ($httpCode === 200 && $response !== false) {
-        $data = json_decode($response, true);
-        return !empty($data) ? $data[0] : null;
-    }
-    return null;
-}
-
-$admin = getAdminById($supabaseUrl, $supabaseKey, $idAdmin);
-if (!$admin) {
-    header("Location: kelola_akun.php?tab=" . $role . "&error=notfound");
-    exit;
-}
-
-$userName = $_SESSION['nama_admin'] ?? 'User';
-$userEmail = $_SESSION['email'] ?? 'user@example.com';
-$userFoto = $_SESSION['foto_profil'] ?? '';
-
-// Proses update data
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    header('Content-Type: application/json');
-    
-    $nama = $_POST['nama_admin'] ?? '';
-    $email = $_POST['email'] ?? '';
-    $password = $_POST['password'] ?? '';
-    $password_ulang = $_POST['password_ulang'] ?? '';
-    
-    if (empty($nama) || empty($email)) {
-        echo json_encode(['success' => false, 'message' => 'Data wajib tidak lengkap']);
+    if (!isset($_SESSION['role'])) {
+        header("Location: ../login.php");
         exit;
     }
-    
-    // Update data admin
-    $data = [
-        'nama_admin' => $nama,
-        'email' => $email,
-    ];
-    
-    // Update password jika diisi
-    if (!empty($password)) {
-        if (strlen($password) < 6) {
-            echo json_encode(['success' => false, 'message' => 'Password minimal 6 karakter']);
-            exit;
-        }
-        if ($password !== $password_ulang) {
-            echo json_encode(['success' => false, 'message' => 'Konfirmasi password tidak sama']);
-            exit;
-        }
-        $data['password'] = md5($password);
+
+    $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
+    $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
+
+    function getSupabaseImageUrl($path) {
+        if (empty($path)) return null;
+        $bucketUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/";
+        return $bucketUrl . ltrim($path, '/');
     }
-    
-    // Upload foto baru jika ada
-    $foto_path = $admin['foto_profil'] ?? '';
-    if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] === UPLOAD_ERR_OK) {
-        // Hapus foto lama jika ada
-        if (!empty($foto_path)) {
-            $deleteUrl = $supabaseUrl . "/storage/v1/object/media/" . $foto_path;
-            $deleteCh = curl_init();
-            curl_setopt($deleteCh, CURLOPT_URL, $deleteUrl);
-            curl_setopt($deleteCh, CURLOPT_CUSTOMREQUEST, "DELETE");
-            curl_setopt($deleteCh, CURLOPT_HTTPHEADER, [
-                "apikey: $supabaseKey",
-                "Authorization: Bearer $supabaseKey"
-            ]);
-            curl_setopt($deleteCh, CURLOPT_RETURNTRANSFER, true);
-            curl_exec($deleteCh);
-            curl_close($deleteCh);
-        }
-        
-        $file = $_FILES['foto_profil'];
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filename = 'admin/' . time() . '_' . uniqid() . '.' . $extension;
-        $storageUrl = $supabaseUrl . "/storage/v1/object/media/" . $filename;
-        
-        $fileData = file_get_contents($file['tmp_name']);
+
+    $role = $_GET['role'] ?? 'admin';
+    $roleTitle = '';
+    switch($role) {
+        case 'admin':
+            $roleTitle = 'Admin';
+            break;
+        case 'bank_sampah':
+            $roleTitle = 'Bank Sampah';
+            break;
+        case 'dlh':
+            $roleTitle = 'DLH';
+            break;
+        default:
+            $roleTitle = 'Admin';
+            $role = 'admin';
+    }
+
+    $idAdmin = $_GET['id'] ?? '';
+    if (empty($idAdmin)) {
+        header("Location: kelola_akun.php?tab=" . $role);
+        exit;
+    }
+
+    function getAdminById($supabaseUrl, $supabaseKey, $id) {
+        $url = $supabaseUrl . "/rest/v1/admin?id_admin=eq." . $id . "&select=*";
+        $headers = [
+            "apikey: $supabaseKey",
+            "Authorization: Bearer $supabaseKey",
+            "Content-Type: application/json"
+        ];
         
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $storageUrl);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $fileData);
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode === 200 && $response !== false) {
+            $data = json_decode($response, true);
+            return !empty($data) ? $data[0] : null;
+        }
+        return null;
+    }
+
+    $admin = getAdminById($supabaseUrl, $supabaseKey, $idAdmin);
+    if (!$admin) {
+        header("Location: kelola_akun.php?tab=" . $role . "&error=notfound");
+        exit;
+    }
+
+    $userName = $_SESSION['nama_admin'] ?? 'User';
+    $userEmail = $_SESSION['email'] ?? 'user@example.com';
+    $userFoto = $_SESSION['foto_profil'] ?? '';
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        header('Content-Type: application/json');
+        
+        $nama = $_POST['nama_admin'] ?? '';
+        $email = $_POST['email'] ?? '';
+        $password = $_POST['password'] ?? '';
+        $password_ulang = $_POST['password_ulang'] ?? '';
+        
+        if (empty($nama) || empty($email)) {
+            echo json_encode(['success' => false, 'message' => 'Data wajib tidak lengkap']);
+            exit;
+        }
+        
+        $data = [
+            'nama_admin' => $nama,
+            'email' => $email,
+        ];
+        
+        if (!empty($password)) {
+            if (strlen($password) < 6) {
+                echo json_encode(['success' => false, 'message' => 'Password minimal 6 karakter']);
+                exit;
+            }
+            if ($password !== $password_ulang) {
+                echo json_encode(['success' => false, 'message' => 'Konfirmasi password tidak sama']);
+                exit;
+            }
+            $data['password'] = md5($password);
+        }
+        
+        $foto_path = $admin['foto_profil'] ?? '';
+        if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] === UPLOAD_ERR_OK) {
+            if (!empty($foto_path)) {
+                $deleteUrl = $supabaseUrl . "/storage/v1/object/media/" . $foto_path;
+                $deleteCh = curl_init();
+                curl_setopt($deleteCh, CURLOPT_URL, $deleteUrl);
+                curl_setopt($deleteCh, CURLOPT_CUSTOMREQUEST, "DELETE");
+                curl_setopt($deleteCh, CURLOPT_HTTPHEADER, [
+                    "apikey: $supabaseKey",
+                    "Authorization: Bearer $supabaseKey"
+                ]);
+                curl_setopt($deleteCh, CURLOPT_RETURNTRANSFER, true);
+                curl_exec($deleteCh);
+                curl_close($deleteCh);
+            }
+            
+            $file = $_FILES['foto_profil'];
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = 'admin/' . time() . '_' . uniqid() . '.' . $extension;
+            $storageUrl = $supabaseUrl . "/storage/v1/object/media/" . $filename;
+            
+            $fileData = file_get_contents($file['tmp_name']);
+            
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $storageUrl);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $fileData);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                "apikey: $supabaseKey",
+                "Authorization: Bearer $supabaseKey",
+                "Content-Type: " . $file['type'],
+                "x-upsert: true"
+            ]);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            if ($httpCode == 200 || $httpCode == 201) {
+                $data['foto_profil'] = $filename;
+            }
+        }
+        
+        $updateUrl = $supabaseUrl . "/rest/v1/admin?id_admin=eq." . $idAdmin;
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $updateUrl);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PATCH");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             "apikey: $supabaseKey",
             "Authorization: Bearer $supabaseKey",
-            "Content-Type: " . $file['type'],
-            "x-upsert: true"
+            "Content-Type: application/json",
+            "Prefer: return=minimal"
         ]);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         
-        if ($httpCode == 200 || $httpCode == 201) {
-            $data['foto_profil'] = $filename;
+        if ($httpCode === 200 || $httpCode === 204) {
+            $logData = [
+                'id_admin' => $_SESSION['id_admin'],
+                'aktivitas' => 'Mengedit ' . $roleTitle . ': ' . $nama,
+                'tabel_terkait' => 'admin',
+                'id_data' => $idAdmin,
+            ];
+            
+            $logCh = curl_init($supabaseUrl . "/rest/v1/log_admin");
+            curl_setopt($logCh, CURLOPT_CUSTOMREQUEST, "POST");
+            curl_setopt($logCh, CURLOPT_POSTFIELDS, json_encode($logData));
+            curl_setopt($logCh, CURLOPT_HTTPHEADER, [
+                "apikey: $supabaseKey",
+                "Authorization: Bearer $supabaseKey",
+                "Content-Type: application/json"
+            ]);
+            curl_setopt($logCh, CURLOPT_RETURNTRANSFER, true);
+            curl_exec($logCh);
+            curl_close($logCh);
+            
+            echo json_encode(['success' => true, 'message' => $roleTitle . ' berhasil diperbarui']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Gagal memperbarui data']);
         }
+        exit;
     }
-    
-    // Update ke database
-    $updateUrl = $supabaseUrl . "/rest/v1/admin?id_admin=eq." . $idAdmin;
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $updateUrl);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PATCH");
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "apikey: $supabaseKey",
-        "Authorization: Bearer $supabaseKey",
-        "Content-Type: application/json",
-        "Prefer: return=minimal"
-    ]);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    if ($httpCode === 200 || $httpCode === 204) {
-        // Catat ke log aktivitas
-        $logData = [
-            'id_admin' => $_SESSION['id_admin'],
-            'aktivitas' => 'Mengedit ' . $roleTitle . ': ' . $nama,
-            'tabel_terkait' => 'admin',
-            'id_data' => $idAdmin,
-        ];
-        
-        $logCh = curl_init($supabaseUrl . "/rest/v1/log_admin");
-        curl_setopt($logCh, CURLOPT_CUSTOMREQUEST, "POST");
-        curl_setopt($logCh, CURLOPT_POSTFIELDS, json_encode($logData));
-        curl_setopt($logCh, CURLOPT_HTTPHEADER, [
-            "apikey: $supabaseKey",
-            "Authorization: Bearer $supabaseKey",
-            "Content-Type: application/json"
-        ]);
-        curl_setopt($logCh, CURLOPT_RETURNTRANSFER, true);
-        curl_exec($logCh);
-        curl_close($logCh);
-        
-        echo json_encode(['success' => true, 'message' => $roleTitle . ' berhasil diperbarui']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Gagal memperbarui data']);
-    }
-    exit;
-}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -219,54 +209,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <nav class="sidebar-nav">
             <div class="nav-item">
                 <a href="dashboard.php" class="nav-link-custom">
-                    <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span>Dashboard</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="kelola_akun.php" class="nav-link-custom active">
-                    <i class="bi bi-people-fill"></i> Kelola Akun
+                    <i class="bi bi-people-fill"></i>
+                    <span>Kelola Akun</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="kelola_data_master.php" class="nav-link-custom">
-                    <i class="bi bi-database-fill-gear"></i> Kelola Data Master
+                    <i class="bi bi-database-fill-gear"></i>
+                    <span>Kelola Data Master</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="monitor_transaksi.php" class="nav-link-custom">
-                    <i class="bi bi-arrow-left-right"></i> Monitor Transaksi
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span>Monitor Transaksi</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pembayaran_komisi.php" class="nav-link-custom">
-                    <i class="bi bi-cash-coin"></i> Pembayaran Komisi
+                    <i class="bi bi-cash-coin"></i>
+                    <span>Pembayaran Komisi</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="aktivitas.php" class="nav-link-custom">
-                    <i class="bi bi-activity"></i> Aktivitas
+                    <i class="bi bi-activity"></i>
+                    <span>Aktivitas</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="sponsor.php" class="nav-link-custom">
-                    <i class="bi bi-megaphone-fill"></i> Sponsor
+                    <i class="bi bi-megaphone-fill"></i>
+                    <span>Sponsor</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="laporan_keuangan.php" class="nav-link-custom">
-                    <i class="bi bi-bar-chart-line-fill"></i> Laporan dan Keuangan
+                    <i class="bi bi-bar-chart-line-fill"></i>
+                    <span>Laporan dan Keuangan</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pengaturan_akun.php" class="nav-link-custom">
-                    <i class="bi bi-gear-fill"></i> Pengaturan Akun
+                    <i class="bi bi-gear-fill"></i>
+                    <span>Pengaturan Akun</span>
                 </a>
             </div>
         </nav>
 
         <div class="sidebar-logout">
             <a class="logout-btn" href="../logout.php">
-                <i class="bi bi-box-arrow-right"></i> Logout
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
             </a>
         </div>
     </aside>
@@ -417,7 +417,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         
-        // Toggle password visibility
         document.querySelectorAll('.toggle-pw').forEach(button => {
             button.addEventListener('click', function() {
                 const targetId = this.dataset.target;

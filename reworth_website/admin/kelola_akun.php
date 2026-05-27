@@ -1,30 +1,30 @@
 <?php
-session_start();
+    session_start();
 
-if (!isset($_SESSION['role'])) {
-    header("Location: ../login.php");
-    exit;
-}
-
-$supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
-$supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
-
-$userName = $_SESSION['nama_admin'] ?? 'User';
-$userEmail = $_SESSION['email'] ?? 'user@example.com';
-$userRole = $_SESSION['role'] ?? '';
-$userFoto = $_SESSION['foto_profil'] ?? '';
-$userId = $_SESSION['id_admin'] ?? '';
-
-function getSupabaseImageUrl($path) {
-    if (empty($path)) {
-        return null;
+    if (!isset($_SESSION['role'])) {
+        header("Location: ../login.php");
+        exit;
     }
-    $bucketUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/";
-    return $bucketUrl . ltrim($path, '/');
-}
 
-$current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'pengguna';
-$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
+    $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
+
+    $userName = $_SESSION['nama_admin'] ?? 'User';
+    $userEmail = $_SESSION['email'] ?? 'user@example.com';
+    $userRole = $_SESSION['role'] ?? '';
+    $userFoto = $_SESSION['foto_profil'] ?? '';
+    $userId = $_SESSION['id_admin'] ?? '';
+
+    function getSupabaseImageUrl($path) {
+        if (empty($path)) {
+            return null;
+        }
+        $bucketUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/";
+        return $bucketUrl . ltrim($path, '/');
+    }
+
+    $current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'pengguna';
+    $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 ?>
 
 <!DOCTYPE html>
@@ -37,29 +37,6 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
     <link rel="stylesheet" href="style/root.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-        .loading-spinner {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-        }
-        .tab-content {
-            min-height: 400px;
-        }
-    </style>
 </head>
 <body>
     <div class="loading-overlay" id="loadingOverlay">
@@ -80,55 +57,55 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             <div class="nav-item">
                 <a href="dashboard.php" class="nav-link-custom">
                     <i class="bi bi-grid-1x2-fill"></i>
-                    Dashboard
+                    <span>Dashboard</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="kelola_akun.php" class="nav-link-custom active">
                     <i class="bi bi-people-fill"></i>
-                    Kelola Akun
+                    <span>Kelola Akun</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="kelola_data_master.php" class="nav-link-custom">
                     <i class="bi bi-database-fill-gear"></i>
-                    Kelola Data Master
+                    <span>Kelola Data Master</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="monitor_transaksi.php" class="nav-link-custom">
                     <i class="bi bi-arrow-left-right"></i>
-                    Monitor Transaksi
+                    <span>Monitor Transaksi</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pembayaran_komisi.php" class="nav-link-custom">
                     <i class="bi bi-cash-coin"></i>
-                    Pembayaran Komisi
+                    <span>Pembayaran Komisi</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="aktivitas.php" class="nav-link-custom">
                     <i class="bi bi-activity"></i>
-                    Aktivitas
+                    <span>Aktivitas</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="sponsor.php" class="nav-link-custom">
                     <i class="bi bi-megaphone-fill"></i>
-                    Sponsor
+                    <span>Sponsor</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="laporan_keuangan.php" class="nav-link-custom">
                     <i class="bi bi-bar-chart-line-fill"></i>
-                    Laporan dan Keuangan
+                    <span>Laporan dan Keuangan</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pengaturan_akun.php" class="nav-link-custom">
                     <i class="bi bi-gear-fill"></i>
-                    Pengaturan Akun
+                    <span>Pengaturan Akun</span>
                 </a>
             </div>
         </nav>
@@ -136,7 +113,7 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         <div class="sidebar-logout">
             <a class="logout-btn" href="../logout.php">
                 <i class="bi bi-box-arrow-right"></i>
-                Logout
+                <span>Logout</span>
             </a>
         </div>
     </aside>
@@ -230,10 +207,8 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             const tabContent = document.getElementById('tabContent');
             const loadingOverlay = document.getElementById('loadingOverlay');
             
-            // Tampilkan loading
             loadingOverlay.style.display = 'flex';
             
-            // Panggil file yang sesuai
             let file = '';
             switch(tab) {
                 case 'pengguna':
@@ -258,7 +233,6 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
                 .then(html => {
                     tabContent.innerHTML = html;
                     
-                    // Re-attach event listeners untuk tombol di dalam konten yang baru dimuat
                     attachTableEventListeners();
                     
                     loadingOverlay.style.display = 'none';
@@ -271,10 +245,8 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         }
         
         function attachTableEventListeners() {
-            // Event listener untuk search
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
-                // Hapus listener lama untuk menghindari duplikasi
                 const newSearchInput = searchInput.cloneNode(true);
                 searchInput.parentNode.replaceChild(newSearchInput, searchInput);
                 
@@ -300,11 +272,9 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         }
         
         function switchTab(tab, el) {
-            // Update active tab styling
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             el.classList.add('active');
             
-            // Update URL tanpa reload
             const url = new URL(window.location.href);
             url.searchParams.set('tab', tab);
             url.searchParams.set('page', '1');
@@ -313,7 +283,6 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             currentTab = tab;
             currentPage = 1;
             
-            // Load konten tab
             loadTabContent(tab, 1);
         }
         
@@ -321,7 +290,6 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             currentPage = page;
             loadTabContent(currentTab, page);
             
-            // Update URL
             const url = new URL(window.location.href);
             url.searchParams.set('page', page);
             window.history.pushState({}, '', url);
@@ -428,7 +396,6 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             setTimeout(() => div.remove(), 3500);
         }
         
-        // Event listener untuk tab buttons
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const tab = this.getAttribute('data-tab');
@@ -436,10 +403,8 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             });
         });
         
-        // Load initial tab
         loadTabContent(currentTab, currentPage);
         
-        // Handle modal overlay click
         document.querySelectorAll('.modal-overlay').forEach(m => {
             m.addEventListener('click', e => {
                 if (e.target === m) m.classList.remove('show');

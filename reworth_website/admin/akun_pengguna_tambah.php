@@ -227,54 +227,64 @@
         <nav class="sidebar-nav">
             <div class="nav-item">
                 <a href="dashboard.php" class="nav-link-custom">
-                    <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span>Dashboard</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="kelola_akun.php" class="nav-link-custom active">
-                    <i class="bi bi-people-fill"></i> Kelola Akun
+                    <i class="bi bi-people-fill"></i>
+                    <span>Kelola Akun</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="kelola_data_master.php" class="nav-link-custom">
-                    <i class="bi bi-database-fill-gear"></i> Kelola Data Master
+                    <i class="bi bi-database-fill-gear"></i>
+                    <span>Kelola Data Master</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="monitor_transaksi.php" class="nav-link-custom">
-                    <i class="bi bi-arrow-left-right"></i> Monitor Transaksi
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span>Monitor Transaksi</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pembayaran_komisi.php" class="nav-link-custom">
-                    <i class="bi bi-cash-coin"></i> Pembayaran Komisi
+                    <i class="bi bi-cash-coin"></i>
+                    <span>Pembayaran Komisi</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="aktivitas.php" class="nav-link-custom">
-                    <i class="bi bi-activity"></i> Aktivitas
+                    <i class="bi bi-activity"></i>
+                    <span>Aktivitas</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="sponsor.php" class="nav-link-custom">
-                    <i class="bi bi-megaphone-fill"></i> Sponsor
+                    <i class="bi bi-megaphone-fill"></i>
+                    <span>Sponsor</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="laporan_keuangan.php" class="nav-link-custom">
-                    <i class="bi bi-bar-chart-line-fill"></i> Laporan dan Keuangan
+                    <i class="bi bi-bar-chart-line-fill"></i>
+                    <span>Laporan dan Keuangan</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pengaturan_akun.php" class="nav-link-custom">
-                    <i class="bi bi-gear-fill"></i> Pengaturan Akun
+                    <i class="bi bi-gear-fill"></i>
+                    <span>Pengaturan Akun</span>
                 </a>
             </div>
         </nav>
 
         <div class="sidebar-logout">
             <a class="logout-btn" href="../logout.php">
-                <i class="bi bi-box-arrow-right"></i> Logout
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
             </a>
         </div>
     </aside>

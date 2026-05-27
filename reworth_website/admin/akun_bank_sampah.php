@@ -1,52 +1,52 @@
 <?php
-session_start();
+    session_start();
 
-if (!isset($_SESSION['role'])) {
-    header("Location: ../login.php");
-    exit;
-}
-
-$supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
-$supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
-
-function getSupabaseImageUrl($path) {
-    if (empty($path)) return null;
-    return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
-}
-
-function getBankSampah($supabaseUrl, $supabaseKey) {
-    $url = $supabaseUrl . "/rest/v1/admin?select=*,role!inner(nama_role)&role.nama_role=eq.bank%20sampah&order=nama_admin.asc";
-    $headers = [
-        "apikey: $supabaseKey",
-        "Authorization: Bearer $supabaseKey",
-        "Content-Type: application/json"
-    ];
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    if ($httpCode === 200 && $response !== false) {
-        return json_decode($response, true) ?: [];
+    if (!isset($_SESSION['role'])) {
+        header("Location: ../login.php");
+        exit;
     }
-    return [];
-}
 
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$per_page = 10;
+    $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
+    $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 
-$allBankSampah = getBankSampah($supabaseUrl, $supabaseKey);
-$total = count($allBankSampah);
-$start = ($page - 1) * $per_page;
-$paginatedData = array_slice($allBankSampah, $start, $per_page);
-$total_pages = ceil($total / $per_page);
-$start_number = $total > 0 ? $start + 1 : 0;
-$end_number = min($start + $per_page, $total);
+    function getSupabaseImageUrl($path) {
+        if (empty($path)) return null;
+        return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
+    }
+
+    function getBankSampah($supabaseUrl, $supabaseKey) {
+        $url = $supabaseUrl . "/rest/v1/admin?select=*,role!inner(nama_role)&role.nama_role=eq.bank%20sampah&order=nama_admin.asc";
+        $headers = [
+            "apikey: $supabaseKey",
+            "Authorization: Bearer $supabaseKey",
+            "Content-Type: application/json"
+        ];
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode === 200 && $response !== false) {
+            return json_decode($response, true) ?: [];
+        }
+        return [];
+    }
+
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $per_page = 10;
+
+    $allBankSampah = getBankSampah($supabaseUrl, $supabaseKey);
+    $total = count($allBankSampah);
+    $start = ($page - 1) * $per_page;
+    $paginatedData = array_slice($allBankSampah, $start, $per_page);
+    $total_pages = ceil($total / $per_page);
+    $start_number = $total > 0 ? $start + 1 : 0;
+    $end_number = min($start + $per_page, $total);
 ?>
 
 <div class="table-wrap">

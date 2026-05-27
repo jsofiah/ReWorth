@@ -1,177 +1,171 @@
 <?php
-session_start();
+    session_start();
 
-if (!isset($_SESSION['role'])) {
-    header("Location: ../login.php");
-    exit;
-}
-
-$supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
-$supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
-
-function getSupabaseImageUrl($path) {
-    if (empty($path)) return null;
-    $bucketUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/";
-    return $bucketUrl . ltrim($path, '/');
-}
-
-$userName = $_SESSION['nama_admin'] ?? 'User';
-$userEmail = $_SESSION['email'] ?? 'user@example.com';
-$userFoto = $_SESSION['foto_profil'] ?? '';
-
-// Proses tambah penjual
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    header('Content-Type: application/json');
-    
-    $nama = $_POST['nama_penjual'] ?? '';
-    $email = $_POST['email'] ?? '';
-    $password = $_POST['password'] ?? '';
-    $password_ulang = $_POST['password_ulang'] ?? '';
-    
-    // Validasi
-    if (empty($nama) || empty($email) || empty($password)) {
-        echo json_encode(['success' => false, 'message' => 'Data wajib tidak lengkap']);
+    if (!isset($_SESSION['role'])) {
+        header("Location: ../login.php");
         exit;
     }
-    
-    if ($password !== $password_ulang) {
-        echo json_encode(['success' => false, 'message' => 'Konfirmasi password tidak sama']);
-        exit;
+
+    $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
+    $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
+
+    function getSupabaseImageUrl($path) {
+        if (empty($path)) return null;
+        $bucketUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/";
+        return $bucketUrl . ltrim($path, '/');
     }
-    
-    if (strlen($password) < 6) {
-        echo json_encode(['success' => false, 'message' => 'Password minimal 6 karakter']);
-        exit;
-    }
-    
-    // Upload foto profil jika ada
-    $foto_path = '';
-    if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] === UPLOAD_ERR_OK) {
-        $file = $_FILES['foto_profil'];
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filename = 'penjual/' . time() . '_' . uniqid() . '.' . $extension;
-        $storageUrl = $supabaseUrl . "/storage/v1/object/media/" . $filename;
+
+    $userName = $_SESSION['nama_admin'] ?? 'User';
+    $userEmail = $_SESSION['email'] ?? 'user@example.com';
+    $userFoto = $_SESSION['foto_profil'] ?? '';
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        header('Content-Type: application/json');
         
-        $fileData = file_get_contents($file['tmp_name']);
+        $nama = $_POST['nama_penjual'] ?? '';
+        $email = $_POST['email'] ?? '';
+        $password = $_POST['password'] ?? '';
+        $password_ulang = $_POST['password_ulang'] ?? '';
         
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $storageUrl);
+        if (empty($nama) || empty($email) || empty($password)) {
+            echo json_encode(['success' => false, 'message' => 'Data wajib tidak lengkap']);
+            exit;
+        }
+        
+        if ($password !== $password_ulang) {
+            echo json_encode(['success' => false, 'message' => 'Konfirmasi password tidak sama']);
+            exit;
+        }
+        
+        if (strlen($password) < 6) {
+            echo json_encode(['success' => false, 'message' => 'Password minimal 6 karakter']);
+            exit;
+        }
+        
+        $foto_path = '';
+        if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['foto_profil'];
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = 'penjual/' . time() . '_' . uniqid() . '.' . $extension;
+            $storageUrl = $supabaseUrl . "/storage/v1/object/media/" . $filename;
+            
+            $fileData = file_get_contents($file['tmp_name']);
+            
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $storageUrl);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $fileData);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                "apikey: $supabaseKey",
+                "Authorization: Bearer $supabaseKey",
+                "Content-Type: " . $file['type'],
+                "x-upsert: true"
+            ]);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            if ($httpCode == 200 || $httpCode == 201) {
+                $foto_path = $filename;
+            }
+        }
+        
+        $authUrl = $supabaseUrl . "/auth/v1/signup";
+        $authData = [
+            'email' => $email,
+            'password' => $password,
+            'data' => [
+                'nama_penjual' => $nama,
+                'role' => 'penjual'
+            ]
+        ];
+        
+        $ch = curl_init($authUrl);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $fileData);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($authData));
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             "apikey: $supabaseKey",
             "Authorization: Bearer $supabaseKey",
-            "Content-Type: " . $file['type'],
-            "x-upsert: true"
+            "Content-Type: application/json"
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $authResponse = curl_exec($ch);
+        $authHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        $authResult = json_decode($authResponse, true);
+        
+        if ($authHttpCode !== 200) {
+            $errorMsg = 'Gagal membuat akun';
+            if (isset($authResult['msg'])) {
+                $errorMsg = $authResult['msg'];
+            } elseif (isset($authResult['error_description'])) {
+                $errorMsg = $authResult['error_description'];
+            }
+            echo json_encode(['success' => false, 'message' => $errorMsg]);
+            exit;
+        }
+        
+        $penjualId = $authResult['user']['id'] ?? null;
+        
+        if (!$penjualId) {
+            echo json_encode(['success' => false, 'message' => 'Gagal mendapatkan ID penjual']);
+            exit;
+        }
+        
+        $data = [
+            'id_penjual' => $penjualId,
+            'nama_penjual' => $nama,
+            'email' => $email,
+            'password' => md5($password),
+            'foto_profil' => $foto_path,
+            'status' => 'menunggu_verifikasi'
+        ];
+        
+        $ch = curl_init($supabaseUrl . "/rest/v1/penjual");
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "apikey: $supabaseKey",
+            "Authorization: Bearer $supabaseKey",
+            "Content-Type: application/json",
+            "Prefer: return=minimal"
         ]);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         
-        if ($httpCode == 200 || $httpCode == 201) {
-            $foto_path = $filename;
+        if ($httpCode === 201 || $httpCode === 200 || $httpCode === 204) {
+            $logData = [
+                'id_admin' => $_SESSION['id_admin'],
+                'aktivitas' => 'Menambahkan penjual baru: ' . $nama,
+                'tabel_terkait' => 'penjual',
+                'id_data' => $penjualId,
+            ];
+            
+            $logCh = curl_init($supabaseUrl . "/rest/v1/log_admin");
+            curl_setopt($logCh, CURLOPT_CUSTOMREQUEST, "POST");
+            curl_setopt($logCh, CURLOPT_POSTFIELDS, json_encode($logData));
+            curl_setopt($logCh, CURLOPT_HTTPHEADER, [
+                "apikey: $supabaseKey",
+                "Authorization: Bearer $supabaseKey",
+                "Content-Type: application/json"
+            ]);
+            curl_setopt($logCh, CURLOPT_RETURNTRANSFER, true);
+            curl_exec($logCh);
+            curl_close($logCh);
+            
+            echo json_encode(['success' => true, 'message' => 'Penjual berhasil ditambahkan']);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Akun Auth berhasil, tapi gagal menyimpan data penjual'
+            ]);
         }
-    }
-    
-    // Buat akun di Auth Supabase
-    $authUrl = $supabaseUrl . "/auth/v1/signup";
-    $authData = [
-        'email' => $email,
-        'password' => $password,
-        'data' => [
-            'nama_penjual' => $nama,
-            'role' => 'penjual'
-        ]
-    ];
-    
-    $ch = curl_init($authUrl);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($authData));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "apikey: $supabaseKey",
-        "Authorization: Bearer $supabaseKey",
-        "Content-Type: application/json"
-    ]);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    $authResponse = curl_exec($ch);
-    $authHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    $authResult = json_decode($authResponse, true);
-    
-    if ($authHttpCode !== 200) {
-        $errorMsg = 'Gagal membuat akun';
-        if (isset($authResult['msg'])) {
-            $errorMsg = $authResult['msg'];
-        } elseif (isset($authResult['error_description'])) {
-            $errorMsg = $authResult['error_description'];
-        }
-        echo json_encode(['success' => false, 'message' => $errorMsg]);
         exit;
     }
-    
-    $penjualId = $authResult['user']['id'] ?? null;
-    
-    if (!$penjualId) {
-        echo json_encode(['success' => false, 'message' => 'Gagal mendapatkan ID penjual']);
-        exit;
-    }
-    
-    // Simpan data ke tabel penjual
-    $data = [
-        'id_penjual' => $penjualId,
-        'nama_penjual' => $nama,
-        'email' => $email,
-        'password' => md5($password),
-        'foto_profil' => $foto_path,
-        'status' => 'menunggu_verifikasi'  // Status awal menunggu verifikasi
-    ];
-    
-    $ch = curl_init($supabaseUrl . "/rest/v1/penjual");
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "apikey: $supabaseKey",
-        "Authorization: Bearer $supabaseKey",
-        "Content-Type: application/json",
-        "Prefer: return=minimal"
-    ]);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    if ($httpCode === 201 || $httpCode === 200 || $httpCode === 204) {
-        // Catat ke log aktivitas
-        $logData = [
-            'id_admin' => $_SESSION['id_admin'],
-            'aktivitas' => 'Menambahkan penjual baru: ' . $nama,
-            'tabel_terkait' => 'penjual',
-            'id_data' => $penjualId,
-        ];
-        
-        $logCh = curl_init($supabaseUrl . "/rest/v1/log_admin");
-        curl_setopt($logCh, CURLOPT_CUSTOMREQUEST, "POST");
-        curl_setopt($logCh, CURLOPT_POSTFIELDS, json_encode($logData));
-        curl_setopt($logCh, CURLOPT_HTTPHEADER, [
-            "apikey: $supabaseKey",
-            "Authorization: Bearer $supabaseKey",
-            "Content-Type: application/json"
-        ]);
-        curl_setopt($logCh, CURLOPT_RETURNTRANSFER, true);
-        curl_exec($logCh);
-        curl_close($logCh);
-        
-        echo json_encode(['success' => true, 'message' => 'Penjual berhasil ditambahkan']);
-    } else {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Akun Auth berhasil, tapi gagal menyimpan data penjual'
-        ]);
-    }
-    exit;
-}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -194,54 +188,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <nav class="sidebar-nav">
             <div class="nav-item">
                 <a href="dashboard.php" class="nav-link-custom">
-                    <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span>Dashboard</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="kelola_akun.php" class="nav-link-custom active">
-                    <i class="bi bi-people-fill"></i> Kelola Akun
+                    <i class="bi bi-people-fill"></i>
+                    <span>Kelola Akun</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="kelola_data_master.php" class="nav-link-custom">
-                    <i class="bi bi-database-fill-gear"></i> Kelola Data Master
+                    <i class="bi bi-database-fill-gear"></i>
+                    <span>Kelola Data Master</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="monitor_transaksi.php" class="nav-link-custom">
-                    <i class="bi bi-arrow-left-right"></i> Monitor Transaksi
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span>Monitor Transaksi</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pembayaran_komisi.php" class="nav-link-custom">
-                    <i class="bi bi-cash-coin"></i> Pembayaran Komisi
+                    <i class="bi bi-cash-coin"></i>
+                    <span>Pembayaran Komisi</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="aktivitas.php" class="nav-link-custom">
-                    <i class="bi bi-activity"></i> Aktivitas
+                    <i class="bi bi-activity"></i>
+                    <span>Aktivitas</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="sponsor.php" class="nav-link-custom">
-                    <i class="bi bi-megaphone-fill"></i> Sponsor
+                    <i class="bi bi-megaphone-fill"></i>
+                    <span>Sponsor</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="laporan_keuangan.php" class="nav-link-custom">
-                    <i class="bi bi-bar-chart-line-fill"></i> Laporan dan Keuangan
+                    <i class="bi bi-bar-chart-line-fill"></i>
+                    <span>Laporan dan Keuangan</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pengaturan_akun.php" class="nav-link-custom">
-                    <i class="bi bi-gear-fill"></i> Pengaturan Akun
+                    <i class="bi bi-gear-fill"></i>
+                    <span>Pengaturan Akun</span>
                 </a>
             </div>
         </nav>
 
         <div class="sidebar-logout">
             <a class="logout-btn" href="../logout.php">
-                <i class="bi bi-box-arrow-right"></i> Logout
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
             </a>
         </div>
     </aside>
@@ -340,7 +344,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             preview.innerHTML = '';
             
             if (input.files && input.files[0]) {
-                // Validasi ukuran file (max 2MB)
                 if (input.files[0].size > 2 * 1024 * 1024) {
                     showToast('Ukuran file terlalu besar! Maksimal 2MB', 'error');
                     input.value = '';
@@ -369,7 +372,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             document.getElementById('fileName').textContent = 'Pilih file foto';
         }
         
-        // Toggle password visibility
         document.querySelectorAll('.toggle-pw').forEach(button => {
             button.addEventListener('click', function() {
                 const targetId = this.dataset.target;
@@ -422,7 +424,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 formData.append('foto_profil', fotoFile);
             }
             
-            // Disable submit button
             const submitBtn = document.querySelector('.btn-submit');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="btn-spinner"><i class="bi bi-arrow-repeat spin"></i></span> Menyimpan...';
