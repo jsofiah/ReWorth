@@ -13,6 +13,7 @@
     --status-diproses:  #DBC729;
 
     --sidebar-w: 240px;
+    --sidebar-w-collapsed: 80px;
     --sidebar-bg: #00916E;
     --body-bg: #F4F7F5;
     --card-bg: #ffffff;
@@ -706,8 +707,7 @@ tbody td {
 
 @media (max-width: 768px) {
     :root { --sidebar-w: 0px; }
-    .sidebar { transform: translateX(-240px); }
-    .topbar, .action-bar-wrap, .content-area { padding-left: 20px; padding-right: 20px; }
+    .topbar, .action-bar-wrap, .content-area { padding-left: 20px; padding-right: 20px; padding-top: 20px; }
     .topbar-title { font-size: 26px; }
 }
 
@@ -978,6 +978,7 @@ tbody td {
 
     .settings-card{
         padding: 18px;
+        top: 20px;
     }
 
     .card-accent{
@@ -995,5 +996,230 @@ tbody td {
 
     .btn-submit{
         width: 100%;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 992px) {
+    .sidebar {
+        width: var(--sidebar-w-collapsed);
+    }
+    
+    .sidebar .nav-link-custom span,
+    .sidebar .logout-btn span {
+        display: none;
+    }
+    
+    .sidebar .nav-link-custom {
+        justify-content: center;
+        padding: 12px;
+    }
+    
+    .sidebar .nav-link-custom i {
+        margin: 0;
+        font-size: 22px;
+    }
+    
+    .sidebar .logout-btn {
+        justify-content: center;
+        padding: 12px;
+    }
+    
+    .sidebar .logout-btn i {
+        margin: 0;
+        font-size: 22px;
+    }
+    
+    .sidebar-logo {
+        padding: 20px 12px;
+    }
+    
+    .sidebar-logo img {
+        width: 50px;
+    }
+    
+    .main-wrap {
+        margin-left: var(--sidebar-w-collapsed);
+    }
+    
+    .sidebar:hover {
+        width: var(--sidebar-w);
+    }
+    
+    .sidebar:hover .nav-link-custom span,
+    .sidebar:hover .logout-btn span {
+        display: inline;
+    }
+    
+    .sidebar:hover .nav-link-custom {
+        justify-content: flex-start;
+        padding: 10px 14px;
+    }
+    
+    .sidebar:hover .nav-link-custom i {
+        font-size: 18px;
+        margin-right: 12px;
+        margin-left: 0;
+    }
+    
+    .sidebar:hover .logout-btn {
+        justify-content: flex-start;
+        padding: 10px 14px;
+    }
+    
+    .sidebar:hover .logout-btn i {
+        font-size: 18px;
+        margin-right: 10px;
+        margin-left: 0;
+    }
+    
+    .sidebar:hover .sidebar-logo {
+        padding: 28px 24px 20px;
+    }
+    
+    .sidebar:hover .sidebar-logo img {
+        width: 80px;
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: var(--sidebar-w-collapsed);
+    }
+    
+    .sidebar .nav-link-custom span,
+    .sidebar .logout-btn span {
+        display: none;
+    }
+    
+    .sidebar .nav-link-custom {
+        justify-content: center;
+        padding: 10px;
+    }
+    
+    .sidebar .nav-link-custom i {
+        margin: 0;
+        font-size: 18px;
+        width: 20px;
+    }
+    
+    .sidebar .logout-btn {
+        justify-content: center;
+        padding: 10px;
+    }
+    
+    .sidebar .logout-btn i {
+        margin: 0;
+        font-size: 18px;
+    }
+    
+    .sidebar-logo {
+        padding: 15px 10px;
+    }
+    
+    .sidebar-logo img {
+        width: 40px;
+    }
+    
+    .main-wrap {
+        margin-left: var(--sidebar-w-collapsed);
+    }
+    
+    .topbar {
+        padding: 20px 15px 40px;
+    }
+    
+    .topbar-title {
+        font-size: 18px;
+    }
+    
+    .topbar-user-name {
+        font-size: 11px;
+    }
+    
+    .topbar-user-email {
+        font-size: 9px;
+    }
+    
+    .topbar-avatar {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .action-bar-wrap,
+    .content-area {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .action-bar {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .search-wrap {
+        min-width: 180px;
+    }
+    
+    .btn-tambah span {
+        display: none;
+    }
+    
+    .btn-tambah i {
+        margin: 0;
+    }
+    
+    .btn-tambah {
+        padding: 11px 15px;
+    }
+    
+    .btn-filter span {
+        display: none;
+    }
+    
+    .btn-filter {
+        padding: 11px 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar {
+        width: 60px;
+    }
+    
+    .sidebar .nav-link-custom {
+        padding: 8px;
+    }
+    
+    .sidebar .nav-link-custom i {
+        font-size: 16px;
+    }
+    
+    .sidebar .logout-btn {
+        padding: 8px;
+    }
+    
+    .sidebar .logout-btn i {
+        font-size: 16px;
+    }
+    
+    .sidebar-logo img {
+        width: 35px;
+    }
+    
+    .main-wrap {
+        margin-left: 60px;
+    }
+    
+    .topbar-title {
+        font-size: 16px;
+    }
+    
+    .topbar-user-info {
+        display: none;
+    }
+    
+    .topbar-avatar {
+        width: 32px;
+        height: 32px;
     }
 }

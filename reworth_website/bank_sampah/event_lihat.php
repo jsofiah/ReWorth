@@ -69,49 +69,58 @@ $statusClass = $event['status'] ?? 'akan_datang';
         <nav class="sidebar-nav">
             <div class="nav-item">
                 <a href="dashboard.php" class="nav-link-custom">
-                    <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span>Dashboard</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="transaksi_setor_sampah.php" class="nav-link-custom">
-                    <i class="bi bi-recycle"></i> Transaksi Setor Sampah
+                    <i class="bi bi-recycle"></i>
+                    <span>Transaksi Setor Sampah</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="penarikan_saldo.php" class="nav-link-custom">
-                    <i class="bi bi-wallet2"></i> Penarikan Saldo
+                    <i class="bi bi-wallet2"></i>
+                    <span>Penarikan Saldo</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="event_lingkungan.php" class="nav-link-custom active">
-                    <i class="bi bi-calendar-event-fill"></i> Event Lingkungan
+                    <i class="bi bi-calendar-event-fill"></i>
+                    <span>Event Lingkungan</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="laporan_keuangan.php" class="nav-link-custom">
-                    <i class="bi bi-bar-chart-line-fill"></i> Laporan dan Keuangan
+                    <i class="bi bi-bar-chart-line-fill"></i>
+                    <span>Laporan dan Keuangan</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="data_nasabah.php" class="nav-link-custom">
-                    <i class="bi bi-people-fill"></i> Data Nasabah
+                    <i class="bi bi-people-fill"></i>
+                    <span>Data Nasabah</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="data_sampah.php" class="nav-link-custom">
-                    <i class="bi bi-trash-fill"></i> Data Sampah
+                    <i class="bi bi-trash-fill"></i>
+                    <span>Data Sampah</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="pengaturan_akun.php" class="nav-link-custom">
-                    <i class="bi bi-gear-fill"></i> Pengaturan Akun
+                    <i class="bi bi-gear-fill"></i>
+                    <span>Pengaturan Akun</span>
                 </a>
             </div>
         </nav>
 
         <div class="sidebar-logout">
             <a class="logout-btn" href="../logout.php">
-                <i class="bi bi-box-arrow-right"></i> Logout
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
             </a>
         </div>
     </aside>
