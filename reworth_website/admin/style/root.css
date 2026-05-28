@@ -316,13 +316,13 @@ body {
     padding: 11px 20px;
     border: 1.5px solid var(--border);
     border-radius: 12px;
-    background: #FAFCFB;
+    background: #CFF27E;
     color: var(--text-main);
     font-size: 14px; font-weight: 500;
     cursor: pointer; transition: all .2s;
     font-family: inherit;
 }
-.btn-filter:hover { border-color: var(--brown); color: var(--brown); background: #F0F8F5; }
+.btn-filter:hover { border-color: var(--brown); color: var(--brown); background: #bee06d; }
 
 .btn-tambah {
     display: flex; align-items: center; gap: 8px;
@@ -765,6 +765,12 @@ tbody td {
     padding-left: 42px;
 }
 
+.card-body-inner2{
+    align-items: flex-start;
+    gap: 42px;
+    padding-left: 42px;
+}
+
 .foto-section{
     flex-shrink: 0;
 }
@@ -962,7 +968,8 @@ tbody td {
 
 @media (max-width: 992px){
 
-    .card-body-inner{
+    .card-body-inner
+    .card-body-inner2{
         flex-direction: column;
         padding-left: 34px;
     }
@@ -986,7 +993,7 @@ tbody td {
     }
 
     .settings-card{
-        padding: 18px;
+        padding: 40px;
         top: 20px
     }
 
@@ -994,7 +1001,8 @@ tbody td {
         width: 12px;
     }
 
-    .card-body-inner{
+    .card-body-inner
+    .card-body-inner2{
         padding-left: 22px;
         gap: 26px;
     }
