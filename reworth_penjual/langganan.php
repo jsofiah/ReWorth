@@ -128,6 +128,7 @@ if ($isExpired) {
 
         <div class="content-area">
             <?php if ($warningMessage): ?>
+                <br><br>
             <div class="alert alert-<?= $warningType ?> mb-4">
                 <div class="d-flex gap-2">
                     <i class="bi bi-exclamation-triangle-fill fs-5"></i>
@@ -169,7 +170,7 @@ if ($isExpired) {
             <!-- Info Paket -->
             <div class="card-custom mt-4">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3"><i class="bi bi-info-circle"></i> Paket Langganan</h5>
+                    <h5 class="fw-bold mb-3">Paket Langganan</h5>
                     <div class="alert alert-info mb-0">
                         <strong>Paket Premium:</strong> 3 bulan <br>
                         <strong>Harga:</strong> Rp 70.000 / 3 bulan
