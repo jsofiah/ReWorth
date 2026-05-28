@@ -138,13 +138,13 @@
                         <td class="table-cell-content"><?= formatTanggal($k['tanggal'] ?? '') ?> </td>
                         <td>
                             <div class="d-flex gap-2 flex-wrap">
-                                <button class="btn-aksi btn-lihat" data-tab="kontribusi" data-id="<?= $k['id_kontribusi'] ?>">
+                                <button class="btn-aksi btn-lihat" data-tab="sponsor_kontribusi" data-id="<?= $k['id_kontribusi'] ?>">
                                     <i class="bi bi-file-earmark-text"></i> Lihat
                                 </button>
-                                <button class="btn-aksi btn-edit" data-tab="kontribusi" data-id="<?= $k['id_kontribusi'] ?>">
+                                <button class="btn-aksi btn-edit" data-tab="sponsor_kontribusi" data-id="<?= $k['id_kontribusi'] ?>">
                                     <i class="bi bi-pencil-square"></i> Edit
                                 </button>
-                                <button class="btn-aksi btn-hapus" data-tab="kontribusi" data-id="<?= $k['id_kontribusi'] ?>">
+                                <button class="btn-aksi btn-hapus" data-tab="sponsor_kontribusi" data-id="<?= $k['id_kontribusi'] ?>">
                                     <i class="bi bi-trash3"></i> Hapus
                                 </button>
                             </div>

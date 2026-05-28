@@ -195,7 +195,7 @@
             <div class="card-custom">
                 <div class="tab-header">
                     <button class="tab-btn <?= $current_tab == 'sponsor' ? 'active' : '' ?>" data-tab="sponsor">Sponsor</button>
-                    <button class="tab-btn <?= $current_tab == 'kontribusi_sponsor' ? 'active' : '' ?>" data-tab="kontribusi_sponsor">Kontribusi</button>
+                    <button class="tab-btn <?= $current_tab == 'sponsor_kontribusi' ? 'active' : '' ?>" data-tab="sponsor_kontribusi">Kontribusi</button>
                 </div>
 
                 <div class="tab-content" id="tabContent">
@@ -272,7 +272,7 @@
                 case 'sponsor':
                     file = 'sponsor_data.php';
                     break;
-                case 'kontribusi_sponsor':
+                case 'sponsor_kontribusi':
                     file = 'sponsor_kontribusi.php';
                     break;
                 default:
@@ -510,7 +510,7 @@
                 case 'sponsor':
                     apiUrl = `sponsor_detail.php?id=${id}`;
                     break;
-                case 'kontribusi_sponsor':
+                case 'sponsor_kontribusi':
                     apiUrl = `sponsor_kontribusi_detail.php?id=${id}`;
                     break;
                 default:
@@ -579,7 +579,7 @@
                         </div>
                     `;
                 }
-            } else if (tab === 'kontribusi_sponsor') {
+            } else if (tab === 'sponsor_kontribusi') {
                 html += `
                     <div class="detail-row">
                         <label>Nama Sponsor:</label>
@@ -707,7 +707,7 @@
                 case 'sponsor':
                     window.location.href = `sponsor_edit.php?id=${id}`;
                     break;
-                case 'kontribusi_sponsor':
+                case 'sponsor_kontribusi':
                     window.location.href = `sponsor_kontribusi_edit.php?id=${id}`;
                     break;
                 default:
@@ -760,7 +760,7 @@
                 case 'sponsor':
                     window.location.href = 'sponsor_tambah.php';
                     break;
-                case 'kontribusi_sponsor':
+                case 'sponsor_kontribusi':
                     window.location.href = 'sponsor_kontribusi_tambah.php';
                     break;
                 default:
