@@ -35,7 +35,7 @@
         return [];
     }
 
-    $laporanValidasi = fetchData($supabaseUrl . "/rest/v1/lapor_sampah". "?select=*,pengguna!lapor_sampah_id_pengguna_fkey(nama_lengkap)". "&status=eq.menunggu". "&order=created_at.desc", $supabaseKey);
+    $laporanValidasi   = fetchData($supabaseUrl . "/rest/v1/lapor_sampah?select=*,pengguna!lapor_sampah_id_pengguna_fkey(nama_lengkap)&status=eq.menunggu&order=created_at.desc", $supabaseKey);
     $laporanPenanganan = fetchData($supabaseUrl . "/rest/v1/lapor_sampah?select=*,pengguna!lapor_sampah_id_pengguna_fkey(nama_lengkap),petugas_lapangan!lapor_sampah_id_petugas_fkey(nama_petugas)&status=in.(diproses,selesai,ditolak)&order=created_at.desc", $supabaseKey);
 
     $per_page = 10;
@@ -193,7 +193,7 @@
                                         <td><?= htmlspecialchars($l['jenis_sampah'] ?? '-') ?></td>
                                         <td><?= htmlspecialchars($l['lokasi'] ?? '-') ?></td>
                                         <td><?= !empty($l['created_at']) ? date('d M Y', strtotime($l['created_at'])) : '-' ?></td>
-                                        <td><span class="status-badge status-akan_datang">Menunggu Konfirmasi</span></td>
+                                        <td><span class="status-badge status-menunggu">Menunggu Konfirmasi</span></td>
                                         <td>
                                             <button class="btn-aksi btn-lihat" onclick="window.location.href='laporan_sampah_detail_validasi.php?id=<?= $l['id_laporan'] ?>'">
                                                 <i class="bi bi-file-earmark-text"></i> Lihat
@@ -256,7 +256,7 @@
                                     <?php foreach ($cur_pen as $idx => $l): ?>
                                     <?php
                                         $st = $l['status'] ?? '';
-                                         $stClass = match($st) { 'diproses' => 'status-diproses', 'selesai' => 'status-selesai', default => 'status-akan_datang' };
+                                        $stClass = match($st) { 'diproses' => 'status-diproses', 'selesai' => 'status-selesai', default => 'status-menunggu' };
                                         $stLabel = match($st) { 'diproses' => 'Diproses', 'selesai' => 'Selesai', 'ditolak' => 'Ditolak', default => ucfirst($st) };
                                     ?>
                                     <tr data-date="<?= $l['created_at'] ?>" data-status="<?= $st ?>" data-jenis="<?= strtolower($l['jenis_sampah'] ?? '') ?>">

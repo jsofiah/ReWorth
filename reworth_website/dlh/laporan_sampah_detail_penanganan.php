@@ -53,6 +53,7 @@
     <link rel="stylesheet" href="style/form.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
 </head>
 <body>
     <aside class="sidebar">
@@ -74,12 +75,7 @@
     <div class="main-wrap">
         <div class="topbar">
             <div class="topbar-inner">
-                <div>
-                    <h1 class="topbar-title">Laporan Sampah</h1>
-                    <a href="laporan_sampah.php?tab=penanganan" class="back-btn-topbar">
-                        <i class="bi bi-arrow-left-circle-fill"></i> Kembali ke Laporan Sampah
-                    </a>
-                </div>
+                <h1 class="topbar-title">Laporan Sampah</h1>
                 <div class="topbar-user">
                     <div class="topbar-user-info">
                         <div class="topbar-user-name"><?= htmlspecialchars($userName) ?></div>
@@ -98,6 +94,7 @@
         </div>
 
         <div class="detail-bar-wrap">
+            <a href="laporan_sampah.php?tab=penanganan" class="back-btn"><i class="bi bi-arrow-left-circle-fill"></i> Kembali ke Laporan Sampah</a>
             <div class="detail-card">
                 <div class="detail-card-inner <?= $buktiUrl ? 'has-bukti' : '' ?>">
 
