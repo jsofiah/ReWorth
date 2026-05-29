@@ -448,6 +448,18 @@ tbody td {
     text-align: center;
 }
 
+.status-menunggu {
+    color: var(--status-menunggu);
+    border-color: var(--status-menunggu);
+    background: rgba(217,93,57,0.08);
+}
+
+.status-diproses {
+    color: var(--status-diproses);
+    border-color: var(--status-diproses);
+    background: rgba(219,199,41,0.12);
+}
+
 .status-akan_datang {
     color: #D95D39;
     border-color: #D95D39;
