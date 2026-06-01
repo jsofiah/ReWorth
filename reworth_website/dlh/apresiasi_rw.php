@@ -294,11 +294,6 @@
                 <?php if ($total_lb_pages > 1): ?>
                 <div class="table-footer" id="footer-leaderboard" style="justify-content:flex-end;">
                     <div class="pagination-custom">
-                        <?php if ($current_lb_page > 1): ?>
-                            <a href="?lb_page=<?= $current_lb_page - 1 ?>" class="page-btn page-btn-text">Previous</a>
-                        <?php else: ?>
-                            <span class="page-btn page-btn-text disabled">Previous</span>
-                        <?php endif; ?>
 
                         <?php
                         // Smart pagination: show max 3 page numbers around current
@@ -384,18 +379,9 @@
                 </div>
                 <div class="table-footer" id="footer-riwayat">
                     <div class="showing-text">
-                        <?php if ($total_rv > 0): ?>
-                            Showing <b><?= $rv_to ?></b> of <b><?= $total_rv ?></b> entries
-                        <?php else: ?>
-                            Tidak ada data
-                        <?php endif; ?>
+                        Showing <b><?= $rv_from ?></b> to <b><?= $rv_to ?></b> of <b><?= $total_rv ?></b> entries
                     </div>
                     <div class="pagination-custom">
-                        <?php if ($current_rv_page > 1): ?>
-                            <a href="?rv_page=<?= $current_rv_page - 1 ?>&tab=riwayat" class="page-btn page-btn-text">Previous</a>
-                        <?php else: ?>
-                            <span class="page-btn page-btn-text disabled">Previous</span>
-                        <?php endif; ?>
 
                         <?php
                         $rv_range_start = max(1, $current_rv_page - 1);

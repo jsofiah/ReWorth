@@ -426,13 +426,10 @@ input[type="file"] {
     background: rgba(217, 93, 57, 0.08);
 }
 
-/* ═══════════════════════════════════════════
-   DETAIL BAR — card overlap dengan topbar gradient
-   ═══════════════════════════════════════════ */
 .detail-bar-wrap {
     position: relative;
     margin-top: -80px;
-    padding: 16px 40px 40px;
+    padding: 30px 40px 40px;
     z-index: 10;
 }
 
@@ -456,7 +453,6 @@ input[type="file"] {
     font-size: 15px;
 }
 
-/* back-btn dipakai di detail validasi & penanganan (class berbeda) */
 .back-btn {
     display: inline-flex;
     align-items: center;
@@ -491,7 +487,7 @@ input[type="file"] {
 
 .detail-left {
     padding: 36px 36px 36px 52px;
-    border-right: 1.5px solid #E2EDE8;
+    border-right: none;
     position: relative;
 }
 
@@ -509,14 +505,23 @@ input[type="file"] {
     padding: 0;
 }
 
-.detail-foto,
-.detail-foto-single {
-    width: 100%;
-    height: 100%;
-    min-height: 300px;
+.detail-foto {
+    width: calc(100% - 24px);
+    height: calc(100% - 24px);
+    min-height: 280px;
     object-fit: cover;
     display: block;
-    border-radius: 0 20px 20px 0;
+    border-radius: 16px;
+    margin: 12px 12px 12px 0;
+}
+
+.detail-foto-single {
+    width: calc(100% - 24px);
+    height: 420px;
+    object-fit: cover;
+    display: block;
+    border-radius: 16px;
+    margin: 12px 12px 12px 0;
 }
 
 .detail-foto-placeholder {
@@ -814,9 +819,6 @@ input[type="file"] {
     }
 }
 
-/* ═══════════════════════════════════════════
-   PODIUM & LEADERBOARD
-   ═══════════════════════════════════════════ */
 .podium-wrap {
     display: flex;
     justify-content: center;
@@ -1018,4 +1020,162 @@ input[type="file"] {
     padding: 4px 16px;
     font-size: 13px;
     font-weight: 600;
+}
+
+.petugas-lihat-wrap {
+    position: relative;
+    margin-top: -50px;
+    padding: 0 32px 40px;
+    z-index: 10;
+}
+
+/* ── Profil Card ── */
+.petugas-profile-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 20px;
+}
+
+.petugas-photo-wrap {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.petugas-photo-accent {
+    width: 7px;
+    border-radius: 10px;
+    background: #B8860B;
+    align-self: stretch;
+}
+
+.petugas-photo-box {
+    width: 130px;
+    height: 160px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.petugas-photo-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.photo-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 52px;
+    color: #ccc;
+}
+
+.petugas-info {
+    flex: 1;
+}
+
+.petugas-info h2 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #1A2E24;
+    margin: 0 0 4px;
+}
+
+.petugas-info .sub-role {
+    color: #6B8A7E;
+    font-size: 14px;
+    margin-bottom: 14px;
+}
+
+.petugas-info .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 15px;
+    color: #1A2E24;
+    margin-bottom: 10px;
+}
+
+.petugas-info .meta-terdaftar {
+    color: #6B8A7E;
+    font-size: 14px;
+}
+
+/* ── Riwayat Tugas Card ── */
+.riwayat-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    padding: 28px 32px;
+}
+
+.riwayat-card h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1A2E24;
+    margin: 0 0 20px;
+}
+
+.tugas-item {
+    border: 1.5px solid #e0e9e0;
+    border-radius: 14px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.tugas-item .tugas-kode {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1A2E24;
+}
+
+.tugas-item .tugas-meta {
+    font-size: 13px;
+    color: #6B8A7E;
+    margin-top: 3px;
+}
+
+@media (max-width: 768px) {
+    .petugas-lihat-wrap {
+        padding: 0 16px 32px;
+        margin-top: -52px;
+    }
+    .petugas-profile-card {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 20px;
+        gap: 16px;
+    }
+    .petugas-photo-box {
+        width: 100px;
+        height: 130px;
+    }
+    .petugas-info h2 {
+        font-size: 20px;
+    }
+    .riwayat-card {
+        padding: 20px 16px;
+    }
+    .tugas-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
 }
