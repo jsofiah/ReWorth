@@ -180,9 +180,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="settings-card">
                 <div class="card-accent"></div>
                 <div class="card-body-inner">
-                    <!-- Kolom Kiri: Informasi Langganan -->
                     <div class="form-section-settings" style="flex: 1;">
                         <form method="POST" enctype="multipart/form-data" id="formPerpanjang">
+                            <!-- Kolom Kiri: Informasi Langganan -->
                             <div class="field-group">
                                 <h2 class="section-title">Perpanjang Langganan</h2>
                                 <label class="field-label">Nama Toko</label>
@@ -203,48 +203,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label class="field-label">Status</label>
                                 <input type="text" class="field-input" value="<?= $isExpired ? 'Kadaluarsa' : 'Aktif' ?>" readonly disabled>
                             </div>
-                    </div>
 
-                    <!-- Kolom Kanan: Upload Bukti -->
-                    <div class="foto-section">
-                                                    </div>
-                            <div class="form-group">
-                                <label class="form-label">
-                                    Upload Bukti Transfer
-                                </label>
-                                <div class="file-input-wrapper">
-                                    <label class="file-input-label">
-                                        <i class="bi bi-images"></i>
-                                        Pilih Foto
-                                        <input
-                                            type="file"
-                                            id="foto_produk"
-                                            name="foto_produk[]"
-                                            accept="image/*"
-                                            multiple
-                                            onchange="previewImages(this)"
-                                        >
-                                    </label>
-                                    <span
-                                        class="selected-filename"
-                                        id="fileName"
-                                    >
-                                        Belum ada file dipilih
-                                    </span>
+                            <!-- Kolom Kanan: QR Code & Upload Bukti -->
+                            <div class="foto-section">
+                                <label class="form-label">Scan Kode QR untuk Pembayaran</label>
+                                <div class="field-group">
+                                    <img src="img/qr.png" alt="QR Code" style="width: 150px; height: 150px;">
                                 </div>
-                                <div
-                                    class="image-preview"
-                                    id="imagePreview"
-                                ></div>
-                            </div>
-                </div>
 
-                <!-- Tombol Batal dan Kirim -->
-                <div class="form-actions" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E2EDE8;">
-                    <button type="button" class="btn-cancel" onclick="window.location.href='langganan.php'">BATAL</button>
-                    <button type="submit" class="btn-submit" id="btnKirim">KIRIM</button>
+                                <div class="form-group">
+                                    <label class="form-label">Upload Bukti Transfer</label>
+                                    <div class="file-input-wrapper">
+                                        <label class="file-input-label">
+                                            <i class="bi bi-images"></i>
+                                            Pilih Foto
+                                            <input type="file" id="bukti_pembayaran" name="bukti_pembayaran" accept="image/*" onchange="previewFile(this)">
+                                        </label>
+                                        <span class="selected-filename" id="fileName">Belum ada file dipilih</span>
+                                    </div>
+                                    <div class="image-preview" id="imagePreview"></div>
+                                </div>
+                            </div>
+
+                            <!-- Tombol Batal dan Kirim -->
+                            <div class="form-actions" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E2EDE8;">
+                                <button type="button" class="btn-cancel" onclick="window.location.href='langganan.php'">BATAL</button>
+                                <button type="submit" class="btn-submit" id="btnKirim">KIRIM</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                </form>
             </div>
         </div>
     </div>
@@ -278,14 +266,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // Loading state on submit
-        document.getElementById('formPerpanjang')?.addEventListener('submit', function() {
+        // Validasi dan loading state on submit
+        document.getElementById('formPerpanjang')?.addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('bukti_pembayaran');
+            
+            // Cek apakah file sudah dipilih
+            if (!fileInput.files || fileInput.files.length === 0) {
+                e.preventDefault();
+                showToast('Harap upload bukti pembayaran terlebih dahulu!', 'error');
+                return false;
+            }
+            
+            // Loading state
             const btn = document.getElementById('btnKirim');
             if (btn) {
                 btn.disabled = true;
                 btn.innerHTML = '<span class="btn-spinner"><i class="bi bi-arrow-repeat spin"></i></span> Mengirim...';
             }
         });
+
+        function showToast(msg, type) {
+            const icons = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill', info: 'bi-info-circle-fill' };
+            const div = document.createElement('div');
+            div.className = `toast-item ${type}`;
+            div.innerHTML = `<i class="bi ${icons[type]} toast-icon"></i><span>${msg}</span>`;
+            document.getElementById('toastContainer').appendChild(div);
+            setTimeout(() => div.remove(), 3500);
+        }
     </script>
 </body>
 </html>
