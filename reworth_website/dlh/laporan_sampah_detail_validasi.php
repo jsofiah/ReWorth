@@ -58,8 +58,8 @@
     curl_close($ch2);
     $listPetugas = json_decode($resPetugas, true) ?: [];
 
-    $fotoSampahUrl  = !empty($laporan['foto_sampah']) ? getSupabaseImageUrl($laporan['foto_sampah']) : null;
-    $statusLaporan  = $laporan['status'] ?? '';
+    $fotoSampahUrl = !empty($laporan['foto_sampah']) ? getSupabaseImageUrl($laporan['foto_sampah']) : null;
+    $statusLaporan = $laporan['status'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -72,7 +72,6 @@
     <link rel="stylesheet" href="style/form.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
 </head>
 <body>
     <aside class="sidebar">
@@ -117,9 +116,9 @@
         </div>
 
         <div class="detail-bar-wrap">
-            <a href="laporan_sampah.php?tab=penanganan" class="back-btn"><i class="bi bi-arrow-left-circle-fill"></i> Kembali ke Laporan Sampah</a>
             <div class="detail-card">
                 <div class="detail-card-inner">
+
                     <!-- KIRI: Info -->
                     <div class="detail-left">
                         <div class="detail-accent"></div>
@@ -168,6 +167,7 @@
                             <div class="detail-foto-placeholder"><i class="bi bi-image"></i></div>
                         <?php endif; ?>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -224,26 +224,64 @@
         function openModalTolak()  { openModal('modalTolak'); }
 
         function konfirmasiTerima() {
-            const idPetugas = document.getElementById('selectPetugas').value;
-            if (!idPetugas) { showToast('Pilih petugas terlebih dahulu.', 'error'); return; }
-            fetch('laporan_sampah_terima.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'id=' + encodeURIComponent(LAPORAN_ID) + '&id_petugas=' + encodeURIComponent(idPetugas)
-            })
-            .then(r => r.json())
-            .then(data => {
-                closeModal('modalTerima');
-                if (data.success) {
-                    showToast('Laporan berhasil diterima dan petugas ditugaskan.', 'success');
+        const idPetugas = document.getElementById('selectPetugas').value;
+
+        if (!idPetugas) {
+            showToast('Pilih petugas terlebih dahulu.', 'error');
+            return;
+        }
+        showToast('Memproses data...', 'info');
+        fetch('laporan_sampah_terima.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'id=' + encodeURIComponent(LAPORAN_ID)
+                + '&id_petugas=' + encodeURIComponent(idPetugas)
+        })
+        .then(r => r.json())
+        .then(data => {
+            console.log(data);
+            closeModal('modalTerima');
+            if (data.success) {
+                showToast('✅ Laporan berhasil diterima!', 'success');
+                if (data.wa_link) {
+                    // Buka WhatsApp Web/Desktop
+                    window.open(data.wa_link, '_blank');
+                    showToast(
+                        '📱 WhatsApp dibuka. Pesan sudah terisi, tinggal klik Kirim.',
+                        'success'
+                    );
                     setTimeout(() => {
-                        window.location.href = 'laporan_sampah.php?tab=penanganan&msg=' + encodeURIComponent('Laporan berhasil diterima.') + '&msg_type=success';
-                    }, 1000);
+                        window.location.href =
+                            'laporan_sampah.php?tab=penanganan&msg=' +
+                            encodeURIComponent('Laporan berhasil diterima') +
+                            '&msg_type=success';
+                    }, 3000);
                 } else {
-                    showToast(data.message || 'Gagal memproses laporan.', 'error');
+                    showToast(
+                        'Nomor WhatsApp petugas tidak tersedia.',
+                        'info'
+                    );
+                    setTimeout(() => {
+                        window.location.href =
+                            'laporan_sampah.php?tab=penanganan&msg=' +
+                            encodeURIComponent('Laporan berhasil diterima') +
+                            '&msg_type=success';
+                    }, 1500);
                 }
-            })
-            .catch(() => showToast('Terjadi kesalahan server.', 'error'));
+            } else {
+                showToast(
+                    data.message || 'Gagal memproses laporan.',
+                    'error'
+                );
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            showToast('Terjadi kesalahan server.', 'error');
+        });
+
         }
 
         function konfirmasiTolak() {
