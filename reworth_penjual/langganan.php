@@ -1,5 +1,6 @@
 <?php
 session_start();
+date_default_timezone_set('Asia/Jakarta');
 
 if (!isset($_SESSION['id_penjual'])) {
     header("Location: login.php");
@@ -42,7 +43,8 @@ $getLangganan = curlRequest(
     ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
 );
 
-$langgananList = json_decode($getLangganan['response'], true) ?? [];
+$allData = json_decode($getLangganan['response'], true);
+$langgananList = is_array($allData) ? $allData : [];
 
 // Cek langganan aktif
 $tanggalMulai = '';
@@ -51,7 +53,7 @@ $isExpired = true;
 $hariTersisa = 0;
 
 foreach ($langgananList as $l) {
-    if ($l['status'] === 'aktif') {
+    if (is_array($l) && isset($l['status']) && $l['status'] === 'aktif') {
         $tanggalMulai = $l['tanggal_mulai'];
         $tanggalSelesai = $l['tanggal_selesai'];
         
@@ -90,6 +92,7 @@ if ($isExpired) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style/root.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <aside class="sidebar">
@@ -128,7 +131,7 @@ if ($isExpired) {
 
         <div class="content-area">
             <?php if ($warningMessage): ?>
-                <br><br>
+                <br>
             <div class="alert alert-<?= $warningType ?> mb-4">
                 <div class="d-flex gap-2">
                     <i class="bi bi-exclamation-triangle-fill fs-5"></i>
@@ -137,32 +140,44 @@ if ($isExpired) {
             </div>
             <?php endif; ?>
 
-            <div class="card-custom">
+            <!-- Status Langganan dengan layout baru -->
+            <div class="card-custom card-with-accent langganan-card">
+                <div class="card-accent"></div>
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-4">Status Langganan</h5>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <div class="text-muted small text-uppercase">TANGGAL MULAI</div>
-                            <div class="fw-bold fs-5"><?= !$isExpired ? date('d F Y', strtotime($tanggalMulai)) : '-' ?></div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="text-muted small text-uppercase">TANGGAL SELESAI</div>
-                            <div class="fw-bold fs-5"><?= !$isExpired ? date('d F Y', strtotime($tanggalSelesai)) : '-' ?></div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="text-muted small text-uppercase">STATUS</div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <!-- Bagian Kiri: Tanggal dan Status (atas ke bawah) -->
+                        <div class="flex-grow-1">
+                            <div class="mb-4">
+                                <div class="text-muted small text-uppercase">TANGGAL MULAI</div>
+                                <div class="fw-bold fs-5"><?= !$isExpired ? date('d F Y', strtotime($tanggalMulai)) : '-' ?></div>
+                            </div>
+                            <div class="mb-4">
+                                <div class="text-muted small text-uppercase">TANGGAL SELESAI</div>
+                                <div class="fw-bold fs-5"><?= !$isExpired ? date('d F Y', strtotime($tanggalSelesai)) : '-' ?></div>
+                            </div>
                             <div>
-                                <?php if ($isExpired): ?>
-                                    <span class="badge bg-danger">Kadaluarsa</span>
-                                <?php else: ?>
-                                    <span class="badge bg-success">Aktif</span>
-                                <?php endif; ?>
+                                <div class="text-muted small text-uppercase">STATUS</div>
+                                <div>
+                                    <?php if ($isExpired): ?>
+                                        <span class="badge bg-danger">Kadaluarsa</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-success">Aktif</span>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="d-flex gap-3 mt-3">
-                        <a href="langganan_riwayat.php" class="btn btn-outline-secondary btn-sm">LIHAT RIWAYAT PEMBAYARAN</a>
-                        <a href="langganan_perpanjang.php" class="btn btn-success btn-sm">PERPANJANG LANGGANAN</a>
+
+                        <!-- Bagian Kanan: Tombol (atas ke bawah) -->
+                        <div class="d-flex flex-column gap-3" style="min-width: 200px;">
+                            <a href="langganan_riwayat.php" class="btn btn-outline-secondary w-100">
+                                LIHAT RIWAYAT PEMBAYARAN
+                            </a>
+                            <a href="langganan_perpanjang.php" class="btn btn-success w-100">
+                                PERPANJANG LANGGANAN
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -179,5 +194,8 @@ if ($isExpired) {
             </div>
         </div>
     </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
