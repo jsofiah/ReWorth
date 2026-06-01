@@ -45,6 +45,7 @@
     $total_val_pages = max(1, ceil($total_val / $per_page));
     $val_start       = ($cur_val_page - 1) * $per_page;
     $cur_val         = array_slice($laporanValidasi, $val_start, $per_page);
+    $val_from        = $total_val > 0 ? $val_start + 1 : 0;
     $val_to          = min($val_start + $per_page, $total_val);
 
     $cur_pen_page    = isset($_GET['pen_page']) ? (int)$_GET['pen_page'] : 1;
@@ -52,6 +53,7 @@
     $total_pen_pages = max(1, ceil($total_pen / $per_page));
     $pen_start       = ($cur_pen_page - 1) * $per_page;
     $cur_pen         = array_slice($laporanPenanganan, $pen_start, $per_page);
+    $pen_from        = $total_pen > 0 ? $pen_start + 1 : 0;
     $pen_to          = min($pen_start + $per_page, $total_pen);
 
     $activeTab = $_GET['tab'] ?? 'validasi';
@@ -208,13 +210,8 @@
                         </table>
                     </div>
                     <div class="table-footer">
-                        <div class="showing-text">Showing <b><?= $val_to ?></b> of <b><?= $total_val ?></b> entries</div>
+                        <div class="showing-text">Showing <b><?= $val_from ?></b> to <b><?= $val_to ?></b> of <b><?= $total_val ?></b> entries</div>
                         <div class="pagination-custom">
-                            <?php if ($cur_val_page > 1): ?>
-                                <a href="?val_page=<?= $cur_val_page-1 ?>&tab=validasi" class="page-btn page-btn-text">Previous</a>
-                            <?php else: ?>
-                                <span class="page-btn page-btn-text disabled">Previous</span>
-                            <?php endif; ?>
                             <?php for ($i = 1; $i <= $total_val_pages; $i++): ?>
                                 <a href="?val_page=<?= $i ?>&tab=validasi" class="page-btn <?= $i == $cur_val_page ? 'active' : '' ?>"><?= $i ?></a>
                             <?php endfor; ?>
@@ -280,13 +277,8 @@
                         </table>
                     </div>
                     <div class="table-footer">
-                        <div class="showing-text">Showing <b><?= $pen_to ?></b> of <b><?= $total_pen ?></b> entries</div>
+                        <div class="showing-text">Showing <b><?= $pen_from ?></b> to <b><?= $pen_to ?></b> of <b><?= $total_pen ?></b> entries</div>
                         <div class="pagination-custom">
-                            <?php if ($cur_pen_page > 1): ?>
-                                <a href="?pen_page=<?= $cur_pen_page-1 ?>&tab=penanganan" class="page-btn page-btn-text">Previous</a>
-                            <?php else: ?>
-                                <span class="page-btn page-btn-text disabled">Previous</span>
-                            <?php endif; ?>
                             <?php for ($i = 1; $i <= $total_pen_pages; $i++): ?>
                                 <a href="?pen_page=<?= $i ?>&tab=penanganan" class="page-btn <?= $i == $cur_pen_page ? 'active' : '' ?>"><?= $i ?></a>
                             <?php endfor; ?>
