@@ -50,148 +50,10 @@
     <title>DLH – Detail Penanganan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style/root.css">
+    <link rel="stylesheet" href="style/form.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        .detail-bar-wrap {
-            position: relative;
-            margin-top: -52px;
-            padding: 0 40px 40px;
-            z-index: 10;
-        }
-        .back-btn-topbar {
-            display: inline-flex; align-items: center; gap: 6px;
-            font-size: 13px; font-weight: 500;
-            color: rgba(255,255,255,0.85);
-            text-decoration: none; margin-top: 6px;
-            transition: color .2s;
-        }
-        .back-btn-topbar:hover { color: #fff; }
-        .back-btn-topbar i { font-size: 15px; }
-
-        /* Card layout */
-        .detail-card {
-            background: #fff; border-radius: 20px;
-            box-shadow: 0 2px 16px rgba(0,145,110,.07); overflow: hidden;
-        }
-        /* Saat selesai (ada bukti) → kanan lebih lebar untuk 2 foto */
-        .detail-card-inner {
-            display: grid;
-            grid-template-columns: 1fr 380px;
-        }
-        .detail-card-inner.has-bukti {
-            grid-template-columns: 1fr 340px;
-        }
-        .detail-left {
-            padding: 36px 36px 36px 52px;
-            border-right: 1.5px solid #E2EDE8;
-            position: relative;
-        }
-        .detail-accent {
-            position: absolute; left: 22px; top: 22px; bottom: 22px;
-            width: 14px; border-radius: 30px; background: #8F784C;
-        }
-
-        /* Kolom kanan: foto tunggal (diproses) */
-        .detail-right { padding: 0; }
-        .detail-foto-single {
-            width: 100%; height: 100%; min-height: 300px;
-            object-fit: cover; display: block;
-            border-radius: 0 20px 20px 0;
-        }
-        .detail-foto-placeholder {
-            width: 100%; min-height: 300px;
-            background: linear-gradient(135deg,#E2EDE8,#C8DACE);
-            border-radius: 0 20px 20px 0;
-            display: flex; align-items: center; justify-content: center;
-            color: #8AA29E; font-size: 48px;
-        }
-
-        /* Kolom kanan: 2 foto (selesai) */
-        .detail-right-bukti {
-            padding: 28px 28px 28px 20px;
-            display: flex; flex-direction: column; gap: 20px;
-        }
-        .foto-box-label {
-            font-size: 15px; font-weight: 700;
-            color: #1A2E24; margin-bottom: 10px;
-        }
-        .foto-box img {
-            width: 100%; border-radius: 12px;
-            object-fit: cover; max-height: 180px;
-            border: 1.5px solid #E2EDE8;
-        }
-        .foto-box-placeholder {
-            width: 100%; height: 150px;
-            background: #F4F7F5; border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            color: #8AA29E; font-size: 32px;
-            border: 1.5px solid #E2EDE8;
-        }
-
-        /* Teks detail */
-        .detail-section-title {
-            font-size: 13px; font-weight: 700; color: #8F784C;
-            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
-        }
-        .detail-nama { font-size: 28px; font-weight: 800; color: #1A2E24; margin-bottom: 20px; }
-        .detail-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px; font-size: 14px; }
-        .detail-row-label { min-width: 130px; color: #6B8A7E; font-weight: 500; }
-        .detail-row-colon { color: #6B8A7E; }
-        .detail-row-value { color: #1A2E24; font-weight: 500; flex: 1; }
-
-        /* Tombol Update Penanganan */
-        .btn-update-wrap { margin-top: 32px; }
-        .btn-update {
-            padding: 12px 32px; border-radius: 12px; border: none;
-            background: #4EAC91; color: #fff; font-size: 14px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: .5px;
-            cursor: pointer; font-family: inherit;
-            box-shadow: 0 4px 14px rgba(78,172,145,.35); transition: all .2s;
-        }
-        .btn-update:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(78,172,145,.45); }
-
-        /* Modal */
-        .modal-header-custom {
-            background: #4EAC91; border-radius: 16px 16px 0 0;
-            padding: 18px 24px; display: flex; align-items: center; justify-content: space-between;
-        }
-        .modal-header-title { font-size: 16px; font-weight: 700; color: #fff; }
-        .modal-close-btn { background: transparent; border: none; color: #fff; font-size: 18px; cursor: pointer; padding: 0; }
-        .modal-body-custom { padding: 24px; }
-        .modal-field-label {
-            font-size: 12px; font-weight: 700; color: #6B8A7E;
-            text-transform: uppercase; letter-spacing: .8px; margin-bottom: 12px; display: block;
-        }
-        .file-input-wrap {
-            display: flex; align-items: center; gap: 12px;
-            border-bottom: 2px solid #D6DEDA; padding-bottom: 12px;
-        }
-        .file-input-label {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 7px 16px; background: #E8E8E8; border-radius: 8px;
-            font-size: 13px; font-weight: 600; cursor: pointer; color: #1A2E24;
-            white-space: nowrap;
-        }
-        .file-input-name { font-size: 13px; color: #8AA29E; }
-        .btn-simpan-modal {
-            width: 100%; padding: 12px; background: #4EAC91; color: #fff;
-            border: none; border-radius: 12px; font-size: 14px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: .5px;
-            cursor: pointer; font-family: inherit; margin-top: 20px;
-            box-shadow: 0 4px 14px rgba(78,172,145,.3); transition: all .2s;
-        }
-        .btn-simpan-modal:hover { transform: translateY(-1px); }
-        .btn-simpan-modal:disabled { opacity: .6; cursor: not-allowed; transform: none; }
-
-        @media (max-width: 768px) {
-            .detail-bar-wrap { padding: 0 16px 32px; }
-            .detail-card-inner, .detail-card-inner.has-bukti { grid-template-columns: 1fr; }
-            .detail-foto-single, .detail-foto-placeholder { min-height: 200px; border-radius: 0; }
-            .detail-right-bukti { padding: 20px; }
-            .detail-left { padding: 24px 20px 24px 40px; }
-        }
-    </style>
+    
 </head>
 <body>
     <aside class="sidebar">
@@ -213,12 +75,7 @@
     <div class="main-wrap">
         <div class="topbar">
             <div class="topbar-inner">
-                <div>
-                    <h1 class="topbar-title">Laporan Sampah</h1>
-                    <a href="laporan_sampah.php?tab=penanganan" class="back-btn-topbar">
-                        <i class="bi bi-arrow-left-circle-fill"></i> Kembali ke Laporan Sampah
-                    </a>
-                </div>
+                <h1 class="topbar-title">Laporan Sampah</h1>
                 <div class="topbar-user">
                     <div class="topbar-user-info">
                         <div class="topbar-user-name"><?= htmlspecialchars($userName) ?></div>
@@ -237,6 +94,7 @@
         </div>
 
         <div class="detail-bar-wrap">
+            <a href="laporan_sampah.php?tab=penanganan" class="back-btn"><i class="bi bi-arrow-left-circle-fill"></i> Kembali ke Laporan Sampah</a>
             <div class="detail-card">
                 <div class="detail-card-inner <?= $buktiUrl ? 'has-bukti' : '' ?>">
 

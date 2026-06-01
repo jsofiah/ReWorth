@@ -48,8 +48,8 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
 if ($httpCode === 200 || $httpCode === 204) {
-    // Kirim notifikasi ke pengguna: ambil id_pengguna dari laporan
-    $getLaporan = $supabaseUrl . "/rest/v1/lapor_sampah?id_laporan=eq." . urlencode($id) . "&select=id_pengguna,lokasi";
+    // Ambil id_pengguna untuk notifikasi
+    $getLaporan = $supabaseUrl . "/rest/v1/lapor_sampah?id_laporan=eq." . urlencode($id) . "&select=id_pengguna";
     $ch2 = curl_init();
     curl_setopt($ch2, CURLOPT_URL, $getLaporan);
     curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
@@ -57,7 +57,7 @@ if ($httpCode === 200 || $httpCode === 204) {
         "apikey: $supabaseKey",
         "Authorization: Bearer $supabaseKey"
     ]);
-    $resLaporan = curl_exec($ch2);
+    $resLaporan  = curl_exec($ch2);
     curl_close($ch2);
     $laporanData = json_decode($resLaporan, true);
     $idPengguna  = $laporanData[0]['id_pengguna'] ?? null;
@@ -69,9 +69,8 @@ if ($httpCode === 200 || $httpCode === 204) {
             'deskripsi'   => 'Laporan sampah Anda telah diterima dan sedang dalam proses penanganan oleh petugas lapangan.',
             'is_read'     => false
         ];
-        $notifUrl = $supabaseUrl . "/rest/v1/notifikasi";
         $ch3 = curl_init();
-        curl_setopt($ch3, CURLOPT_URL, $notifUrl);
+        curl_setopt($ch3, CURLOPT_URL, $supabaseUrl . "/rest/v1/notifikasi");
         curl_setopt($ch3, CURLOPT_POST, true);
         curl_setopt($ch3, CURLOPT_POSTFIELDS, json_encode($notifData));
         curl_setopt($ch3, CURLOPT_HTTPHEADER, [

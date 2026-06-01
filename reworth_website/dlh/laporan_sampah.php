@@ -35,7 +35,7 @@
         return [];
     }
 
-    $laporanValidasi   = fetchData($supabaseUrl . "/rest/v1/lapor_sampah?select=*,pengguna!lapor_sampah_id_pengguna_fkey(nama_lengkap)&status=eq.menunggu_konfirmasi&order=created_at.desc", $supabaseKey);
+    $laporanValidasi   = fetchData($supabaseUrl . "/rest/v1/lapor_sampah?select=*,pengguna!lapor_sampah_id_pengguna_fkey(nama_lengkap)&status=eq.menunggu&order=created_at.desc", $supabaseKey);
     $laporanPenanganan = fetchData($supabaseUrl . "/rest/v1/lapor_sampah?select=*,pengguna!lapor_sampah_id_pengguna_fkey(nama_lengkap),petugas_lapangan!lapor_sampah_id_petugas_fkey(nama_petugas)&status=in.(diproses,selesai,ditolak)&order=created_at.desc", $supabaseKey);
 
     $per_page = 10;
@@ -64,6 +64,7 @@
     <title>DLH – Laporan Sampah</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style/root.css">
+    <link rel="stylesheet" href="style/form.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>

@@ -220,24 +220,37 @@ body {
 
 .filter-dropdown{
     position:relative;
+    display: inline-block;
 }
 
-.filter-box{
-    position:absolute;
-    top:55px;
-    right:0;
-    width:260px;
-    background:#fff;
-    border-radius:18px;
-    padding:18px;
-    box-shadow:0 10px 30px rgba(0,0,0,.08);
-    display:none;
-    z-index:999;
-    border:1px solid #E7EFEA;
+.filter-box {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 280px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    z-index: 1000;
+    display: none;
 }
 
 .filter-box.show{
     display:block;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .filter-group{
@@ -252,38 +265,76 @@ body {
     color:#2F5D50;
 }
 
-.filter-group select{
+.filter-group select,
+.filter-group input{
     width:100%;
     border:1px solid #D8E6DE;
     border-radius:12px;
     padding:10px 12px;
     outline:none;
     font-size:14px;
+    color: #374151;
+    background: white;
+    transition: all 0.2s;
 }
 
-.filter-actions{
-    display:flex;
-    gap:10px;
+.filter-group select:focus,
+.filter-group input:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
 }
 
-.filter-actions button{
-    flex:1;
-    border:none;
-    border-radius:12px;
-    padding:10px;
-    font-size:14px;
-    font-weight:600;
-    cursor:pointer;
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
 }
 
-.filter-actions button:first-child{
-    background:#EEF4F0;
-    color:#2F5D50;
+.filter-actions button {
+    flex: 1;
+    padding: 8px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-.filter-actions button:last-child{
-    background:#2F5D50;
-    color:white;
+.filter-actions button:first-child {
+    background: white;
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+}
+
+.filter-actions button:first-child:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+.filter-actions button:last-child {
+    background: #10b981;
+    border: none;
+    color: white;
+}
+
+.filter-actions button:last-child:hover {
+    background: #059669;
+}
+
+.filter-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #10b981;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 2px 6px;
+    margin-left: 4px;
 }
 
 .search-wrap {
@@ -617,6 +668,13 @@ tbody td {
     background: #fff;
     border-radius: 20px;
     padding: 32px;
+    width: 100%; max-width: 520px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.15);
+    animation: modalIn .25s ease;
+}
+.modal-box2 {
+    background: #fff;
+    border-radius: 20px;
     width: 100%; max-width: 520px;
     box-shadow: 0 20px 60px rgba(0,0,0,.15);
     animation: modalIn .25s ease;
@@ -1307,4 +1365,80 @@ tbody td {
         width: 32px;
         height: 32px;
     }
+}
+
+.modal-header-custom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+    border-radius: 16px 16px 0 0;
+}
+
+.modal-header-custom h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.modal-header-custom h3 i {
+    margin-right: 8px;
+    color: #10b981;
+}
+
+.btn-close-modal {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6b7280;
+    transition: color 0.2s;
+    line-height: 1;
+}
+
+.btn-close-modal:hover {
+    color: #ef4444;
+}
+
+.modal-body-custom {
+    padding: 20px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.modal-footer-custom {
+    padding: 16px 20px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    background: #f9fafb;
+    border-radius: 0 0 16px 16px;
+}
+
+.detail-info {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.detail-row {
+    display: flex;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-row label {
+    width: 140px;
+    font-weight: 600;
+    color: #4b5563;
+    font-size: 13px;
+}
+
+.detail-row span {
+    flex: 1;
+    color: #1f2937;
+    font-size: 13px;
 }

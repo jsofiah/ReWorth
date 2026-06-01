@@ -624,3 +624,31 @@ input[type="file"] {
     padding: 16px;
     border-radius: 14px;
 }
+
+@keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .dynamic-field {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .dynamic-field.show {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
