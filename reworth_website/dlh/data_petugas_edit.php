@@ -9,6 +9,12 @@
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 
+    $petugasId = $_GET['id'] ?? '';
+    if (empty($petugasId)) {
+        header("Location: data_petugas.php");
+        exit;
+    }
+
     $userName  = $_SESSION['nama_admin']  ?? 'User';
     $userEmail = $_SESSION['email']       ?? 'user@example.com';
     $userFoto  = $_SESSION['foto_profil'] ?? '';
@@ -18,81 +24,109 @@
         return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
     }
 
+    // Fetch current data
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $supabaseUrl . "/rest/v1/petugas_lapangan?id_petugas=eq." . urlencode($petugasId) . "&select=*");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "apikey: $supabaseKey",
+        "Authorization: Bearer $supabaseKey"
+    ]);
+    $resp     = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    $result  = ($httpCode === 200) ? json_decode($resp, true) : [];
+    $petugas = $result[0] ?? null;
+    if (!$petugas) {
+        header("Location: data_petugas.php");
+        exit;
+    }
+
+    $isAktif = $petugas['status_aktif'] === true || $petugas['status_aktif'] === 'true';
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         header('Content-Type: application/json');
 
+        $petugas_id   = $_POST['petugas_id']   ?? '';
         $nama_petugas = trim($_POST['nama_petugas'] ?? '');
         $no_telepon   = trim($_POST['no_telepon']   ?? '');
-        // status_aktif adalah boolean di DB
         $status_aktif = ($_POST['status_aktif'] ?? 'true') === 'true';
 
-        if (empty($nama_petugas) || empty($no_telepon)) {
-            echo json_encode(['success' => false, 'message' => 'Data wajib tidak lengkap']);
-            exit;
-        }
-
-        $foto_path = '';
+        $data = [
+            'nama_petugas' => $nama_petugas,
+            'no_telepon'   => $no_telepon,
+            'status_aktif' => $status_aktif
+        ];
 
         if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] === UPLOAD_ERR_OK) {
+
+            // Hapus foto lama di bucket
+            if (!empty($petugas['foto_profil'])) {
+                $delBody = json_encode(["prefixes" => [$petugas['foto_profil']]]);
+                $delCh   = curl_init();
+                curl_setopt($delCh, CURLOPT_URL, $supabaseUrl . "/storage/v1/object/media");
+                curl_setopt($delCh, CURLOPT_CUSTOMREQUEST, "DELETE");
+                curl_setopt($delCh, CURLOPT_POSTFIELDS, $delBody);
+                curl_setopt($delCh, CURLOPT_HTTPHEADER, [
+                    "apikey: $supabaseKey",
+                    "Authorization: Bearer $supabaseKey",
+                    "Content-Type: application/json"
+                ]);
+                curl_setopt($delCh, CURLOPT_RETURNTRANSFER, true);
+                curl_exec($delCh);
+                curl_close($delCh);
+            }
+
             $file      = $_FILES['foto_profil'];
             $filename  = 'petugas/' . time() . '_' . preg_replace('/[^A-Za-z0-9.\-_]/', '', $file['name']);
             $uploadUrl = $supabaseUrl . "/storage/v1/object/media/" . $filename;
             $fileData  = file_get_contents($file['tmp_name']);
 
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $uploadUrl);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $fileData);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            $upCh = curl_init();
+            curl_setopt($upCh, CURLOPT_URL, $uploadUrl);
+            curl_setopt($upCh, CURLOPT_CUSTOMREQUEST, "POST");
+            curl_setopt($upCh, CURLOPT_POSTFIELDS, $fileData);
+            curl_setopt($upCh, CURLOPT_HTTPHEADER, [
                 "apikey: $supabaseKey",
                 "Authorization: Bearer $supabaseKey",
                 "Content-Type: " . $file['type'],
-                "x-upsert: true"
+                "x-upsert: true",
+                "Content-Length: " . filesize($file['tmp_name'])
             ]);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $upResp = curl_exec($ch);
-            $upCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+            curl_setopt($upCh, CURLOPT_RETURNTRANSFER, true);
+            $upResp = curl_exec($upCh);
+            $upCode = curl_getinfo($upCh, CURLINFO_HTTP_CODE);
+            curl_close($upCh);
 
-            if ($upCode == 200 || $upCode == 201) {
-                $foto_path = $filename;
+            if ($upCode === 200 || $upCode === 201) {
+                $data['foto_profil'] = $filename;
             } else {
-                echo json_encode(['success' => false, 'message' => 'Upload foto gagal', 'debug' => $upResp]);
+                echo json_encode(['success' => false, 'message' => 'Upload foto baru gagal', 'debug' => $upResp]);
                 exit;
             }
         }
 
-        $data = [
-            'nama_petugas' => $nama_petugas,
-            'no_telepon'   => $no_telepon,
-            'status_aktif' => $status_aktif,   // boolean
-            'foto_profil'  => $foto_path,
-            'created_at'   => date('c')
-        ];
-
-        $ch = curl_init($supabaseUrl . "/rest/v1/petugas_lapangan");
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        $patchCh = curl_init($supabaseUrl . "/rest/v1/petugas_lapangan?id_petugas=eq." . $petugas_id);
+        curl_setopt($patchCh, CURLOPT_CUSTOMREQUEST, "PATCH");
+        curl_setopt($patchCh, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($patchCh, CURLOPT_HTTPHEADER, [
             "apikey: $supabaseKey",
             "Authorization: Bearer $supabaseKey",
             "Content-Type: application/json",
-            "Prefer: return=representation"
+            "Prefer: return=minimal"
         ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        curl_setopt($patchCh, CURLOPT_RETURNTRANSFER, true);
+        $patchResp = curl_exec($patchCh);
+        $patchCode = curl_getinfo($patchCh, CURLINFO_HTTP_CODE);
+        curl_close($patchCh);
 
-        if ($httpCode === 200 || $httpCode === 201) {
-            $newData = json_decode($response, true);
-            $newId   = $newData[0]['id_petugas'] ?? null;
-
-            // Log — id_data integer di DB, kirim null jika uuid
+        if ($patchCode === 200 || $patchCode === 204) {
+            // Log
             $logData = [
                 'id_admin'      => $_SESSION['id_admin'],
-                'aktivitas'     => 'Menambahkan petugas baru: ' . $nama_petugas,
+                'aktivitas'     => 'Mengedit data petugas: ' . $nama_petugas,
                 'tabel_terkait' => 'petugas_lapangan',
                 'created_at'    => date('c')
             ];
@@ -109,9 +143,9 @@
             curl_exec($logCh);
             curl_close($logCh);
 
-            echo json_encode(['success' => true, 'message' => 'Petugas berhasil ditambahkan']);
+            echo json_encode(['success' => true, 'message' => 'Data petugas berhasil diperbarui']);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Gagal menyimpan data', 'debug' => $response]);
+            echo json_encode(['success' => false, 'message' => 'Gagal mengupdate data', 'debug' => $patchResp]);
         }
         exit;
     }
@@ -121,7 +155,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tambah Petugas - DLH</title>
+    <title>Edit Petugas - DLH</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style/root.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -186,36 +220,47 @@
             <div class="form-container">
                 <div class="form-section">
                     <div class="inside-header">
-                        <h2>Tambah Data Petugas</h2>
+                        <h2>Edit Data Petugas</h2>
                     </div>
 
                     <form id="petugasForm" enctype="multipart/form-data">
+                        <input type="hidden" id="petugas_id" value="<?= htmlspecialchars($petugas['id_petugas']) ?>">
 
                         <div class="form-group">
                             <label class="form-label">Nama Lengkap</label>
                             <input type="text" class="form-control-custom" id="nama_petugas"
-                                placeholder="Masukkan nama lengkap petugas" required>
+                                value="<?= htmlspecialchars($petugas['nama_petugas'] ?? '') ?>" required>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">No. Telepon</label>
                             <input type="text" class="form-control-custom" id="no_telepon"
-                                placeholder="Contoh: 6281234567890" required>
+                                value="<?= htmlspecialchars($petugas['no_telepon'] ?? '') ?>" required>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Status Aktif</label>
                             <select class="form-control-custom" id="status_aktif">
-                                <option value="true">Aktif</option>
-                                <option value="false">Nonaktif</option>
+                                <option value="true"  <?= $isAktif ? 'selected' : '' ?>>Aktif</option>
+                                <option value="false" <?= !$isAktif ? 'selected' : '' ?>>Nonaktif</option>
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Foto Petugas</label>
+                            <label class="form-label">Foto Petugas Saat Ini</label>
+                            <?php if (!empty($petugas['foto_profil'])): ?>
+                                <div class="current-image">
+                                    <img src="<?= htmlspecialchars(getSupabaseImageUrl($petugas['foto_profil'])) ?>"
+                                        style="width:100px;height:100px;object-fit:cover;border-radius:12px;">
+                                </div>
+                            <?php else: ?>
+                                <div style="color:#aaa;font-size:13px;margin-bottom:8px;">Tidak ada foto</div>
+                            <?php endif; ?>
+
+                            <label class="form-label" style="margin-top:12px;">Ganti Foto Petugas</label>
                             <div class="file-input-wrapper">
                                 <label class="file-input-label">
-                                    <i class="bi bi-cloud-upload"></i> Pilih file
+                                    <i class="bi bi-cloud-upload"></i> Pilih File Baru
                                     <input type="file" id="foto_profil" accept="image/*" onchange="previewImage(this)">
                                 </label>
                                 <span class="selected-filename" id="fileName">No file chosen</span>
@@ -246,7 +291,7 @@
                 reader.onload = e => {
                     const div = document.createElement('div');
                     div.className = 'preview-item';
-                    div.innerHTML = `<img src="${e.target.result}" alt="Preview">
+                    div.innerHTML = `<img src="${e.target.result}">
                         <button type="button" class="remove-image" onclick="removeImage(this)">
                             <i class="bi bi-x"></i></button>`;
                     preview.appendChild(div);
@@ -264,6 +309,7 @@
         document.getElementById('petugasForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const formData = new FormData();
+            formData.append('petugas_id',   document.getElementById('petugas_id').value);
             formData.append('nama_petugas', document.getElementById('nama_petugas').value);
             formData.append('no_telepon',   document.getElementById('no_telepon').value);
             formData.append('status_aktif', document.getElementById('status_aktif').value);
@@ -274,10 +320,10 @@
                 const res  = await fetch(window.location.href, { method: 'POST', body: formData });
                 const data = await res.json();
                 if (data.success) {
-                    showToast('Petugas berhasil ditambahkan!', 'success');
+                    showToast('Data petugas berhasil diperbarui!', 'success');
                     setTimeout(() => window.location.href = 'data_petugas.php', 1500);
                 } else {
-                    showToast(data.message || 'Gagal menambahkan petugas', 'error');
+                    showToast(data.message || 'Gagal mengupdate petugas', 'error');
                 }
             } catch { showToast('Terjadi kesalahan pada server', 'error'); }
         });
