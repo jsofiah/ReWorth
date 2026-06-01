@@ -379,11 +379,7 @@
                 </div>
                 <div class="table-footer" id="footer-riwayat">
                     <div class="showing-text">
-                        <?php if ($total_rv > 0): ?>
-                            Showing <b><?= $rv_to ?></b> of <b><?= $total_rv ?></b> entries
-                        <?php else: ?>
-                            Tidak ada data
-                        <?php endif; ?>
+                        Showing <b><?= $rv_from ?></b> to <b><?= $rv_to ?></b> of <b><?= $total_rv ?></b> entries
                     </div>
                     <div class="pagination-custom">
 
