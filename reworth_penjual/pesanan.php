@@ -1,5 +1,6 @@
 <?php
 session_start();
+date_default_timezone_set('Asia/Jakarta');
 
 if (!isset($_SESSION['id_penjual'])) {
     header("Location: login.php");
@@ -65,8 +66,7 @@ $search = $_GET['search'] ?? '';
 if (!empty($search)) {
     $pesananList = array_filter($pesananList, function($p) use ($search) {
         return stripos($p['produk']['nama_produk'] ?? '', $search) !== false ||
-               stripos($p['alamat_pengiriman'] ?? '', $search) !== false ||
-               stripos($p['nomor_resi'] ?? '', $search) !== false;
+               stripos($p['alamat_pengiriman'] ?? '', $search) !== false;
     });
 }
 
@@ -144,7 +144,7 @@ function getStatusBadge($status) {
                     <i class="bi bi-search"></i>
                     <input type="text" class="search-input" placeholder="Cari pesanan..." id="searchInput" value="<?= htmlspecialchars($search) ?>">
                 </div>
-                <select id="statusFilter" class="form-select w-auto" style="width: auto;">
+                <select id="statusFilter" class="form-select w-auto">
                     <option value="semua" <?= $filterStatus == 'semua' ? 'selected' : '' ?>>Semua Status</option>
                     <option value="menunggu_pembayaran" <?= $filterStatus == 'menunggu_pembayaran' ? 'selected' : '' ?>>Menunggu Pembayaran</option>
                     <option value="diproses" <?= $filterStatus == 'diproses' ? 'selected' : '' ?>>Diproses</option>
@@ -152,9 +152,7 @@ function getStatusBadge($status) {
                     <option value="selesai" <?= $filterStatus == 'selesai' ? 'selected' : '' ?>>Selesai</option>
                     <option value="dibatalkan" <?= $filterStatus == 'dibatalkan' ? 'selected' : '' ?>>Dibatalkan</option>
                 </select>
-                <a href="pesanan_tambah.php" class="btn-tambah">
-                    <i class="bi bi-plus-lg"></i> Tambah Pesanan
-                </a>
+
             </div>
         </div>
 
@@ -163,37 +161,30 @@ function getStatusBadge($status) {
                 <div class="table-scroll-wrapper">
                     <table class="responsive-table">
                         <thead>
-                            <tr><th>No</th><th>ID Pesanan</th><th>Produk</th><th>Total</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr>
+                            <tr>
+                                <th class="text-center">No</th>
+                                <th>Nama Pesanan</th>
+                                <th>Alamat Pembeli</th>
+                                <th class="text-center">Total Bayar</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Aksi</th>
+                            </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($current_data)): ?>
-                                <tr><td colspan="7" class="text-center py-4">Belum ada pesanan</td></tr>
+                                <tr><td colspan="6" class="text-center py-4">Belum ada pesanan</td></tr>
                             <?php else: ?>
                                 <?php $no = $showing_from; foreach ($current_data as $p): ?>
                                 <tr>
-                                    <td><?= $no++ ?></td>
-                                    <td><small><?= substr($p['id_pesanan'], 0, 8) ?>...</small></td>
+                                    <td class="text-center"><?= $no++ ?></td>
                                     <td><?= htmlspecialchars($p['produk']['nama_produk'] ?? '-') ?></td>
-                                    <td>Rp <?= number_format($p['total_bayar'], 0, ',', '.') ?></td>
-                                    <td><?= getStatusBadge($p['status']) ?></td>
-                                    <td><?= date('d/m/Y', strtotime($p['created_at'])) ?></td>
-                                    <td>
-                                        <div class="d-flex gap-2 flex-wrap">
-                                            <a href="pesanan_detail.php?id=<?= $p['id_pesanan'] ?>" class="btn-aksi btn-lihat"><i class="bi bi-eye"></i> Detail</a>
-                                            
-                                            <?php if ($p['status'] == 'menunggu_pembayaran'): ?>
-                                                <button class="btn-aksi btn-edit" onclick="updateStatus('<?= $p['id_pesanan'] ?>', 'diproses')"><i class="bi bi-check-lg"></i> Proses</button>
-                                                <button class="btn-aksi btn-hapus" onclick="updateStatus('<?= $p['id_pesanan'] ?>', 'dibatalkan')"><i class="bi bi-x-lg"></i> Batal</button>
-                                            
-                                            <?php elseif ($p['status'] == 'diproses'): ?>
-                                                <button class="btn-aksi btn-edit" onclick="openResiModal('<?= $p['id_pesanan'] ?>')"><i class="bi bi-truck"></i> Kirim</button>
-                                            
-                                            <?php elseif ($p['status'] == 'dikirim'): ?>
-                                                <button class="btn-aksi btn-success" onclick="updateStatus('<?= $p['id_pesanan'] ?>', 'selesai')"><i class="bi bi-check-circle"></i> Selesai</button>
-                                            <?php endif; ?>
-                                            
-                                            <button class="btn-aksi btn-hapus" onclick="hapusPesanan('<?= $p['id_pesanan'] ?>')"><i class="bi bi-trash"></i> Hapus</button>
-                                        </div>
+                                    <td><?= htmlspecialchars(substr($p['alamat_pengiriman'], 0, 50)) ?>...</td>
+                                    <td class="text-center">Rp <?= number_format($p['total_bayar'], 0, ',', '.') ?></td>
+                                    <td class="text-center"><?= getStatusBadge($p['status']) ?></td>
+                                    <td class="text-center">
+                                        <button class="btn-aksi btn-lihat" onclick="lihatDetail('<?= $p['id_pesanan'] ?>')">
+                                            <i class="bi bi-eye"></i> Detail
+                                        </button>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -219,17 +210,13 @@ function getStatusBadge($status) {
         </div>
     </div>
 
-    <!-- Modal Input Resi -->
-    <div class="modal-overlay" id="modalResi">
-        <div class="modal-box" style="max-width: 450px;">
-            <div class="modal-title">Input Nomor Resi<button class="modal-close" onclick="closeModal('modalResi')">&times;</button></div>
-            <div class="form-group">
-                <label class="form-label">Nomor Resi Pengiriman</label>
-                <input type="text" id="resiNumber" class="form-control-custom" placeholder="Masukkan nomor resi">
-            </div>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal('modalResi')">Batal</button>
-                <button class="btn-save" onclick="submitResi()">Kirim</button>
+    <!-- Modal Detail Pesanan -->
+    <div class="modal-overlay" id="modalDetail">
+        <div class="modal-box" style="max-width: 550px;">
+            <div class="modal-title">Detail Pesanan <button class="modal-close" onclick="closeModal('modalDetail')">&times;</button></div>
+            <div id="detailContent"></div>
+            <div class="modal-actions mt-3">
+                <button class="btn-cancel" onclick="closeModal('modalDetail')">Tutup</button>
             </div>
         </div>
     </div>
@@ -237,8 +224,6 @@ function getStatusBadge($status) {
     <div class="toast-container" id="toastContainer"></div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let currentPesananId = null;
-
         function openModal(id) { document.getElementById(id).classList.add('show'); }
         function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
@@ -252,47 +237,13 @@ function getStatusBadge($status) {
             }
         });
 
-        function updateStatus(id, status) {
-            if (!confirm('Ubah status pesanan ini?')) return;
-            fetch('pesanan_update_status.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'id_pesanan=' + encodeURIComponent(id) + '&status=' + encodeURIComponent(status)
-            }).then(res => res.json()).then(data => {
-                showToast(data.message, data.success ? 'success' : 'error');
-                if (data.success) setTimeout(() => location.reload(), 1000);
-            });
-        }
-
-        function openResiModal(id) {
-            currentPesananId = id;
-            openModal('modalResi');
-        }
-
-        function submitResi() {
-            let resi = document.getElementById('resiNumber').value;
-            if (!resi) { showToast('Masukkan nomor resi', 'error'); return; }
-            fetch('pesanan_update_status.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'id_pesanan=' + encodeURIComponent(currentPesananId) + '&status=dikirim&nomor_resi=' + encodeURIComponent(resi)
-            }).then(res => res.json()).then(data => {
-                showToast(data.message, data.success ? 'success' : 'error');
-                closeModal('modalResi');
-                if (data.success) setTimeout(() => location.reload(), 1000);
-            });
-        }
-
-        function hapusPesanan(id) {
-            if (!confirm('Yakin hapus pesanan ini?')) return;
-            fetch('pesanan_hapus.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'id=' + encodeURIComponent(id)
-            }).then(res => res.json()).then(data => {
-                showToast(data.message, data.success ? 'success' : 'error');
-                if (data.success) setTimeout(() => location.reload(), 1000);
-            });
+        function lihatDetail(id) {
+            fetch('pesanan_detail_modal.php?id=' + id)
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('detailContent').innerHTML = html;
+                    openModal('modalDetail');
+                });
         }
 
         function showToast(msg, type) {
