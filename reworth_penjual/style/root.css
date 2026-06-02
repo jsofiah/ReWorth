@@ -618,6 +618,8 @@ tbody td {
     border-radius: 20px;
     padding: 32px;
     width: 100%; max-width: 520px;
+        max-height: 80vh;      /* ← TAMBAHKAN */
+    overflow-y: auto;      /* ← TAMBAHKAN */
     box-shadow: 0 20px 60px rgba(0,0,0,.15);
     animation: modalIn .25s ease;
 }
@@ -631,6 +633,18 @@ tbody td {
     color: var(--text-main);
     margin-bottom: 20px;
     display: flex; align-items: center; justify-content: space-between;
+}
+.modal-container {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    z-index: 1001;
+    min-width: 350px;
 }
 .modal-close {
     width: 32px; height: 32px; border-radius: 8px;
