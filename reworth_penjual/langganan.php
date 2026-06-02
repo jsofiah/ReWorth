@@ -51,33 +51,40 @@ $tanggalMulai = '';
 $tanggalSelesai = '';
 $isExpired = true;
 $hariTersisa = 0;
+$isPremium = false;
 
+$today = date('Y-m-d');
 foreach ($langgananList as $l) {
-    if (is_array($l) && isset($l['status']) && $l['status'] === 'aktif') {
-        $tanggalMulai = $l['tanggal_mulai'];
-        $tanggalSelesai = $l['tanggal_selesai'];
-        
-        $sekarang = new DateTime();
-        $tSelesai = new DateTime($tanggalSelesai);
-        $hariTersisa = $sekarang->diff($tSelesai)->days;
-        
-        if ($tanggalSelesai < date('Y-m-d')) {
-            $isExpired = true;
-        } else {
+    if ($l['status'] === 'aktif') {
+        $tanggalMulai = $l['tanggal_mulai'];     
+        $tanggalSelesai = $l['tanggal_selesai']; 
+        if ($l['tanggal_selesai'] >= $today) {
+            $isPremium = true;
             $isExpired = false;
+            $sekarang = new DateTime();
+            $tSelesai = new DateTime($tanggalSelesai);
+            $hariTersisa = $sekarang->diff($tSelesai)->days;
+        } else {
+            $isPremium = false;
+            $isExpired = true;
         }
         break;
     }
 }
 
+// Ambil notifikasi dari session (null jika belum pernah pilih)
+$notifikasiHari = $_SESSION['notifikasi_hari'] ?? null;
+
 // Peringatan
 $warningMessage = '';
 $warningType = '';
 
-if ($isExpired) {
+if (empty($langgananList)) {
+    $warningMessage = '';
+} elseif ($isExpired) {
     $warningMessage = "Langganan Anda telah berakhir! Segera lakukan perpanjangan agar layanan anda tidak terputus.";
     $warningType = "danger";
-} elseif ($hariTersisa <= 7) {
+} elseif ($notifikasiHari !== null && $hariTersisa <= $notifikasiHari && $hariTersisa > 0) {
     $warningMessage = "Masa aktif langganan anda akan berakhir dalam <strong>$hariTersisa hari</strong>, lakukan pembayaran perpanjangan agar layanan anda tidak terputus. Jika tidak, layanan langganan ini akan dinonaktifkan secara otomatis pada <strong>" . date('d F Y', strtotime($tanggalSelesai)) . "</strong>!";
     $warningType = "warning";
 }
