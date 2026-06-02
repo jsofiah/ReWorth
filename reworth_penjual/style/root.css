@@ -335,8 +335,9 @@ body {
     font-family: inherit;
     white-space: nowrap;
     box-shadow: 0 4px 14px rgba(255,207,0,.35);
+    text-decoration: none;
 }
-.btn-tambah:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(255,207,0,.45); }
+.btn-tambah:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(255,207,0,.45); text-decoration: none; }
 .btn-tambah i { font-size: 18px; }
 
 .content-area { padding: 0 40px 40px; }
