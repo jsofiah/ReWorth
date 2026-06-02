@@ -62,7 +62,7 @@ $tanggalMulai = '';
 $tanggalSelesai = '';
 
 foreach ($allLangganan as $l) {
-    if (is_array($l) && isset($l['status']) && $l['status'] === 'aktif') {
+    if ($l['status'] === 'aktif') {
         $tanggalMulai = $l['tanggal_mulai'];
         $tanggalSelesai = $l['tanggal_selesai'];
         if ($tanggalSelesai >= $today) {
