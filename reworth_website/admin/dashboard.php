@@ -113,9 +113,9 @@
     <link rel="stylesheet" href="style/dashboard.css">
 </head>
 <body>
-<aside class="sidebar">
+    <aside class="sidebar">
         <div class="sidebar-logo">
-            <img src="img/logo.png" alt="Logo ReWorth" title="DLH Kota Malang">
+            <img src="img/logo.png" alt="Logo ReWorth" title="Admin Kota Malang">
         </div>
 
         <nav class="sidebar-nav">
@@ -126,33 +126,45 @@
                 </a>
             </div>
             <div class="nav-item">
-                <a href="laporan_sampah.php" class="nav-link-custom">
-                    <i class="bi bi-exclamation-diamond-fill"></i>
-                    <span>Laporan Sampah</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="apresiasi_rw.php" class="nav-link-custom">
-                    <i class="bi bi-award-fill"></i>
-                    <span>Apresiasi RW</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="event_lingkungan.php" class="nav-link-custom">
-                    <i class="bi bi-calendar-event-fill"></i>
-                    <span>Event Lingkungan</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="laporan_analitik.php" class="nav-link-custom">
-                    <i class="bi bi-bar-chart-line-fill"></i>
-                    <span>Laporan dan Analitik</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="data_petugas.php" class="nav-link-custom">
+                <a href="kelola_akun.php" class="nav-link-custom">
                     <i class="bi bi-people-fill"></i>
-                    <span>Data Petugas</span>
+                    <span>Kelola Akun</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="kelola_data_master.php" class="nav-link-custom">
+                    <i class="bi bi-database-fill-gear"></i>
+                    <span>Kelola Data Master</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="monitor_transaksi.php" class="nav-link-custom">
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span>Monitor Transaksi</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="pembayaran_komisi.php" class="nav-link-custom">
+                    <i class="bi bi-cash-coin"></i>
+                    <span>Pembayaran Komisi</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="aktivitas.php" class="nav-link-custom">
+                    <i class="bi bi-activity"></i>
+                    <span>Aktivitas</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="sponsor.php" class="nav-link-custom">
+                    <i class="bi bi-megaphone-fill"></i>
+                    <span>Sponsor</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="laporan_keuangan.php" class="nav-link-custom">
+                    <i class="bi bi-bar-chart-line-fill"></i>
+                    <span>Laporan dan Keuangan</span>
                 </a>
             </div>
             <div class="nav-item">
