@@ -1,0 +1,101 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 11pt;
+    color: #000;
+    background: #fff;
+    padding: 24px 36px;
+}
+
+.report-header { text-align: center; margin-bottom: 6px; }
+.report-header .org-name { font-size: 16pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+.report-header .report-title { font-size: 12pt; font-weight: bold; margin-top: 4px; }
+.report-header .report-period { font-size: 10pt; margin-top: 2px; }
+.report-header .klasifikasi { font-size: 9pt; margin-top: 2px; }
+.divider-thick { border-top: 2.5px solid #000; margin: 4px 0; }
+.divider-thin  { border-top: 1px solid #000; margin: 4px 0; }
+
+.section-title {
+    font-weight: bold;
+    font-size: 11pt;
+    background: #d9d9d9;
+    padding: 4px 8px;
+    margin-top: 14px;
+    margin-bottom: 4px;
+    border: 1px solid #000;
+    }
+
+.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 4px;
+}
+.summary-table td {
+    padding: 4px 8px;
+    font-size: 10.5pt;
+    vertical-align: top;
+}
+.summary-table td.label { width: 65%; }
+.summary-table td.value { width: 35%; text-align: right; }
+.summary-table tr.total-row td {
+    font-weight: bold;
+    border-top: 1px solid #000;
+    border-bottom: 2px solid #000;
+}
+.summary-table tr.subtotal td { font-weight: bold; }
+.summary-table tr.indent td.label { padding-left: 28px; }
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 6px 0 10px;
+    font-size: 10pt;
+}
+.data-table th {
+    background: #f2f2f2;
+    border: 1px solid #999;
+    padding: 5px 6px;
+    text-align: center;
+    font-weight: bold;
+}
+.data-table td {
+    border: 1px solid #ccc;
+    padding: 4px 6px;
+    vertical-align: top;
+}
+.data-table td.right { text-align: right; }
+.data-table td.center { text-align: center; }
+.data-table tr.total-row td {
+    font-weight: bold;
+    border-top: 2px solid #000;
+    background: #f9f9f9;
+}
+.empty-row td { text-align: center; color: #666; font-style: italic; }
+
+.signature-section {
+    margin-top: 40px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 60px;
+}
+.sig-box { text-align: center; }
+.sig-box .sig-title { font-size: 10pt; margin-bottom: 56px; }
+.sig-box .sig-name { font-weight: bold; font-size: 10pt; border-top: 1px solid #000; padding-top: 5px; min-width: 180px; }
+
+.print-btn {
+    position: fixed; top: 16px; right: 16px;
+    background: #00916E; color: #fff;
+    border: none; border-radius: 8px;
+    padding: 10px 22px; font-size: 13px;
+    font-family: Arial, sans-serif; cursor: pointer;
+    z-index: 999;
+}
+    .print-btn:hover { background: #007a5c; }
+
+@media print {
+    .print-btn { display: none; }
+    body { padding: 10mm 14mm; }
+    @page { size: A4; margin: 12mm 14mm; }
+}
+
+.avoid-break { page-break-inside: avoid; }

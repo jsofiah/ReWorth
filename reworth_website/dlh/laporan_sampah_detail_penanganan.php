@@ -39,7 +39,6 @@
     $fotoSampahUrl = !empty($laporan['foto_sampah'])      ? getSupabaseImageUrl($laporan['foto_sampah'])      : null;
     $buktiUrl      = !empty($laporan['bukti_penanganan']) ? getSupabaseImageUrl($laporan['bukti_penanganan']) : null;
 
-    // Tombol update hanya muncul saat status diproses
     $showUpdate = ($st === 'diproses');
 ?>
 <!DOCTYPE html>
@@ -53,7 +52,6 @@
     <link rel="stylesheet" href="style/form.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
 </head>
 <body>
     <aside class="sidebar">
@@ -83,7 +81,9 @@
                     </div>
                     <div class="topbar-avatar">
                         <?php if (!empty($userFoto)): $fotoUrl = getSupabaseImageUrl($userFoto); ?>
-                            <img src="<?= htmlspecialchars($fotoUrl) ?>" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <img src="<?= htmlspecialchars($fotoUrl) ?>"
+                                style="width:100%;height:100%;border-radius:50%;object-fit:cover;"
+                                onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
                             <i class="bi bi-person-fill" style="display:none;"></i>
                         <?php else: ?>
                             <i class="bi bi-person-fill"></i>
@@ -94,7 +94,6 @@
         </div>
 
         <div class="detail-bar-wrap">
-            <a href="laporan_sampah.php?tab=penanganan" class="back-btn"><i class="bi bi-arrow-left-circle-fill"></i> Kembali ke Laporan Sampah</a>
             <div class="detail-card">
                 <div class="detail-card-inner <?= $buktiUrl ? 'has-bukti' : '' ?>">
 
@@ -154,12 +153,12 @@
                     <!-- KANAN: Foto -->
                     <div class="detail-right">
                         <?php if ($buktiUrl): ?>
-                            <!-- Status selesai: 2 foto (Bukti Lapor + Bukti Penanganan) -->
                             <div class="detail-right-bukti">
                                 <div class="foto-box">
                                     <div class="foto-box-label">Bukti Lapor</div>
                                     <?php if ($fotoSampahUrl): ?>
-                                        <img src="<?= htmlspecialchars($fotoSampahUrl) ?>" alt="Bukti Lapor" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                        <img src="<?= htmlspecialchars($fotoSampahUrl) ?>" alt="Bukti Lapor"
+                                            onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
                                         <div class="foto-box-placeholder" style="display:none;"><i class="bi bi-image"></i></div>
                                     <?php else: ?>
                                         <div class="foto-box-placeholder"><i class="bi bi-image"></i></div>
@@ -167,14 +166,16 @@
                                 </div>
                                 <div class="foto-box">
                                     <div class="foto-box-label">Bukti Penanganan</div>
-                                    <img src="<?= htmlspecialchars($buktiUrl) ?>" alt="Bukti Penanganan" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                    <img src="<?= htmlspecialchars($buktiUrl) ?>" alt="Bukti Penanganan"
+                                        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
                                     <div class="foto-box-placeholder" style="display:none;"><i class="bi bi-image"></i></div>
                                 </div>
                             </div>
                         <?php else: ?>
-                            <!-- Status diproses: 1 foto besar -->
                             <?php if ($fotoSampahUrl): ?>
-                                <img src="<?= htmlspecialchars($fotoSampahUrl) ?>" alt="Foto Sampah" class="detail-foto-single" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                <img src="<?= htmlspecialchars($fotoSampahUrl) ?>" alt="Foto Sampah"
+                                    class="detail-foto-single"
+                                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
                                 <div class="detail-foto-placeholder" style="display:none;"><i class="bi bi-image"></i></div>
                             <?php else: ?>
                                 <div class="detail-foto-placeholder"><i class="bi bi-image"></i></div>
@@ -197,9 +198,7 @@
             <div class="modal-body-custom">
                 <label class="modal-field-label">BUKTI PENANGANAN</label>
                 <div class="file-input-wrap">
-                    <label class="file-input-label" for="inputBukti">
-                        Pilih file
-                    </label>
+                    <label class="file-input-label" for="inputBukti">Pilih file</label>
                     <span class="file-input-name" id="namaFile">No file chosen</span>
                     <input type="file" id="inputBukti" accept="image/*" style="display:none;" onchange="updateFileName(this)">
                 </div>
