@@ -9,12 +9,13 @@ $userName  = $_SESSION['nama_admin']  ?? 'User';
 $userEmail = $_SESSION['email']       ?? 'user@example.com';
 $userFoto  = $_SESSION['foto_profil'] ?? '';
 
-$dateFrom = $_GET['date_from'] ?? date('Y-m-01');
-$dateTo   = $_GET['date_to']   ?? date('Y-m-t');
-$fromTs   = $dateFrom . 'T00:00:00';
-$toTs     = $dateTo   . 'T23:59:59';
+/* ══ FILTER TANGGAL ══ */
+$dateFrom = $_GET['date_from'] ?? date('Y-01-01');
+$dateTo   = $_GET['date_to']   ?? date('Y-12-31');
 
-// Label tanggal untuk flatpickr default value
+$fromTs = $dateFrom . 'T00:00:00';
+$toTs   = $dateTo   . 'T23:59:59';
+
 $labelFrom = date('d M Y', strtotime($dateFrom));
 $labelTo   = date('d M Y', strtotime($dateTo));
 
@@ -310,25 +311,30 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
     <!-- ACTION BAR -->
     <div class="action-bar-wrap">
         <form method="GET" action="" class="laporan-bar" id="filterForm">
-            <!-- Hidden inputs dikirim ke server saat Generate -->
-            <input type="hidden" name="date_from" id="dateFromHidden" value="<?= htmlspecialchars($dateFrom) ?>">
-            <input type="hidden" name="date_to"   id="dateToHidden"   value="<?= htmlspecialchars($dateTo) ?>">
 
-            <div class="date-range-wrap">
-                <i class="bi bi-calendar3"></i>
-                <!-- Flatpickr range picker — tampil cantik, bukan native date input -->
-                <input type="text" id="dateRangePicker" readonly
-                       placeholder="Pilih rentang tanggal..."
-                       value="<?= $labelFrom . ' – ' . $labelTo ?>">
-            </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <i class="bi bi-calendar3" style="font-size:22px;color:var(--green);"></i>
 
-            <button type="submit" class="btn-generate">Generate</button>
+            <input type="date"
+                name="date_from"
+                value="<?= htmlspecialchars($dateFrom) ?>"
+                style="padding:8px 12px;border:1px solid #E5E7EB;border-radius:8px;">
 
-            <!-- Export PDF → buka laporan_pdf.php di tab baru dengan date range yg dipilih -->
-            <button type="button" class="btn-export" onclick="exportPDF()">
-                <i class="bi bi-file-earmark-pdf"></i> Export PDF
-            </button>
-        </form>
+            <span>–</span>
+
+            <input type="date"
+                name="date_to"
+                value="<?= htmlspecialchars($dateTo) ?>"
+                style="padding:8px 12px;border:1px solid #E5E7EB;border-radius:8px;">
+        </div>
+
+    <button type="submit" class="btn-generate">
+        Generate
+    </button>
+
+    <button type="button" class="btn-export" onclick="exportPDF()">
+        <i class="bi bi-file-earmark-pdf"></i> Export PDF
+    </button>
     </div>
 
     <!-- CONTENT -->
@@ -426,34 +432,6 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
-/* ── Flatpickr range picker ── */
-flatpickr("#dateRangePicker", {
-    mode      : "range",
-    dateFormat: "d M Y",
-    locale    : {
-        rangeSeparator: " – ",
-        months: {
-            shorthand: ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],
-            longhand : ['Januari','Februari','Maret','April','Mei','Juni',
-                        'Juli','Agustus','September','Oktober','November','Desember']
-        },
-        weekdays: {
-            shorthand: ['Min','Sen','Sel','Rab','Kam','Jum','Sab'],
-            longhand : ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']
-        },
-        firstDayOfWeek: 1
-    },
-    defaultDate: ["<?= $dateFrom ?>", "<?= $dateTo ?>"],
-    onChange   : function(dates) {
-        if (dates.length === 2) {
-            const fmt = d => d.getFullYear() + '-'
-                + String(d.getMonth() + 1).padStart(2, '0') + '-'
-                + String(d.getDate()).padStart(2, '0');
-            document.getElementById('dateFromHidden').value = fmt(dates[0]);
-            document.getElementById('dateToHidden').value   = fmt(dates[1]);
-        }
-    }
-});
 
 /* ── Bar Chart ── */
 new Chart(document.getElementById('trendChart').getContext('2d'), {
@@ -489,9 +467,14 @@ new Chart(document.getElementById('trendChart').getContext('2d'), {
 
 /* ── Export PDF → buka laporan_pdf.php di tab baru ── */
 function exportPDF() {
-    const from = document.getElementById('dateFromHidden').value || '<?= $dateFrom ?>';
-    const to   = document.getElementById('dateToHidden').value   || '<?= $dateTo ?>';
-    window.open('laporan_pdf.php?date_from=' + from + '&date_to=' + to, '_blank');
+    const from = document.querySelector('input[name="date_from"]').value;
+    const to   = document.querySelector('input[name="date_to"]').value;
+
+    window.open(
+        'laporan_pdf.php?date_from=' + encodeURIComponent(from) +
+        '&date_to=' + encodeURIComponent(to),
+        '_blank'
+    );
 }
 </script>
 </body>
