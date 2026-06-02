@@ -221,6 +221,45 @@ function getStatusBadge($status) {
         </div>
     </div>
 
+        <div id="modalKirimContainer" class="modal-container">
+        <div class="modal-title">Input Pengiriman</div>
+        <div class="form-group">
+            <label class="form-label">Jasa Kirim</label>
+            <select id="jasaKirim" class="form-control-custom">
+                <option value="">-- Pilih Jasa Kirim --</option>
+                <option value="JNE">JNE</option>
+                <option value="SiCepat">SiCepat</option>
+                <option value="J&T">J&T</option>
+                <option value="Pos Indonesia">Pos Indonesia</option>
+                <option value="Ninja Express">Ninja Express</option>
+                <option value="Grab Express">Grab Express</option>
+                <option value="GoSend">GoSend</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Nomor Resi</label>
+            <input type="text" id="nomorResi" class="form-control-custom" placeholder="Masukkan nomor resi">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeKirimModal()">Batal</button>
+            <button class="btn-save" onclick="submitKirim()">Kirim</button>
+        </div>
+    </div>
+
+    <!-- Modal Tolak Container (hidden) -->
+    <div id="modalTolakContainer" class="modal-container">
+        <div class="modal-title">Tolak Pesanan</div>
+        <div class="form-group">
+            <label class="form-label">Alasan Penolakan</label>
+            <textarea id="alasanTolak" class="form-control-custom" rows="3" placeholder="Masukkan alasan penolakan..."></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeTolakModal()">Batal</button>
+            <button class="btn-save" onclick="submitTolak()">Kirim</button>
+        </div>
+    </div>
+    <!-- ===== SAMPAI SINI ===== -->
+
     <div class="toast-container" id="toastContainer"></div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -238,7 +277,7 @@ function getStatusBadge($status) {
         });
 
         function lihatDetail(id) {
-            fetch('pesanan_detail_modal.php?id=' + id)
+            fetch('pesanan_detail.php?id=' + id)
                 .then(res => res.text())
                 .then(html => {
                     document.getElementById('detailContent').innerHTML = html;
@@ -253,6 +292,82 @@ function getStatusBadge($status) {
             div.innerHTML = `<i class="bi ${icons[type]} toast-icon"></i><span>${msg}</span>`;
             document.getElementById('toastContainer').appendChild(div);
             setTimeout(() => div.remove(), 3500);
+        }
+
+        let currentPesananId = null;
+
+        function openKirimModal(id) {
+            currentPesananId = id;
+            document.getElementById('jasaKirim').value = '';
+            document.getElementById('nomorResi').value = '';
+            document.getElementById('modalKirimContainer').style.display = 'block';
+        }
+
+        function closeKirimModal() {
+            document.getElementById('modalKirimContainer').style.display = 'none';
+        }
+
+        function submitKirim() {
+            let jasaKirim = document.getElementById('jasaKirim').value;
+            let nomorResi = document.getElementById('nomorResi').value;
+            
+            if (!jasaKirim) {
+                showToast('Pilih jasa kirim terlebih dahulu!', 'error');
+                return;
+            }
+            if (!nomorResi) {
+                showToast('Masukkan nomor resi!', 'error');
+                return;
+            }
+            
+            fetch('pesanan_status.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'id_pesanan=' + encodeURIComponent(currentPesananId) + '&status=dikirim&jasa_kirim=' + encodeURIComponent(jasaKirim) + '&nomor_resi=' + encodeURIComponent(nomorResi)
+            }).then(res => res.json()).then(data => {
+                showToast(data.message, data.success ? 'success' : 'error');
+                closeKirimModal();
+                if (data.success) setTimeout(() => location.reload(), 1000);
+            });
+        }
+
+        function openTolakModal(id) {
+            currentPesananId = id;
+            document.getElementById('alasanTolak').value = '';
+            document.getElementById('modalTolakContainer').style.display = 'block';
+        }
+
+        function closeTolakModal() {
+            document.getElementById('modalTolakContainer').style.display = 'none';
+        }
+
+        function submitTolak() {
+            let alasan = document.getElementById('alasanTolak').value;
+            if (!alasan) {
+                showToast('Masukkan alasan penolakan!', 'error');
+                return;
+            }
+            fetch('pesanan_status.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'id_pesanan=' + encodeURIComponent(currentPesananId) + '&status=ditolak&alasan=' + encodeURIComponent(alasan)
+            }).then(res => res.json()).then(data => {
+                showToast(data.message, data.success ? 'success' : 'error');
+                closeTolakModal();
+                if (data.success) setTimeout(() => location.reload(), 1000);
+            });
+        }
+
+        function konfirmasiPesanan(id) {
+            if (!confirm('Konfirmasi pembayaran pesanan ini?')) return;
+            fetch('pesanan_status.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'id_pesanan=' + encodeURIComponent(id) + '&status=diproses'
+            }).then(res => res.json()).then(data => {
+                showToast(data.message, data.success ? 'success' : 'error');
+                if (data.success) setTimeout(() => location.reload(), 1000);
+            });
         }
     </script>
 </body>
