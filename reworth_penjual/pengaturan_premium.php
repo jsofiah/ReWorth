@@ -14,6 +14,15 @@ $userName = $_SESSION['nama_penjual'] ?? 'User';
 $userEmail = $_SESSION['email'] ?? '';
 $userFoto = $_SESSION['foto_profil'] ?? '';
 
+// Ambil toast dari session
+$toastMessage = $_SESSION['toast_message'] ?? '';
+$toastType = $_SESSION['toast_type'] ?? '';
+unset($_SESSION['toast_message']);
+unset($_SESSION['toast_type']);
+
+// Ambil nilai notifikasi dari session
+$notifikasiHari = $_SESSION['notifikasi_hari'] ?? '';
+
 function getSupabaseImageUrl($path) {
     if (empty($path)) return null;
     return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
@@ -39,10 +48,7 @@ $getLangganan = curlRequest(
     $supabaseUrl . "/rest/v1/langganan?id_penjual=eq.$userId&order=created_at.desc",
     'GET',
     null,
-    [
-        "apikey: $supabaseKey",
-        "Authorization: Bearer $supabaseKey"
-    ]
+    ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
 );
 
 $langgananList = json_decode($getLangganan['response'], true) ?? [];
@@ -54,10 +60,11 @@ $tanggalMulai = '';
 $tanggalSelesai = '';
 $hariTersisa = 0;
 
+$today = date('Y-m-d');
 foreach ($langgananList as $l) {
-    if ($l['status'] === 'aktif') {
-        $langgananAktif = $l;
+    if ($l['status'] === 'aktif' && $l['tanggal_selesai'] >= $today) {
         $isPremium = true;
+        $langgananAktif = $l;
         $tanggalMulai = $l['tanggal_mulai'];
         $tanggalSelesai = $l['tanggal_selesai'];
         $sekarang = new DateTime();
@@ -67,42 +74,23 @@ foreach ($langgananList as $l) {
     }
 }
 
-// Load pengaturan dari session atau default
-$autoRenewal = $_SESSION['auto_renewal'] ?? 'off';
-$notifikasiHari = $_SESSION['notifikasi_hari'] ?? 7;
-$metodeBayar = $_SESSION['metode_bayar'] ?? 'transfer';
-
-// Proses simpan pengaturan
-$message = '';
-$messageType = '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['simpan_pengaturan'])) {
-        $autoRenewal = $_POST['auto_renewal'] ?? 'off';
-        $notifikasiHari = (int)$_POST['notifikasi_hari'];
-        $metodeBayar = $_POST['metode_bayar'] ?? 'transfer';
+        $notifikasiHari = $_POST['notifikasi_hari'] ?? '';
         
-        $_SESSION['auto_renewal'] = $autoRenewal;
-        $_SESSION['notifikasi_hari'] = $notifikasiHari;
-        $_SESSION['metode_bayar'] = $metodeBayar;
-        
-        $message = "Pengaturan berhasil disimpan!";
-        $messageType = "success";
-    }
-    
-    if (isset($_POST['batalkan_langganan'])) {
-        // Hanya jika ada langganan aktif
-        if ($langgananAktif) {
-            // Update status jadi tidak akan diperpanjang
-            // Bisa juga update status jadi 'kadaluarsa' atau tambah field 'auto_renewal'
-            $message = "Langganan akan dihentikan setelah masa aktif berakhir.";
-            $messageType = "warning";
-            $_SESSION['auto_renewal'] = 'off';
-            $autoRenewal = 'off';
+        if (empty($notifikasiHari)) {
+            $_SESSION['toast_message'] = "Silakan pilih notifikasi pengingat terlebih dahulu!";
+            $_SESSION['toast_type'] = "error";
         } else {
-            $message = "Tidak ada langganan aktif untuk dibatalkan.";
-            $messageType = "error";
+            $notifikasiHari = (int)$notifikasiHari;
+            $_SESSION['notifikasi_hari'] = $notifikasiHari;
+            
+            $_SESSION['toast_message'] = "Pengaturan berhasil disimpan!";
+            $_SESSION['toast_type'] = "success";
         }
+        
+        header("Location: pengaturan_premium.php");
+        exit;
     }
 }
 ?>
@@ -117,12 +105,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="style/root.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style/form.css">
 </head>
 <body>
     <aside class="sidebar">
-        <div class="sidebar-logo">
-            <img src="img/logo.png" alt="Logo ReWorth">
-        </div>
+        <div class="sidebar-logo"><img src="img/logo.png" alt="Logo ReWorth"></div>
         <nav class="sidebar-nav">
             <div class="nav-item"><a href="dashboard.php" class="nav-link-custom"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a></div>
             <div class="nav-item"><a href="produk.php" class="nav-link-custom"><i class="bi bi-box-seam-fill"></i><span>Manajemen Produk</span></a></div>
@@ -132,9 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="nav-item"><a href="pengaturan_toko.php" class="nav-link-custom"><i class="bi bi-shop-window"></i><span>Pengaturan Toko</span></a></div>
             <div class="nav-item"><a href="pengaturan_premium.php" class="nav-link-custom active"><i class="bi bi-gem"></i><span>Pengaturan Premium</span></a></div>
         </nav>
-        <div class="sidebar-logout">
-            <a class="logout-btn" href="logout.php"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>
-        </div>
+        <div class="sidebar-logout"><a class="logout-btn" href="logout.php"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></div>
     </aside>
 
     <div class="main-wrap">
@@ -157,27 +142,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
 
-        <div class="action-bar-wrap">
-            <div class="action-bar">
-                <div class="flex-grow-1"></div>
-                <a href="langganan.php" class="btn btn-outline-success btn-sm">
-                    <i class="bi bi-arrow-left"></i> Kembali ke Langganan
-                </a>
-            </div>
-        </div>
-
         <div class="content-area">
-            <?php if ($message): ?>
-                <div class="alert alert-<?= $messageType == 'success' ? 'success' : ($messageType == 'warning' ? 'warning' : 'danger') ?> alert-dismissible fade show mb-4">
-                    <?= htmlspecialchars($message) ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            <?php endif; ?>
+            <br>
 
             <!-- INFORMASI LANGGANAN SAAT INI -->
             <div class="card-custom mb-4">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4"><i class="bi bi-info-circle"></i> Informasi Langganan Saat Ini</h5>
+                    <h5 class="fw-bold mb-4">Informasi Langganan Saat Ini</h5>
                     
                     <?php if ($isPremium && $langgananAktif && $tanggalSelesai >= date('Y-m-d')): ?>
                         <div class="row">
@@ -210,72 +181,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- PENGATURAN PREMIUM -->
             <div class="card-custom mb-4">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4"><i class="bi bi-gear"></i> Pengaturan Akun Premium</h5>
+                    <h5 class="fw-bold mb-4">Pengaturan Akun Premium</h5>
                     
                     <form method="POST">
-                        <div class="mb-3">
-                            <label class="fw-bold mb-2">Auto-Renewal (Perpanjang Otomatis)</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="auto_renewal" value="on" id="autoRenewalOn" <?= $autoRenewal == 'on' ? 'checked' : '' ?>>
-                                <label class="form-check-label" for="autoRenewalOn">
-                                    <i class="bi bi-check-circle-fill text-success"></i> Aktif - Perpanjang otomatis sebelum masa aktif habis
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="auto_renewal" value="off" id="autoRenewalOff" <?= $autoRenewal == 'off' ? 'checked' : '' ?>>
-                                <label class="form-check-label" for="autoRenewalOff">
-                                    <i class="bi bi-x-circle-fill text-danger"></i> Nonaktif - Perpanjang manual setiap periode
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="fw-bold mb-2">Notifikasi Pengingat</label>
-                            <select name="notifikasi_hari" class="form-select w-50">
+                        <div class="form-group">
+                            <label class="form-label">Notifikasi Pengingat</label>
+                            <select name="notifikasi_hari" class="form-control-custom w-50" required>
+                                <option value="" disabled>-- Pilih pengingat --</option>
+                                <option value="1" <?= $notifikasiHari == 1 ? 'selected' : '' ?>>1 hari sebelum kadaluarsa</option>
                                 <option value="3" <?= $notifikasiHari == 3 ? 'selected' : '' ?>>3 hari sebelum kadaluarsa</option>
                                 <option value="7" <?= $notifikasiHari == 7 ? 'selected' : '' ?>>7 hari sebelum kadaluarsa</option>
                                 <option value="14" <?= $notifikasiHari == 14 ? 'selected' : '' ?>>14 hari sebelum kadaluarsa</option>
                                 <option value="30" <?= $notifikasiHari == 30 ? 'selected' : '' ?>>30 hari sebelum kadaluarsa</option>
                             </select>
-                            <small class="text-muted d-block">Kami akan mengirimkan pengingat via email</small>
+                            <div class="text-muted small mt-1">Notifikasi peringatan akan muncul di halaman Langganan</div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="fw-bold mb-2">Metode Pembayaran Default</label>
-                            <select name="metode_bayar" class="form-select w-50">
-                                <option value="transfer" <?= $metodeBayar == 'transfer' ? 'selected' : '' ?>>Transfer Bank (Manual)</option>
-                                <option value="virtual_account" <?= $metodeBayar == 'virtual_account' ? 'selected' : '' ?>>Virtual Account</option>
-                                <option value="ewallet" <?= $metodeBayar == 'ewallet' ? 'selected' : '' ?>>E-Wallet (Qris, OVO, Dana)</option>
-                            </select>
+                        <!-- METODE PEMBAYARAN (QRIS) -->
+                        <div class="form-group">
+                            <label class="form-label">Metode Pembayaran</label>
+                            <div class="alert alert-info">
+                                <i class="bi bi-upc-scan"></i> <strong>QRIS</strong><br>
+                                Lakukan pembayaran di menu <strong>Langganan → Perpanjang Langganan</strong>
+                            </div>
                         </div>
 
-                        <div class="d-flex gap-3">
-                            <button type="submit" name="simpan_pengaturan" class="btn btn-success">
+                        <div class="form-actions">
+                            <button type="submit" name="simpan_pengaturan" class="btn-submit">
                                 <i class="bi bi-save"></i> Simpan Pengaturan
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
-
-            <!-- BATALKAN LANGGANAN -->
-            <?php if ($isPremium && $langgananAktif && $tanggalSelesai >= date('Y-m-d')): ?>
-            <div class="card-custom">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4 text-danger"><i class="bi bi-exclamation-triangle"></i> Batalkan Langganan</h5>
-                    <p class="mb-3">Jika Anda membatalkan langganan, akun premium Anda akan tetap aktif hingga masa langganan berakhir. Setelah itu, akun Anda akan kembali ke akun biasa.</p>
-                    <form method="POST" onsubmit="return confirm('Yakin ingin membatalkan langganan premium? Anda tetap bisa menggunakan fitur premium hingga masa aktif berakhir.')">
-                        <button type="submit" name="batalkan_langganan" class="btn btn-danger">
-                            <i class="bi bi-x-circle"></i> Batalkan Langganan
-                        </button>
-                    </form>
-                </div>
-            </div>
-            <?php endif; ?>
         </div>
     </div>
 
     <div class="toast-container" id="toastContainer"></div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showToast(msg, type) {
+            const icons = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill', warning: 'bi-exclamation-triangle-fill' };
+            const div = document.createElement('div');
+            div.className = `toast-item ${type}`;
+            div.innerHTML = `<i class="bi ${icons[type]} toast-icon"></i><span>${msg}</span>`;
+            document.getElementById('toastContainer').appendChild(div);
+            setTimeout(() => div.remove(), 3500);
+        }
+    </script>
+    <?php if ($toastMessage): ?>
+    <script>
+        showToast('<?= htmlspecialchars($toastMessage) ?>', '<?= $toastType ?>');
+    </script>
+    <?php endif; ?>
 </body>
 </html>
