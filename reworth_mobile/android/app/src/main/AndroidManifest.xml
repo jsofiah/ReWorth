@@ -48,9 +48,7 @@
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
-            <data android:scheme="https" />
             <data android:mimeType="text/plain"/>
-            <data android:scheme="reworth" android:host="reset-password" />
         </intent>
     </queries>
 </manifest>

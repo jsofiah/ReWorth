@@ -31,9 +31,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     setState(() => _isLoading = true);
 
     try {
+      // HAPUS redirectTo - biarkan Supabase yang handle
       await Supabase.instance.client.auth.resetPasswordForEmail(
         _emailController.text.trim(),
-        redirectTo: 'reworth://reset-password',
+        // redirectTo: 'reworth://reset-password', // HAPUS BARIS INI
       );
 
       if (!mounted) return;
@@ -48,9 +49,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       
       setState(() => _isLoading = false);
       
+      String errorMessage = e.toString();
+      // Bersihkan pesan error
+      errorMessage = errorMessage.replaceAll('Exception:', '');
+      errorMessage = errorMessage.replaceAll('AuthException', '');
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal: ${e.toString().replaceAll('Exception:', '')}'),
+          content: Text('Gagal: $errorMessage'),
           backgroundColor: Colors.red,
         ),
       );
@@ -148,7 +154,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(
-          Icons.email,
+          Icons.email_outlined, // Ganti icon biar lebih bagus
           size: 80,
           color: AppColors.secondary,
         ),
@@ -160,8 +166,30 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Kami telah mengirimkan link reset password ke:\n${_emailController.text}',
+          'Kami telah mengirimkan link reset password ke:',
           style: AppTextStyles.bodyMedium,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(AppConstants.radiusM),
+          ),
+          child: Text(
+            _emailController.text,
+            style: AppTextStyles.body.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.secondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Klik link di email untuk mengatur ulang password Anda.',
+          style: AppTextStyles.caption,
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 32),

@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:uni_links/uni_links.dart';
 import 'utils/app_theme.dart';
 import 'pages/splash_screen.dart';
 import 'pages/login_page.dart';
 import 'pages/home_page.dart';
 import 'pages/profil_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'pages/reset_password_page.dart';
-
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,24 +15,6 @@ void main() async {
   );
 
   runApp(const MyApp());
-
-  setupDeepLinks();
-}
-
-void setupDeepLinks() async {
-  final Uri? initialLink = await getInitialUri();
-  handleDeepLinkString(initialLink as String?);
-  
-  linkStream.listen(handleDeepLinkString);
-}
-
-void handleDeepLinkString(String? uriString) {
-  if (uriString == null) return;
-  
-  final Uri? uri = Uri.tryParse(uriString);
-  if (uri?.scheme == 'reworth' && uri?.path == '/reset-password') {
-    navigatorKey.currentState?.pushNamed('/reset-password');
-  }
 }
 
 class MyApp extends StatelessWidget {
@@ -48,14 +26,12 @@ class MyApp extends StatelessWidget {
       title: 'ReWorth',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      navigatorKey: navigatorKey,
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginPage(),
         '/home': (context) => const HomePage(),
         '/profil': (context) => const ProfilPage(),
-        '/reset-password': (context) => const ResetPasswordPage(),
       },
     );
   }

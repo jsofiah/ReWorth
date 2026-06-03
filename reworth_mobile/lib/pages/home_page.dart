@@ -11,6 +11,7 @@ import '../services/auth_service.dart';
 import '../pages/lapor_page.dart';
 import '../pages/setor_page.dart';
 import '../pages/belanja_page.dart';
+import '../pages/belanja_detail_page.dart';
 import '../pages/event_page.dart';
 import '../pages/event_detail_page.dart';
 import '../pages/reward_page.dart';
@@ -1150,7 +1151,9 @@ class _HomePageState extends State<HomePage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const BelanjaPage(),
+            builder: (_) => BelanjaDetailPage(
+              idProduk: product['id_produk'],
+            ),
           ),
         );
       },
