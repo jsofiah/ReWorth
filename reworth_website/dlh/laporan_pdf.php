@@ -29,27 +29,20 @@ function sbGet($url, $key, $ep)
     return $c === 200 ? (json_decode($r, true) ?: []) : [];
 }
 
-// ==================== DATA LAPORAN SAMPAH ====================
-
-// Total semua laporan
 $allLaporan = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan");
 $totalLaporan = count($allLaporan);
 
-// Laporan baru (menunggu)
 $laporanBaru = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.menunggu");
 $totalBaru = count($laporanBaru);
 
-// Laporan selesai dalam periode
 $laporanSelesai = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.selesai&created_at=gte." . urlencode($fromTs) . "&created_at=lte." . urlencode($toTs));
 $totalSelesai = count($laporanSelesai);
 $persenSelesai = $totalLaporan > 0 ? round(($totalSelesai / $totalLaporan) * 100, 1) : 0;
 
-// Laporan ditolak
 $laporanDitolak = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.ditolak");
 $totalDitolak = count($laporanDitolak);
 $persenDitolak = $totalLaporan > 0 ? round(($totalDitolak / $totalLaporan) * 100, 1) : 0;
 
-// Status laporan (persentase dari semua status)
 $statusMenunggu = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.menunggu");
 $statusDiproses = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.diproses");
 $statusSelesaiCount = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.selesai");
@@ -61,7 +54,6 @@ $persenDiprosesTotal = $totalSemua > 0 ? round((count($statusDiproses) / $totalS
 $persenMenungguTotal = $totalSemua > 0 ? round((count($statusMenunggu) / $totalSemua) * 100) : 0;
 $persenDitolakTotal = $totalSemua > 0 ? round((count($statusDitolakCount) / $totalSemua) * 100) : 0;
 
-// Detail laporan untuk tabel
 $laporanList = sbGet($supabaseUrl, $supabaseKey, 
     "/rest/v1/lapor_sampah?select=*,pengguna(nama_lengkap),petugas_lapangan(nama_petugas)"
     . "&created_at=gte=" . urlencode($fromTs) 
@@ -88,7 +80,6 @@ function formatNumber($n) { return number_format($n, 0, ',', '.'); }
         <i class="bi bi-printer-fill"></i> Cetak / Simpan PDF
     </button>
 
-    <!-- HEADER -->
     <div class="report-header">
         <div class="org-name">DINAS LINGKUNGAN HIDUP (DLH)</div>
         <div class="org-sub">KOTA MALANG</div>
@@ -99,7 +90,6 @@ function formatNumber($n) { return number_format($n, 0, ',', '.'); }
     <div class="divider-thick"></div>
     <div class="divider-thin" style="margin-bottom:10px;"></div>
 
-    <!-- A. RINGKASAN UMUM -->
     <div class="section-title">A. RINGKASAN UMUM</div>
     <table class="summary-table">
         <tr class="indent"><td class="label">Total Laporan Terdaftar</td><td class="value"><?= formatNumber($totalLaporan) ?> laporan</td></tr>
@@ -109,7 +99,6 @@ function formatNumber($n) { return number_format($n, 0, ',', '.'); }
     </table>
     <div class="divider-thin"></div>
 
-    <!-- B. STATUS LAPORAN -->
     <div class="section-title">B. STATUS LAPORAN</div>
     <table class="summary-table">
         <tr class="indent"><td class="label">Selesai</td><td class="value"><?= $persenSelesaiTotal ?>%</td></tr>
@@ -119,7 +108,6 @@ function formatNumber($n) { return number_format($n, 0, ',', '.'); }
     </table>
     <div class="divider-thin"></div>
 
-    <!-- C. DETAIL LAPORAN MASUK -->
     <div class="section-title">C. DETAIL LAPORAN MASUK</div>
     <table class="data-table">
         <thead>
@@ -152,7 +140,6 @@ function formatNumber($n) { return number_format($n, 0, ',', '.'); }
         </tbody>
     </table>
 
-    <!-- TANDA TANGAN -->
     <div class="signature-section">
         <div class="sig-box">
             <div class="sig-title">Malang, <?= date('d F Y') ?><br>Mengetahui,<br>Kepala DLH Kota Malang</div>
