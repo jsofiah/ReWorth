@@ -38,32 +38,31 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
         /* ── card ── */
         .form-wrap { display: flex; justify-content: center; padding: 0 40px 40px; }
         .form-card {
-            background: #fff;
-            border-radius: 24px;
-            padding: 0 0 36px;
-            box-shadow: 0 4px 24px rgba(0,0,0,.07);
-            position: relative;
-            margin-top: -60px;
-            z-index: 10;
-            width: 100%;
-            max-width: 820px;
-            overflow: hidden;
-        }
+        background: #fff;
+        border-radius: 24px;
+        padding: 32px;
+        box-shadow: 0 4px 20px rgba(0,0,0,.06);
+        position: relative;
+        margin-top: -72px;
+        z-index: 10;
+        width: 100%;
+        max-width: 860px;
+    }
 
-        /* ── orange header ── */
-        .card-header-orange {
-            background: #ED985A;
-            padding: 22px 40px;
-            text-align: center;
-            margin-bottom: 32px;
-        }
-        .card-header-orange h2 {
-            margin: 0;
-            color: #fff;
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: -.3px;
-        }
+    .card-header-orange {
+        background: #ED985A;
+        border-radius: 18px;
+        padding: 18px 24px;
+        margin-bottom: 28px;
+        text-align: center;
+    }
+
+    .card-header-orange h2 {
+        margin: 0;
+        color: #fff;
+        font-size: 28px;
+        font-weight: 700;
+    }
 
         /* ── fields ── */
         .fields-wrap { padding: 0 40px; }
@@ -89,11 +88,29 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
             outline: none;
             transition: border-color .2s;
             appearance: none;
+            -webkit-appearance: none;
         }
         .field-underline:focus { border-bottom-color: var(--green); }
         .field-underline::placeholder { color: #B0BFB8; }
         .field-underline[readonly] { color: #9AA7A2; cursor: default; }
-        .field-underline option { color: #333; }
+
+        /* wrapper untuk select + ikon panah */
+        .select-wrap {
+            position: relative;
+        }
+        .select-wrap::after {
+            content: '';
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-70%);
+            width: 0; height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid #9AA7A2;
+            pointer-events: none;
+        }
+        .select-wrap select.field-underline { cursor: pointer; padding-right: 20px; }
 
         /* error hint */
         .field-err {
@@ -104,15 +121,33 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
             font-weight: 500;
         }
 
+        /* saldo badge */
+        .saldo-badge {
+            display: none;
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        /* warning saldo kurang */
+        .warn-saldo {
+            display: none;
+            font-size: 12px;
+            color: #D95D39;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
         /* ── actions ── */
         .form-actions {
-            display: flex;
-            justify-content: center;
-            gap: 14px;
-            padding: 28px 40px 0;
-            border-top: 1.5px solid #E8F0EC;
-            margin-top: 8px;
-        }
+        display:flex;
+        justify-content:center;
+        gap:14px;
+        margin-top:28px;
+        padding-top:24px;
+        border-top:1.5px solid #E2EDE8;
+    }
         .btn-batal {
             padding: 12px 36px;
             border-radius: 12px;
@@ -143,24 +178,6 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
         }
         .btn-simpan:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,145,110,.4); }
         .btn-simpan:disabled { opacity: .6; pointer-events: none; }
-
-        /* saldo badge */
-        .saldo-badge {
-            display: none;
-            margin-top: 6px;
-            font-size: 12px;
-            color: var(--green);
-            font-weight: 600;
-        }
-
-        /* warning saldo kurang */
-        .warn-saldo {
-            display: none;
-            font-size: 12px;
-            color: #D95D39;
-            margin-top: 5px;
-            font-weight: 500;
-        }
     </style>
 </head>
 <body>
@@ -216,21 +233,23 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
                 <h2>Tambah Penarikan</h2>
             </div>
 
-            <div class="fields-wrap">
+            <div class="fields-wrap" style="padding:0;">
 
-                <!-- NAMA NASABAH -->
+                <!-- NAMA NASABAH (dropdown) -->
                 <div class="field-group">
                     <label class="field-label">Nama Nasabah</label>
-                    <select id="idPengguna" class="field-underline" onchange="onNasabahChange(this)">
-                        <option value="" data-saldo="0">Nama nasabah...</option>
-                        <?php foreach ($penggunaList as $p): ?>
-                        <option value="<?= htmlspecialchars($p['id_pengguna']) ?>"
-                                data-saldo="<?= (float)($p['saldo_tabungan'] ?? 0) ?>"
-                                data-nama="<?= htmlspecialchars($p['nama_lengkap']) ?>">
-                            <?= htmlspecialchars($p['nama_lengkap']) ?>
-                        </option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div class="select-wrap">
+                        <select id="idPengguna" class="field-underline" onchange="onNasabahChange(this)">
+                            <option value="" data-saldo="0">Nama nasabah...</option>
+                            <?php foreach ($penggunaList as $p): ?>
+                            <option value="<?= htmlspecialchars($p['id_pengguna']) ?>"
+                                    data-saldo="<?= (float)($p['saldo_tabungan'] ?? 0) ?>"
+                                    data-nama="<?= htmlspecialchars($p['nama_lengkap']) ?>">
+                                <?= htmlspecialchars($p['nama_lengkap']) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                     <div id="errNasabah" class="field-err">Nama nasabah wajib dipilih.</div>
                 </div>
 
@@ -238,10 +257,9 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
                 <div class="field-group">
                     <label class="field-label">Jumlah Tabungan</label>
                     <input type="text" id="saldoTabungan" class="field-underline"
-                           value="" placeholder="Rp0">
+                           value="" placeholder="Rp0" readonly>
                     <div id="saldoBadge" class="saldo-badge">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Saldo tersedia untuk ditarik
+                        <i class="bi bi-info-circle me-1"></i>Saldo tersedia untuk ditarik
                     </div>
                 </div>
 
@@ -277,16 +295,14 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
 <div class="toast-container" id="toastContainer"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-/* ── data nasabah dari PHP ── */
 const NASABAH_LIST = <?= json_encode($penggunaList) ?>;
-
 let currentSaldo = 0;
 
 function fmt(n) {
     return 'Rp' + parseFloat(n || 0).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
-/* ── saat nasabah dipilih ── */
+/* saat nasabah dipilih → otomatis isi jumlah tabungan */
 function onNasabahChange(sel) {
     const opt   = sel.options[sel.selectedIndex];
     const saldo = parseFloat(opt.dataset.saldo || 0);
@@ -310,7 +326,7 @@ function onNasabahChange(sel) {
     document.getElementById('errNasabah').style.display = 'none';
 }
 
-/* ── validasi jumlah real-time ── */
+/* validasi jumlah real-time */
 function onJumlahChange(inp) {
     const val  = parseFloat(inp.value || 0);
     const warn = document.getElementById('warnSaldo');
@@ -320,7 +336,7 @@ function onJumlahChange(inp) {
     warn.style.display = (currentSaldo > 0 && val > currentSaldo) ? 'block' : 'none';
 }
 
-/* ── validasi sebelum simpan ── */
+/* validasi sebelum simpan */
 function validate() {
     let ok = true;
     const idP    = document.getElementById('idPengguna').value;
@@ -337,7 +353,7 @@ function validate() {
     return ok;
 }
 
-/* ── simpan ── */
+/* simpan ke penarikan_simpan.php */
 function simpanData() {
     if (!validate()) return;
 
