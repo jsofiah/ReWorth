@@ -1435,9 +1435,6 @@ input[type="file"] {
     .btn-generate, .btn-export { justify-content: center; }
 }
 
-/* ==================== CSS KHUSUS LAPORAN PDF ==================== */
-/* HANYA berlaku jika body memiliki class "laporan-pdf" */
-
 body.laporan-pdf {
     font-family: 'Times New Roman', Times, serif !important;
     font-size: 11pt;
