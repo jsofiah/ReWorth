@@ -37,9 +37,27 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.0
 
 flutter:
   uses-material-design: true
   assets:
   - assets/logo.png
   - assets/gradient.png
+  - assets/banner_reward/1.png
+  - assets/banner_reward/2.png
+  - assets/banner_reward/3.png
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo_apk.png"
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  android: true
+  ios: true
+
+  android_12:
+    color: "#FFFFFF"
