@@ -4,9 +4,10 @@ import '../utils/app_colors.dart';
 import '../utils/app_constants.dart';
 import '../utils/app_text_styles.dart';
 import '../utils/app_image_helper.dart';
+import 'package:flutter/services.dart';
 
 enum AktivitasType { laporan, setor, pesanan, tukarPoin, event, reward }
-enum AktivitasStatus { diproses, selesai, menunggu, berhasil }
+enum AktivitasStatus { diproses, selesai, menunggu, berhasil, dikirim }
 RealtimeChannel? _channel;
 
 class AktivitasItem {
@@ -15,6 +16,9 @@ class AktivitasItem {
   final String description;
   final AktivitasStatus status;
   final String? buktiFotoUrl;
+  final String? kodeVoucher;
+  final String? namaReward;
+  final String? idReferensi;
 
   const AktivitasItem({
     required this.type,
@@ -22,6 +26,9 @@ class AktivitasItem {
     required this.description,
     required this.status,
     this.buktiFotoUrl,
+    this.kodeVoucher,
+    this.namaReward,
+    this.idReferensi,
   });
 }
 
@@ -125,10 +132,13 @@ class _AktivitasPageState extends State<AktivitasPage> {
         final itemDate  = DateTime(createdAt.year, createdAt.month, createdAt.day);
 
         final groupLabel = itemDate == today     ? 'Hari Ini'
-                         : itemDate == yesterday ? 'Kemarin'
-                                                 : 'Minggu Lalu';
+                        : itemDate == yesterday ? 'Kemarin'
+                                                : 'Minggu Lalu';
 
         String buktiFoto = '';
+        String? kodeVoucher;
+        String? namaReward;
+
         if (item['jenis_aktivitas'] == 'lapor_sampah') {
           try {
             final laporan = await Supabase.instance.client
@@ -143,6 +153,35 @@ class _AktivitasPageState extends State<AktivitasPage> {
             }
           } catch (e) { debugPrint('ERROR FOTO: $e'); }
         }
+        
+        // PERBAIKAN: Ambil kode voucher untuk tukar poin
+        if (item['jenis_aktivitas'] == 'tukar_poin') {
+          try {
+            // Langkah 1: Cari di tabel tukar_poin berdasarkan id_referensi
+            final tukarData = await Supabase.instance.client
+                .from('tukar_poin')
+                .select('id_reward')
+                .eq('id_tukar', item['id_referensi'])
+                .maybeSingle();
+            
+            if (tukarData != null && tukarData['id_reward'] != null) {
+              // Langkah 2: Ambil data reward berdasarkan id_reward
+              final rewardData = await Supabase.instance.client
+                  .from('reward')
+                  .select('kode_voucher, nama_reward')
+                  .eq('id_reward', tukarData['id_reward'])
+                  .maybeSingle();
+              
+              if (rewardData != null) {
+                kodeVoucher = rewardData['kode_voucher'];
+                namaReward = rewardData['nama_reward'];
+                debugPrint('Found voucher: $kodeVoucher for reward: $namaReward');
+              }
+            }
+          } catch (e) { 
+            debugPrint('ERROR FETCH REWARD: $e'); 
+          }
+        }
 
         grouped.putIfAbsent(groupLabel, () => []);
         grouped[groupLabel]!.add(AktivitasItem(
@@ -151,6 +190,9 @@ class _AktivitasPageState extends State<AktivitasPage> {
           description: item['deskripsi'] ?? '-',
           status:      _parseStatus(item['status']),
           buktiFotoUrl: buktiFoto,
+          kodeVoucher: kodeVoucher,
+          namaReward: namaReward,
+          idReferensi: item['id_referensi'],
         ));
       }
 
@@ -170,6 +212,58 @@ class _AktivitasPageState extends State<AktivitasPage> {
     }
   }
 
+  Future<void> _updatePesananStatus(String idPesanan, String statusBaru) async {
+    try {
+      await Supabase.instance.client
+          .from('pesanan')
+          .update({'status': statusBaru})
+          .eq('id_pesanan', idPesanan);
+      
+      // Update juga riwayat aktivitas
+      await Supabase.instance.client
+          .from('riwayat_aktivitas')
+          .update({'status': statusBaru})
+          .eq('id_referensi', idPesanan)
+          .eq('jenis_aktivitas', 'pesanan');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pesanan telah selesai'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+        await _fetchAktivitas(); // Refresh data
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal update: $e'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<String?> _getPesananStatus(String idPesanan) async {
+    try {
+      final result = await Supabase.instance.client
+          .from('pesanan')
+          .select('status')
+          .eq('id_pesanan', idPesanan)
+          .maybeSingle();
+      
+      return result?['status'];
+    } catch (e) {
+      debugPrint('Error get pesanan status: $e');
+      return null;
+    }
+  }
+
   AktivitasType _parseType(String? v) {
     switch (v) {
       case 'lapor_sampah':     return AktivitasType.laporan;
@@ -186,6 +280,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
       case 'diproses': return AktivitasStatus.diproses;
       case 'selesai':  return AktivitasStatus.selesai;
       case 'menunggu': return AktivitasStatus.menunggu;
+      case 'dikirim':  return AktivitasStatus.dikirim;
       default:         return AktivitasStatus.berhasil;
     }
   }
@@ -229,6 +324,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
       case AktivitasStatus.diproses: return (bg: const Color(0xFFB3E7FF), text: const Color(0xFF016BB6), label: 'Diproses');
       case AktivitasStatus.selesai:  return (bg: const Color(0x99B3E5B3), text: const Color(0xFF008000), label: 'Selesai');
       case AktivitasStatus.menunggu: return (bg: const Color(0xFFF2DEB3), text: const Color(0xFFA8760B), label: 'Menunggu');
+      case AktivitasStatus.dikirim:  return (bg: const Color(0xFFFFE0B3), text: const Color(0xFFD2691E), label: 'Dikirim');
       case AktivitasStatus.berhasil: return (bg: const Color(0x99B3E5B3), text: const Color(0xFF008000), label: 'Berhasil');
     }
   }
@@ -267,10 +363,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
                       children: [
                         Text(
                           'Riwayat Aktivitas',
-                          style: AppTextStyles.title.copyWith(
-                            fontSize: 20, fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                          ),
+                          style: AppTextStyles.namafitur
                         ),
                         const SizedBox(height: 18),
 
@@ -679,95 +772,278 @@ class _AktivitasPageState extends State<AktivitasPage> {
   void _showDetailDialog(BuildContext context, AktivitasItem item, _TypeTheme theme) {
     final st = _statusStyle(item.status);
     final isLaporan = item.type == AktivitasType.laporan;
-
+    final isTukarPoin = item.type == AktivitasType.tukarPoin;
+    final isPesanan = item.type == AktivitasType.pesanan; // TAMBAHKAN
+    
+    // State untuk tombol loading
+    bool isUpdating = false;
+    
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-        child: Container(
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppConstants.radiusL)),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
-                decoration: BoxDecoration(
-                  color: theme.labelBg.withValues(alpha: 0.6),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(AppConstants.radiusL),
-                    topRight: Radius.circular(AppConstants.radiusL),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 38, height: 38,
-                      decoration: BoxDecoration(color: theme.iconBg, borderRadius: BorderRadius.circular(AppConstants.radiusS)),
-                      child: Icon(_typeIcon(item.type), color: theme.accent, size: 20),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(item.title, style: AppTextStyles.title.copyWith(fontWeight: FontWeight.w700, color: theme.accent))),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(ctx),
-                      child: Container(
-                        width: 32, height: 32,
-                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.06), shape: BoxShape.circle),
-                        child: const Icon(Icons.close, size: 18),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+              child: Container(
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppConstants.radiusL)),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: st.bg, borderRadius: BorderRadius.circular(AppConstants.radiusS)),
-                      child: Text(st.label, style: AppTextStyles.small.copyWith(color: st.text, fontWeight: FontWeight.w700)),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(item.description, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary, height: 1.55)),
-                    if (isLaporan) ...[
-                      const SizedBox(height: 16),
-                      Text('Bukti Foto Laporan', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 8),
-                      item.buktiFotoUrl != null && item.buktiFotoUrl!.isNotEmpty
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(AppConstants.radiusM),
-                              child: Image.network(
-                                item.buktiFotoUrl!,
-                                width: double.infinity, height: 180, fit: BoxFit.cover,
-                                loadingBuilder: (ctx, child, p) => p == null ? child : _fotoPlaceholder(isError: false, isLoading: true),
-                                errorBuilder: (ctx, e, s) => _fotoPlaceholder(isError: true, isLoading: false),
-                              ),
-                            )
-                          : _fotoPlaceholder(isError: false, isLoading: false),
-                    ],
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity, height: 46,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusXL)),
+                      padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
+                      decoration: BoxDecoration(
+                        color: theme.labelBg.withValues(alpha: 0.6),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(AppConstants.radiusL),
+                          topRight: Radius.circular(AppConstants.radiusL),
                         ),
-                        child: Text('Tutup', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700, color: AppColors.secondary)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 38, height: 38,
+                            decoration: BoxDecoration(color: theme.iconBg, borderRadius: BorderRadius.circular(AppConstants.radiusS)),
+                            child: Icon(_typeIcon(item.type), color: theme.accent, size: 20),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(child: Text(item.title, style: AppTextStyles.title.copyWith(fontWeight: FontWeight.w700, color: theme.accent))),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(ctx),
+                            child: Container(
+                              width: 32, height: 32,
+                              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.06), shape: BoxShape.circle),
+                              child: const Icon(Icons.close, size: 18),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(color: st.bg, borderRadius: BorderRadius.circular(AppConstants.radiusS)),
+                            child: Text(st.label, style: AppTextStyles.small.copyWith(color: st.text, fontWeight: FontWeight.w700)),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(item.description, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary, height: 1.55)),
+                          
+                          // Kode voucher untuk tukar poin
+                          if (isTukarPoin && item.kodeVoucher != null && item.kodeVoucher!.isNotEmpty) ...[
+                            const SizedBox(height: 20),
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8FF8A).withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                                border: Border.all(color: AppColors.secondary, width: 1.5),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.card_giftcard_outlined, color: AppColors.secondary, size: 20),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Kode Voucher',
+                                        style: AppTextStyles.body.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.secondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(AppConstants.radiusS),
+                                      border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3)),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            item.kodeVoucher!,
+                                            style: AppTextStyles.title.copyWith(
+                                              fontSize: 16,
+                                              letterSpacing: 1.5,
+                                              color: AppColors.secondary,
+                                            ),
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () {
+                                            Clipboard.setData(ClipboardData(text: item.kodeVoucher!));
+                                            ScaffoldMessenger.of(ctx).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Kode voucher disalin'),
+                                                duration: Duration(seconds: 2),
+                                                backgroundColor: Colors.green,
+                                              ),
+                                            );
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.secondary,
+                                              borderRadius: BorderRadius.circular(AppConstants.radiusS),
+                                            ),
+                                            child: const Icon(Icons.copy, size: 18, color: Colors.white),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Tunjukkan kode ini saat menukarkan reward',
+                                    style: AppTextStyles.small.copyWith(color: AppColors.textSecondary, fontSize: 10),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                          
+                          // Bukti foto untuk laporan
+                          if (isLaporan) ...[
+                            const SizedBox(height: 16),
+                            Text('Bukti Foto Laporan', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 8),
+                            item.buktiFotoUrl != null && item.buktiFotoUrl!.isNotEmpty
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                                    child: Image.network(
+                                      item.buktiFotoUrl!,
+                                      width: double.infinity, height: 180, fit: BoxFit.cover,
+                                      loadingBuilder: (ctx, child, p) => p == null ? child : _fotoPlaceholder(isError: false, isLoading: true),
+                                      errorBuilder: (ctx, e, s) => _fotoPlaceholder(isError: true, isLoading: false),
+                                    ),
+                                  )
+                                : _fotoPlaceholder(isError: false, isLoading: false),
+                          ],
+                          
+                          const SizedBox(height: 20),
+                          
+                          // Tampilkan tombol Selesai untuk pesanan dengan status tertentu
+                          if (isPesanan && item.idReferensi != null) ...[
+                            FutureBuilder<String?>(
+                              future: _getPesananStatus(item.idReferensi!),
+                              builder: (context, snapshot) {
+                                final pesananStatus = snapshot.data;
+                                
+                                // Tampilkan tombol Selesai jika status 'dikirim' atau 'diproses'
+                                if (pesananStatus == 'dikirim' || pesananStatus == 'diproses') {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // KETERANGAN SEDERHANA
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 8),
+                                        child: Text(
+                                          'Klik "Selesai" saat paket anda sudah sampai',
+                                          style: AppTextStyles.small.copyWith(
+                                            color: Colors.orange.shade700,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                      // Tombol Selesai
+                                      SizedBox(
+                                        width: double.infinity,
+                                        height: 46,
+                                        child: ElevatedButton(
+                                          onPressed: isUpdating
+                                              ? null
+                                              : () async {
+                                                  setDialogState(() => isUpdating = true);
+                                                  await _updatePesananStatus(item.idReferensi!, 'selesai');
+                                                  if (mounted) {
+                                                    Navigator.pop(ctx);
+                                                  }
+                                                },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.green,
+                                            elevation: 0,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(AppConstants.radiusXL),
+                                            ),
+                                          ),
+                                          child: isUpdating
+                                              ? const SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: Colors.white,
+                                                  ),
+                                                )
+                                              : Row(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    const Icon(Icons.check_circle_outline, size: 20, color: Colors.white),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      'Selesai',
+                                                      style: AppTextStyles.body.copyWith(
+                                                        fontWeight: FontWeight.w700,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          
+                          // Tombol Tutup
+                          SizedBox(
+                            width: double.infinity,
+                            height: 46,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(AppConstants.radiusXL),
+                                ),
+                              ),
+                              child: Text(
+                                'Tutup',
+                                style: AppTextStyles.body.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.secondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 

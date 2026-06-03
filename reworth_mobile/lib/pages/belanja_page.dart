@@ -321,7 +321,7 @@ class _BelanjaPageState extends State<BelanjaPage> {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: AppColors.white.withOpacity(0.55),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
@@ -341,10 +341,7 @@ class _BelanjaPageState extends State<BelanjaPage> {
             child: Center(
               child: Text(
                 'Marketplace',
-                style: AppTextStyles.title.copyWith(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: AppTextStyles.namafitur
               ),
             ),
           ),

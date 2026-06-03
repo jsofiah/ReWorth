@@ -32,6 +32,8 @@ dependencies:
   flutter_image_compress: ^2.3.0
   path_provider: ^2.0.11
   dotted_border: ^2.1.0
+  shared_preferences: ^2.0.15
+  uni_links: ^0.5.1
   
 dev_dependencies:
   flutter_test:
@@ -45,6 +47,7 @@ flutter:
   assets:
   - assets/logo.png
   - assets/gradient.png
+  - assets/mask_group.png
   - assets/banner_reward/1.png
   - assets/banner_reward/2.png
   - assets/banner_reward/3.png

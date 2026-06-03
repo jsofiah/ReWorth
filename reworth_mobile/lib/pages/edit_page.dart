@@ -8,6 +8,7 @@ import '../services/auth_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_constants.dart';
 import '../utils/app_image_helper.dart';
+import '../utils/app_text_styles.dart';
 
 class EditPage extends StatefulWidget {
   const EditPage({super.key});
@@ -345,7 +346,7 @@ class _EditPageState extends State<EditPage> {
                     child: const Icon(Icons.chevron_left_rounded, color: Color(0xFF1A2800), size: 26),
                   ),
                 ),
-                const Expanded(child: Center(child: Text('Edit Profil', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)))),
+                Expanded(child: Center(child: Text('Edit Profil', style: AppTextStyles.namafitur))),
                 const SizedBox(width: 38),
               ]),
             ),

@@ -742,7 +742,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildEventSection() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppConstants.paddingL, 0, AppConstants.paddingL, 20),
+      padding: const EdgeInsets.fromLTRB(AppConstants.paddingL, 0, AppConstants.paddingL, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -993,7 +993,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildEmptyEvent() {
     return Container(
-      height: 220,
+      height: 210,
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppConstants.radiusL),

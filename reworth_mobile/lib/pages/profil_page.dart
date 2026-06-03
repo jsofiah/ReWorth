@@ -199,11 +199,7 @@ class _ProfilPageState extends State<ProfilPage> {
           Center(
             child: Text(
               'Profil Saya',
-              style: AppTextStyles.headline.copyWith(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: AppColors.black,
-              ),
+              style: AppTextStyles.namafitur
             ),
           ),
           

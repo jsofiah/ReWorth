@@ -530,7 +530,7 @@ class _RewardPageState extends State<RewardPage> {
               child: Text(
                 f,
                 style: AppTextStyles.body.copyWith(
-                  color: selected ? AppColors.white : AppColors.textSecondary,
+                  color: selected ? AppColors.black : AppColors.textSecondary,
                   fontWeight:
                       selected ? FontWeight.w600 : FontWeight.normal,
                 ),
