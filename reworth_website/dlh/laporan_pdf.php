@@ -29,9 +29,6 @@ function sbGet($url, $key, $ep)
     return $c === 200 ? (json_decode($r, true) ?: []) : [];
 }
 
-// ==================== FETCH DATA UNTUK DLH ====================
-
-// 1. Laporan Sampah
 $allLaporan = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan");
 $totalLaporan = count($allLaporan);
 
@@ -46,7 +43,6 @@ $laporanDitolak = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?selec
 $totalDitolak = count($laporanDitolak);
 $persenDitolak = $totalLaporan > 0 ? round(($totalDitolak / $totalLaporan) * 100, 1) : 0;
 
-// 2. Status Laporan (persentase dari total semua status)
 $statusMenunggu = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.menunggu");
 $statusDiproses = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.diproses");
 $statusSelesaiCount = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.selesai");
@@ -58,7 +54,6 @@ $persenDiprosesTotal = $totalSemua > 0 ? round((count($statusDiproses) / $totalS
 $persenMenungguTotal = $totalSemua > 0 ? round((count($statusMenunggu) / $totalSemua) * 100) : 0;
 $persenDitolakTotal = $totalSemua > 0 ? round((count($statusDitolakCount) / $totalSemua) * 100) : 0;
 
-// 3. Detail Laporan untuk Tabel
 $laporanList = sbGet($supabaseUrl, $supabaseKey, 
     "/rest/v1/lapor_sampah?select=*,pengguna(nama_lengkap),petugas_lapangan(nama_petugas)"
     . "&created_at=gte=" . urlencode($fromTs) 
@@ -66,18 +61,6 @@ $laporanList = sbGet($supabaseUrl, $supabaseKey,
     . "&order=created_at.desc");
 
 $statusMap = ['menunggu' => 'Menunggu', 'diproses' => 'Diproses', 'selesai' => 'Selesai', 'ditolak' => 'Ditolak'];
-
-// 4. Event Lingkungan
-$eventList = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/event?select=id_event&status=eq.berlangsung");
-$eventAktif = count($eventList);
-$totalPendaftar = count(sbGet($supabaseUrl, $supabaseKey, "/rest/v1/pendaftar_event?select=id_pendaftar_event"));
-
-// 5. Poin Reward
-$tukarList = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/tukar_poin?select=id_tukar,reward(poin_dibutuhkan)");
-$totalPoin = 0;
-foreach ($tukarList as $t) {
-    $totalPoin += (int)($t['reward']['poin_dibutuhkan'] ?? 0);
-}
 
 function formatNumber($n) { return number_format($n, 0, ',', '.'); }
 ?>
@@ -90,89 +73,82 @@ function formatNumber($n) { return number_format($n, 0, ',', '.'); }
     <link rel="stylesheet" href="style/root.css">
     <link rel="stylesheet" href="style/form.css">
 </head>
-<body>
+<body class="laporan-pdf">
 
-<button class="print-btn" onclick="window.print()">
-    <i class="bi bi-printer-fill"></i> Cetak / Simpan PDF
-</button>
+<div class="pdf-container">
+    <button class="print-btn" onclick="window.print()">
+        <i class="bi bi-printer-fill"></i> Cetak / Simpan PDF
+    </button>
 
-<!-- HEADER -->
-<div class="report-header">
-    <div class="org-name">DINAS LINGKUNGAN HIDUP (DLH)</div>
-    <div class="org-sub">KOTA MALANG</div>
-    <div class="report-title">LAPORAN DAN ANALITIK</div>
-    <div class="report-period">Periode <?= $labelFrom ?> s.d <?= $labelTo ?></div>
-    <div class="klasifikasi">Dicetak pada: <?= date('d F Y, H:i') ?> WIB</div>
-</div>
-<div class="divider-thick"></div>
-<div class="divider-thin" style="margin-bottom:10px;"></div>
-
-<!-- A. RINGKASAN UMUM -->
-<div class="section-title">A. RINGKASAN UMUM</div>
-<table class="summary-table">
-    <tr class="indent"><td class="label">Total Laporan Terdaftar</td><td class="value"><?= formatNumber($totalLaporan) ?> laporan</td></tr>
-    <tr class="indent"><td class="label">Laporan Baru (Menunggu Konfirmasi)</td><td class="value"><?= formatNumber($totalBaru) ?> laporan</td></tr>
-    <tr class="indent"><td class="label">Laporan Selesai Ditangani</td><td class="value"><?= formatNumber($totalSelesai) ?> laporan (<?= $persenSelesai ?>%)</td></tr>
-    <tr class="indent"><td class="label">Laporan Ditolak</td><td class="value"><?= formatNumber($totalDitolak) ?> laporan (<?= $persenDitolak ?>%)</td></tr>
-    <tr class="indent"><td class="label">Event Lingkungan Aktif</td><td class="value"><?= formatNumber($eventAktif) ?> event</td></tr>
-    <tr class="indent"><td class="label">Total Pendaftar Event</td><td class="value"><?= formatNumber($totalPendaftar) ?> orang</td></tr>
-    <tr class="indent"><td class="label">Total Poin Ditukarkan (Reward)</td><td class="value"><?= formatNumber($totalPoin) ?> poin</td></tr>
-    <tr class="indent"><td class="label">Jumlah Penukaran Reward</td><td class="value"><?= formatNumber(count($tukarList)) ?> kali</td></tr>
-</table>
-<div class="divider-thin"></div>
-
-<!-- B. STATUS LAPORAN -->
-<div class="section-title">B. STATUS LAPORAN</div>
-<table class="summary-table">
-    <tr class="indent"><td class="label">Selesai</td><td class="value"><?= $persenSelesaiTotal ?>%</td></tr>
-    <tr class="indent"><td class="label">Diproses</td><td class="value"><?= $persenDiprosesTotal ?>%</td></tr>
-    <tr class="indent"><td class="label">Menunggu</td><td class="value"><?= $persenMenungguTotal ?>%</td></tr>
-    <tr class="indent"><td class="label">Ditolak</td><td class="value"><?= $persenDitolakTotal ?>%</td></tr>
-</table>
-<div class="divider-thin"></div>
-
-<!-- C. DETAIL LAPORAN MASUK -->
-<div class="section-title">C. DETAIL LAPORAN MASUK</div>
-<table class="data-table">
-    <thead>
-        <tr>
-            <th style="width:40px;">No</th>
-            <th>Tanggal Lapor</th>
-            <th>Nama Pelapor</th>
-            <th>Jenis Sampah</th>
-            <th>Lokasi</th>
-            <th>Petugas</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php if (!empty($laporanList)): ?>
-            <?php $no = 1; foreach ($laporanList as $lp): ?>
-            <tr>
-                <td class="center"><?= $no++ ?></td>
-                <td class="center"><?= date('d/m/Y', strtotime($lp['created_at'])) ?></td>
-                <td><?= htmlspecialchars($lp['pengguna']['nama_lengkap'] ?? '-') ?></td>
-                <td><?= htmlspecialchars($lp['jenis_sampah'] ?? '-') ?></td>
-                <td><?= htmlspecialchars($lp['lokasi'] ?? '-') ?></td>
-                <td><?= htmlspecialchars($lp['petugas_lapangan']['nama_petugas'] ?? '-') ?></td>
-                <td class="center"><?= $statusMap[$lp['status']] ?? ucfirst($lp['status']) ?></td>
-            </tr>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <tr class="empty-row"><td colspan="7">Tidak ada laporan pada periode ini.</td></tr>
-        <?php endif; ?>
-    </tbody>
-</table>
-
-<!-- TANDA TANGAN -->
-<div class="signature-section">
-    <div class="sig-box">
-        <div class="sig-title">Malang, <?= date('d F Y') ?><br>Mengetahui,<br>Kepala DLH Kota Malang</div>
-        <div class="sig-name">( ________________________ )</div>
+    <div class="report-header">
+        <div class="org-name">DINAS LINGKUNGAN HIDUP (DLH)</div>
+        <div class="org-sub">KOTA MALANG</div>
+        <div class="report-title">LAPORAN DAN ANALITIK</div>
+        <div class="report-period">Periode <?= $labelFrom ?> s.d <?= $labelTo ?></div>
+        <div class="klasifikasi">Dicetak pada: <?= date('d F Y, H:i') ?> WIB</div>
     </div>
-    <div class="sig-box">
-        <div class="sig-title">Malang, <?= date('d F Y') ?><br>Dibuat oleh,<br>Petugas/Admin</div>
-        <div class="sig-name">( <?= htmlspecialchars($_SESSION['nama_admin'] ?? 'Admin') ?> )</div>
+    <div class="divider-thick"></div>
+    <div class="divider-thin" style="margin-bottom:10px;"></div>
+
+    <div class="section-title">A. RINGKASAN UMUM</div>
+    <table class="summary-table">
+        <tr class="indent"><td class="label">Total Laporan Terdaftar</td><td class="value"><?= formatNumber($totalLaporan) ?> laporan</td></tr>
+        <tr class="indent"><td class="label">Laporan Baru (Menunggu Konfirmasi)</td><td class="value"><?= formatNumber($totalBaru) ?> laporan</td></tr>
+        <tr class="indent"><td class="label">Laporan Selesai Ditangani</td><td class="value"><?= formatNumber($totalSelesai) ?> laporan (<?= $persenSelesai ?>%)</td></tr>
+        <tr class="indent"><td class="label">Laporan Ditolak</td><td class="value"><?= formatNumber($totalDitolak) ?> laporan (<?= $persenDitolak ?>%)</td></tr>
+    </table>
+    <div class="divider-thin"></div>
+
+    <div class="section-title">B. STATUS LAPORAN</div>
+    <table class="summary-table">
+        <tr class="indent"><td class="label">Selesai</td><td class="value"><?= $persenSelesaiTotal ?>%</td></tr>
+        <tr class="indent"><td class="label">Diproses</td><td class="value"><?= $persenDiprosesTotal ?>%</td></tr>
+        <tr class="indent"><td class="label">Menunggu</td><td class="value"><?= $persenMenungguTotal ?>%</td></tr>
+        <tr class="indent"><td class="label">Ditolak</td><td class="value"><?= $persenDitolakTotal ?>%</td></tr>
+    </table>
+    <div class="divider-thin"></div>
+
+    <div class="section-title">C. DETAIL LAPORAN MASUK</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width:40px;">No</th>
+                <th>Tanggal Lapor</th>
+                <th>Nama Pelapor</th>
+                <th>Jenis Sampah</th>
+                <th>Lokasi</th>
+                <th>Petugas</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (!empty($laporanList)): ?>
+                <?php $no = 1; foreach ($laporanList as $lp): ?>
+                <tr>
+                    <td class="center"><?= $no++ ?></td>
+                    <td class="center"><?= date('d/m/Y', strtotime($lp['created_at'])) ?></td>
+                    <td><?= htmlspecialchars($lp['pengguna']['nama_lengkap'] ?? '-') ?></td>
+                    <td><?= htmlspecialchars($lp['jenis_sampah'] ?? '-') ?></td>
+                    <td><?= htmlspecialchars($lp['lokasi'] ?? '-') ?></td>
+                    <td><?= htmlspecialchars($lp['petugas_lapangan']['nama_petugas'] ?? '-') ?></td>
+                    <td class="center"><?= $statusMap[$lp['status']] ?? ucfirst($lp['status']) ?></td>
+                </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr class="empty-row"><td colspan="7">Tidak ada laporan pada periode ini.</td></tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
+
+    <div class="signature-section">
+        <div class="sig-box">
+            <div class="sig-title">Malang, <?= date('d F Y') ?><br>Mengetahui,<br>Kepala DLH Kota Malang</div>
+            <div class="sig-name">( ________________________ )</div>
+        </div>
+        <div class="sig-box">
+            <div class="sig-title">Malang, <?= date('d F Y') ?><br>Dibuat oleh,<br>Petugas/Admin</div>
+            <div class="sig-name">( <?= htmlspecialchars($_SESSION['nama_admin'] ?? 'Admin') ?> )</div>
+        </div>
     </div>
 </div>
 
