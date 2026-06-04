@@ -57,6 +57,10 @@ foreach ($semuaPesanan as $p) {
 $filterStatus = $_GET['status'] ?? 'semua';
 if ($filterStatus !== 'semua') {
     $pesananList = array_filter($pesananList, function($p) use ($filterStatus) {
+        // Untuk status menunggu_konfirmasi, filter sesuai database
+        if ($filterStatus == 'menunggu_konfirmasi') {
+            return $p['status'] === 'menunggu_konfirmasi';
+        }
         return $p['status'] === $filterStatus;
     });
 }
@@ -82,11 +86,11 @@ $showing_to = min($start + $per_page, $total_data);
 
 function getStatusBadge($status) {
     switch($status) {
-        case 'menunggu_pembayaran': return '<span class="badge bg-warning text-dark">Menunggu Pembayaran</span>';
+        case 'menunggu_konfirmasi': return '<span class="badge bg-warning text-dark">Menunggu Konfirmasi</span>';
         case 'diproses': return '<span class="badge bg-info text-dark">Diproses</span>';
         case 'dikirim': return '<span class="badge bg-primary">Dikirim</span>';
         case 'selesai': return '<span class="badge bg-success">Selesai</span>';
-        case 'dibatalkan': return '<span class="badge bg-danger">Dibatalkan</span>';
+        case 'ditolak': return '<span class="badge bg-danger">Ditolak</span>';
         default: return '<span class="badge bg-secondary">'.$status.'</span>';
     }
 }
@@ -144,14 +148,14 @@ function getStatusBadge($status) {
                     <i class="bi bi-search"></i>
                     <input type="text" class="search-input" placeholder="Cari pesanan..." id="searchInput" value="<?= htmlspecialchars($search) ?>">
                 </div>
-                <select id="statusFilter" class="form-select w-auto">
-                    <option value="semua" <?= $filterStatus == 'semua' ? 'selected' : '' ?>>Semua Status</option>
-                    <option value="menunggu_pembayaran" <?= $filterStatus == 'menunggu_pembayaran' ? 'selected' : '' ?>>Menunggu Pembayaran</option>
-                    <option value="diproses" <?= $filterStatus == 'diproses' ? 'selected' : '' ?>>Diproses</option>
-                    <option value="dikirim" <?= $filterStatus == 'dikirim' ? 'selected' : '' ?>>Dikirim</option>
-                    <option value="selesai" <?= $filterStatus == 'selesai' ? 'selected' : '' ?>>Selesai</option>
-                    <option value="dibatalkan" <?= $filterStatus == 'dibatalkan' ? 'selected' : '' ?>>Dibatalkan</option>
-                </select>
+<select id="statusFilter" class="form-select w-auto">
+    <option value="semua" <?= $filterStatus == 'semua' ? 'selected' : '' ?>>Semua Status</option>
+    <option value="menunggu_konfirmasi" <?= $filterStatus == 'menunggu_konfirmasi' ? 'selected' : '' ?>>Menunggu Konfirmasi</option>
+    <option value="diproses" <?= $filterStatus == 'diproses' ? 'selected' : '' ?>>Diproses</option>
+    <option value="dikirim" <?= $filterStatus == 'dikirim' ? 'selected' : '' ?>>Dikirim</option>
+    <option value="selesai" <?= $filterStatus == 'selesai' ? 'selected' : '' ?>>Selesai</option>
+    <option value="ditolak" <?= $filterStatus == 'ditolak' ? 'selected' : '' ?>>Ditolak</option>
+</select>
 
             </div>
         </div>
