@@ -65,7 +65,107 @@
         curl_close($ch);
 
         if ($code === 200 || $code === 201) {
-            echo json_encode(['success' => true, 'message' => 'Apresiasi berhasil ditambahkan!']);
+            $wilayahUrl = $supabaseUrl . "/rest/v1/wilayah?id_wilayah=eq." . urlencode($id_wilayah);
+            $wilayahData = supabaseGet($wilayahUrl, $supabaseKey);
+            $namaWilayah = '';
+            if (!empty($wilayahData)) {
+                $kec = $wilayahData[0]['kecamatan'] ?? '';
+                $kel = $wilayahData[0]['kelurahan'] ?? '';
+                $rw = $wilayahData[0]['rw'] ?? '';
+                $namaWilayah = "Kec. $kec, Kel. $kel, RW " . str_pad($rw, 2, '0', STR_PAD_LEFT);
+            }
+
+            $getUrl = $supabaseUrl . "/rest/v1/apresiasi?select=id_apresiasi&order=created_at.desc&limit=1";
+            $getResult = supabaseGet($getUrl, $supabaseKey);
+            $newId = $getResult[0]['id_apresiasi'] ?? null;
+
+            $logData = [
+                'id_admin' => $_SESSION['id_admin'] ?? '',
+                'aktivitas' => 'Menambahkan apresiasi: ' . $judul . ' - ' . $namaWilayah . ' (' . $periode . ')',
+                'tabel_terkait' => 'apresiasi',
+                'id_data' => $newId,
+                'created_at' => date('c')
+            ];
+
+            $logCh = curl_init($supabaseUrl . "/rest/v1/log_admin");
+            curl_setopt($logCh, CURLOPT_CUSTOMREQUEST, "POST");
+            curl_setopt($logCh, CURLOPT_POSTFIELDS, json_encode($logData));
+            curl_setopt($logCh, CURLOPT_HTTPHEADER, [
+                "apikey: $supabaseKey",
+                "Authorization: Bearer $supabaseKey",
+                "Content-Type: application/json",
+                "Prefer: return=representation"
+            ]);
+            curl_setopt($logCh, CURLOPT_RETURNTRANSFER, true);
+            $logResponse = curl_exec($logCh);
+            $logHttpCode = curl_getinfo($logCh, CURLINFO_HTTP_CODE);
+            curl_close($logCh);
+
+            $getKetuaUrl = $supabaseUrl . "/rest/v1/wilayah?id_wilayah=eq." . urlencode($id_wilayah) . "&select=id_ketua_rw";
+            $ketuaResult = supabaseGet($getKetuaUrl, $supabaseKey);
+            $idKetuaRW = $ketuaResult[0]['id_ketua_rw'] ?? null;
+
+            if ($idKetuaRW) {
+                // [4] INSERT NOTIFIKASI KE TABEL notifikasi
+                $notifData = [
+                    'id_pengguna' => $idKetuaRW,
+                    'judul' => 'Selamat! RW Anda Mendapat Apresiasi',
+                    'deskripsi' => 'Apresiasi telah diberikan untuk periode ' . $periode . '. Silakan datang ke Kantor DLH untuk informasi lebih lanjut.',
+                    'is_read' => false,
+                    'created_at' => date('c')
+                ];
+
+                $notifCh = curl_init($supabaseUrl . "/rest/v1/notifikasi");
+                curl_setopt($notifCh, CURLOPT_CUSTOMREQUEST, "POST");
+                curl_setopt($notifCh, CURLOPT_POSTFIELDS, json_encode($notifData));
+                curl_setopt($notifCh, CURLOPT_HTTPHEADER, [
+                    "apikey: $supabaseKey",
+                    "Authorization: Bearer $supabaseKey",
+                    "Content-Type: application/json",
+                    "Prefer: return=minimal"
+                ]);
+                curl_setopt($notifCh, CURLOPT_RETURNTRANSFER, true);
+                $notifResponse = curl_exec($notifCh);
+                $notifHttpCode = curl_getinfo($notifCh, CURLINFO_HTTP_CODE);
+                curl_close($notifCh);
+
+                // [5] KIRIM FCM NOTIFICATION KE KETUA RW
+                $fcmPayload = [
+                    'user_id' => $idKetuaRW,
+                    'title' => 'Selamat! RW Anda Mendapat Apresiasi',
+                    'body' => 'Apresiasi telah diberikan untuk periode ' . $periode . '. Silakan datang ke Kantor DLH untuk informasi lebih lanjut.'
+                ];
+
+                $chFcm = curl_init();
+                curl_setopt($chFcm, CURLOPT_URL, "https://rxzrbyqqhkxemdjbcntc.supabase.co/functions/v1/send-user-notification");
+                curl_setopt($chFcm, CURLOPT_POST, true);
+                curl_setopt($chFcm, CURLOPT_POSTFIELDS, json_encode($fcmPayload));
+                curl_setopt($chFcm, CURLOPT_HTTPHEADER, [
+                    "Authorization: Bearer $supabaseKey",
+                    "apikey: $supabaseKey",
+                    "Content-Type: application/json"
+                ]);
+                curl_setopt($chFcm, CURLOPT_RETURNTRANSFER, true);
+                $fcmResponse = curl_exec($chFcm);
+                $fcmHttpCode = curl_getinfo($chFcm, CURLINFO_HTTP_CODE);
+                $fcmError = curl_error($chFcm);
+                curl_close($chFcm);
+            }
+
+            echo json_encode([
+                'success' => true, 
+                'message' => 'Apresiasi berhasil ditambahkan!',
+                'debug_log' => [
+                    'new_id' => $newId,
+                    'log_http_code' => $logHttpCode,
+                    'log_response' => $logResponse,
+                    'ketua_rw_id' => $idKetuaRW,
+                    'notif_http_code' => $notifHttpCode,
+                    'notif_response' => $notifResponse,
+                    'fcm_http_code' => $fcmHttpCode,
+                    'fcm_response' => json_decode($fcmResponse ?? '{}', true)
+                ]
+            ]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Gagal menyimpan data', 'debug' => $res]);
         }
