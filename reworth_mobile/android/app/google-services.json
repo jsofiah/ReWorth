@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "661013807242",
+    "project_id": "reworth-b8941",
+    "storage_bucket": "reworth-b8941.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:661013807242:android:8f6af813b87e6c67a62d73",
+        "android_client_info": {
+          "package_name": "com.example.reworth_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJA6nv4yWrvxgxKeqOlWY8wlk31PUHkUY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

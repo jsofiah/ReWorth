@@ -54,7 +54,7 @@ class _EventPageState extends State<EventPage> {
   Future<void> _fetchEvents() async {
     setState(() => _isLoading = true);
     try {
-      // Fetch semua event
+      // Fetch semua event dengan status != 'selesai'
       final data = await _supabase
           .from('event')
           .select('''
@@ -66,6 +66,7 @@ class _EventPageState extends State<EventPage> {
               )
             )
           ''')
+          .neq('status', 'selesai')  // Tambahkan filter ini
           .order('tanggal', ascending: true);
 
       final events = (data as List)

@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 class AuthService {
   static final _supabase = Supabase.instance.client;
 
@@ -13,6 +15,7 @@ class AuthService {
     required String idWilayah,
     required double latitude,
     required double longitude,
+    String? fcmToken,
   }) async {
     try {
       print("=== START REGISTER PROCESS ===");
@@ -46,6 +49,7 @@ class AuthService {
         'longitude': longitude,
         'poin': 0,
         'saldo_tabungan': 0,
+        'fcm_token': fcmToken,
       };
       
       print("Insert data: $insertData");
@@ -324,5 +328,23 @@ class AuthService {
       print("Error getting user saldo: $e");
       return 0;
     }
+  }
+
+  static Future<void> updateFcmToken() async {
+    final user = _supabase.auth.currentUser;
+
+    if (user == null) return;
+
+    final token =
+        await FirebaseMessaging.instance.getToken();
+
+    if (token == null) return;
+
+    await _supabase
+        .from('pengguna')
+        .update({'fcm_token': token})
+        .eq('id_pengguna', user.id);
+
+    print("FCM Updated: $token");
   }
 }
