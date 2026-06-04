@@ -187,7 +187,7 @@ function getStatusBadge($status) {
                                     <td class="text-center"><?= getStatusBadge($p['status']) ?></td>
                                     <td class="text-center">
                                         <button class="btn-aksi btn-lihat" onclick="lihatDetail('<?= $p['id_pesanan'] ?>')">
-                                            <i class="bi bi-eye"></i> Detail
+                                            <i class="bi bi-eye"></i> Lihat
                                         </button>
                                     </td>
                                 </tr>
