@@ -388,9 +388,6 @@ input[type="file"] {
     }
 }
 
-/* ═══════════════════════════════════════════
-   STATUS BADGE — base wajib ada agar warna muncul
-   ═══════════════════════════════════════════ */
 .status-badge {
     display: inline-block;
     padding: 4px 14px;
@@ -1029,7 +1026,6 @@ input[type="file"] {
     z-index: 10;
 }
 
-/* ── Profil Card ── */
 .petugas-profile-card {
     background: #fff;
     border-radius: 20px;
@@ -1115,7 +1111,6 @@ input[type="file"] {
     font-size: 14px;
 }
 
-/* ── Riwayat Tugas Card ── */
 .riwayat-card {
     background: #fff;
     border-radius: 20px;
@@ -1177,5 +1172,447 @@ input[type="file"] {
         flex-direction: column;
         align-items: flex-start;
         gap: 10px;
+    }
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 20px;
+    padding: 24px 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border: 1px solid #E2EDE8;
+    text-align: center;
+    position: relative;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20px;
+    bottom: 20px;
+    width: 6px;
+    border-radius: 0 6px 6px 0;
+}
+
+.stat-card:nth-child(1)::before { background: #8EA604; }
+.stat-card:nth-child(2)::before { background: #F5BB00; }
+.stat-card:nth-child(3)::before { background: #4EAC91; }
+.stat-card:nth-child(4)::before { background: #D95D39; }
+
+.stat-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6B8A7E;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    font-size: 38px;
+    font-weight: 800;
+    color: #1A2E24;
+    line-height: 1.1;
+    margin-bottom: 8px;
+}
+
+.stat-trend {
+    font-size: 11px;
+    font-weight: 500;
+    color: #6B8A7E;
+}
+
+.trend-up { color: #8EA604; }
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid #E2EDE8;
+}
+
+.chart-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #1A2E24;
+}
+
+.status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.status-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.status-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1A2E24;
+}
+
+.status-percent {
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.status-percent.selesai { color: #8EA604; }
+.status-percent.diproses { color: #DBC729; }
+.status-percent.menunggu { color: #D95D39; }
+.status-percent.ditolak { color: #E29802; }
+
+.progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background-color: #E2EDE8;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.progress-bar-fill.selesai { background-color: #8EA604; }
+.progress-bar-fill.diproses { background-color: #DBC729; }
+.progress-bar-fill.menunggu { background-color: #D95D39; }
+.progress-bar-fill.ditolak { background-color: #E29802; }
+
+.bar-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    gap: 40px;
+    padding: 20px 0;
+}
+
+.bar-item {
+    text-align: center;
+    flex: 1;
+}
+
+.bar {
+    background: #8EA604;
+    border-radius: 10px 10px 0 0;
+    width: 100%;
+    min-height: 4px;
+}
+
+.bar-label {
+    margin-top: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6B8A7E;
+}
+
+.bar-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1A2E24;
+    margin-bottom: 6px;
+}
+
+.filter-bar {
+    background: #fff;
+    border-radius: 20px;
+    padding: 16px 24px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+    border: 1px solid #E2EDE8;
+}
+
+.date-range-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.date-range-wrap i {
+    font-size: 20px;
+    color: #8EA604;
+}
+
+.date-range-wrap input {
+    border: 1.5px solid #E2EDE8;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    outline: none;
+    font-family: inherit;
+    background: #fff;
+}
+
+.date-range-wrap input:focus {
+    border-color: #8EA604;
+}
+
+.btn-generate {
+    background: white;
+    color: #8EA604;
+    border: 1.5px solid #8EA604;
+    padding: 8px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.btn-generate:hover {
+    background: #8EA604;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-export {
+    background: #F5BB00;
+    color: #1A2E24;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-export:hover {
+    background: #FFCF00;
+    transform: translateY(-1px);
+}
+
+.btn-export i {
+    font-size: 14px;
+}
+
+@media (max-width: 992px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 576px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .bar-chart { gap: 20px; }
+    .filter-bar { flex-direction: column; align-items: stretch; }
+    .btn-generate, .btn-export { justify-content: center; }
+}
+
+body.laporan-pdf {
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 11pt;
+    color: #000;
+    background: #fff;
+    padding: 24px 36px;
+    margin: 0;
+}
+
+body.laporan-pdf * {
+    box-sizing: border-box;
+}
+
+body.laporan-pdf .print-btn {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: #8EA604;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: 13px;
+    font-family: 'Poppins', Arial, sans-serif;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(142, 166, 4, 0.35);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+body.laporan-pdf .print-btn:hover {
+    background: #6b8403;
+}
+
+body.laporan-pdf .report-header {
+    text-align: center;
+    margin-bottom: 6px;
+}
+
+body.laporan-pdf .report-header .org-name {
+    font-size: 14pt;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+body.laporan-pdf .report-header .org-sub {
+    font-size: 11pt;
+    font-weight: normal;
+    margin-top: 2px;
+}
+
+body.laporan-pdf .report-header .report-title {
+    font-size: 12pt;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+body.laporan-pdf .report-header .report-period {
+    font-size: 10pt;
+    margin-top: 3px;
+}
+
+body.laporan-pdf .report-header .klasifikasi {
+    font-size: 10pt;
+    margin-top: 2px;
+}
+
+body.laporan-pdf .divider-thick {
+    border-top: 2.5px solid #000;
+    margin: 4px 0;
+}
+
+body.laporan-pdf .divider-thin {
+    border-top: 1px solid #000;
+    margin: 4px 0;
+}
+
+body.laporan-pdf .section-title {
+    font-weight: bold;
+    font-size: 11pt;
+    background: #d9d9d9;
+    padding: 3px 6px;
+    margin-top: 10px;
+    margin-bottom: 2px;
+    border: 1px solid #000;
+}
+
+body.laporan-pdf .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 4px;
+}
+
+body.laporan-pdf .summary-table td {
+    padding: 3px 6px;
+    font-size: 10.5pt;
+    vertical-align: top;
+}
+
+body.laporan-pdf .summary-table td.label {
+    width: 60%;
+}
+
+body.laporan-pdf .summary-table td.value {
+    width: 40%;
+    text-align: right;
+}
+
+body.laporan-pdf .summary-table tr.indent td.label {
+    padding-left: 24px;
+}
+
+body.laporan-pdf .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 6px 0 10px;
+    font-size: 10pt;
+}
+
+body.laporan-pdf .data-table th {
+    background: #f2f2f2;
+    border: 1px solid #999;
+    padding: 4px 6px;
+    text-align: center;
+    font-weight: bold;
+}
+
+body.laporan-pdf .data-table td {
+    border: 1px solid #ccc;
+    padding: 3px 6px;
+    vertical-align: top;
+}
+
+body.laporan-pdf .data-table td.center {
+    text-align: center;
+}
+
+body.laporan-pdf .empty-row td {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+body.laporan-pdf .signature-section {
+    margin-top: 32px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 60px;
+}
+
+body.laporan-pdf .sig-box {
+    text-align: center;
+}
+
+body.laporan-pdf .sig-box .sig-title {
+    font-size: 10pt;
+    margin-bottom: 56px;
+}
+
+body.laporan-pdf .sig-box .sig-name {
+    font-weight: bold;
+    font-size: 10pt;
+    border-top: 1px solid #000;
+    padding-top: 3px;
+    min-width: 160px;
+}
+
+@media print {
+    body.laporan-pdf .print-btn {
+        display: none;
+    }
+    body.laporan-pdf {
+        padding: 10mm 14mm;
+    }
+    @page {
+        size: A4;
+        margin: 12mm 14mm;
     }
 }

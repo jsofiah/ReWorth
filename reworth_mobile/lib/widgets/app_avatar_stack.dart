@@ -4,10 +4,14 @@ import '../utils/app_image_helper.dart';
 
 class AvatarStack extends StatelessWidget {
   final List<String> avatars;
+  final int maxAvatars;
+  final double avatarSize;
 
   const AvatarStack({
     super.key,
     required this.avatars,
+    this.maxAvatars = 3,
+    this.avatarSize = 24,
   });
 
   @override

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:reworth_mobile/pages/home_page.dart';
 import 'package:reworth_mobile/pages/register_page.dart';
 import '../utils/app_colors.dart';
@@ -7,6 +8,7 @@ import '../utils/app_text_styles.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/app_primary_button.dart';
 import '../services/auth_service.dart';
+import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -24,10 +26,48 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // LOAD saved email & password jika remember me true
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('saved_email');
+    final savedPassword = prefs.getString('saved_password');
+    final rememberMe = prefs.getBool('remember_me') ?? false;
+
+    if (rememberMe && savedEmail != null && savedPassword != null) {
+      setState(() {
+        _emailController.text = savedEmail;
+        _passwordController.text = savedPassword;
+        _rememberMe = true;
+      });
+    }
+  }
+
+  // SAVE credentials jika remember me true
+  Future<void> _saveCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    if (_rememberMe) {
+      await prefs.setString('saved_email', _emailController.text);
+      await prefs.setString('saved_password', _passwordController.text);
+      await prefs.setBool('remember_me', true);
+    } else {
+      // Hapus data jika remember me tidak dicentang
+      await prefs.remove('saved_email');
+      await prefs.remove('saved_password');
+      await prefs.setBool('remember_me', false);
+    }
   }
 
   Future<void> _onLogin() async {
@@ -41,6 +81,9 @@ class _LoginPageState extends State<LoginPage> {
         email: _emailController.text,
         password: _passwordController.text,
       );
+
+      // SIMPAN CREDENTIALS jika remember me dicentang
+      await _saveCredentials();
 
       if (!mounted) return;
 
@@ -66,7 +109,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _onForgotPassword() {
-    // TODO: Navigate to forgot password page
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
+    );
   }
 
   void _onDaftar() {

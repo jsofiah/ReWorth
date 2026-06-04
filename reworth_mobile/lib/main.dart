@@ -26,8 +26,8 @@ class MyApp extends StatelessWidget {
       title: 'ReWorth',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      initialRoute: '/',  
-      routes: {           
+      initialRoute: '/',
+      routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginPage(),
         '/home': (context) => const HomePage(),

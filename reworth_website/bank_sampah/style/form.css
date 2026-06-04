@@ -408,4 +408,49 @@ input[type="file"] {
         padding: 10px 14px;
         font-size: 13px;
     }
+
+    /* Modal form */
+    .modal-form-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,.45); z-index: 1000;
+        align-items: center; justify-content: center;
+    }
+    .modal-form-overlay.show { display: flex; }
+    .modal-form-box {
+        background: #fff; border-radius: 24px;
+        padding: 0; width: 100%; max-width: 480px;
+        box-shadow: 0 8px 40px rgba(0,0,0,.18); overflow: hidden;
+    }
+    .modal-form-header {
+        background: #ED985A; padding: 20px 28px;
+        text-align: center;
+    }
+    .modal-form-header h3 { margin: 0; color: #fff; font-size: 22px; font-weight: 700; }
+    .modal-form-body { padding: 28px; }
+    .field-label { display: block; font-size: 11px; font-weight: 700; color: #2C3E2F;
+        letter-spacing: .5px; text-transform: uppercase; margin-bottom: 8px; }
+    .field-ul { width: 100%; border: none; border-bottom: 1.5px solid #D6DEDA;
+        background: transparent; padding: 4px 2px 10px; font-size: 14px;
+        font-family: inherit; color: #555; outline: none; transition: .2s; }
+    .field-ul:focus { border-bottom-color: var(--green); }
+    .field-ul::placeholder { color: #B0BFB8; }
+    .field-err { display: none; font-size: 11px; color: #D95D39; margin-top: 3px; font-weight: 500; }
+    .field-group { margin-bottom: 20px; }
+    .modal-form-actions {
+        display: flex; justify-content: center; gap: 12px;
+        padding: 16px 28px; border-top: 1.5px solid #E8F0EC;
+    }
+    .btn-batal-modal {
+        padding: 10px 28px; border-radius: 12px; border: 1.5px solid #D2E0D8;
+        background: #fff; font-size: 13px; font-weight: 700; color: #6B8A7E;
+        cursor: pointer; font-family: inherit; transition: .2s;
+    }
+    .btn-batal-modal:hover { border-color: var(--green); color: var(--green); }
+    .btn-simpan-modal {
+        padding: 10px 28px; border-radius: 12px; border: none;
+        background: var(--green); color: #fff; font-size: 13px; font-weight: 700;
+        cursor: pointer; font-family: inherit;
+        box-shadow: 0 4px 14px rgba(0,145,110,.3); transition: .2s;
+    }
+    .btn-simpan-modal:disabled { opacity: .6; pointer-events: none; }
 }
