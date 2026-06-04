@@ -1,12 +1,15 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:reworth_mobile/models/location_model2.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_constants.dart';
 import '../utils/app_text_styles.dart';
 import '../utils/app_image_helper.dart';
+import '../models/location_model2.dart';
 
 class _RekeningPenjual {
   final String namaBank;  
@@ -63,6 +66,21 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
   final _picker = ImagePicker();
   final _scrollController = ScrollController();
 
+<<<<<<< HEAD
+=======
+  LocationData2? _sellerLocation;
+  LocationData2? _userLocation;
+
+  bool _isLoadingOngkir = true;
+  int _ongkir = 0;
+  String? _shippingService;
+  String? _shippingEtd;
+
+  int get _totalBayarDenganOngkir => _totalBayar + _ongkir;
+
+
+  // Step: 0 = Keranjang, 1 = Ringkasan, 2 = Pembayaran
+>>>>>>> 0d16d9ca67049f6416786d1e86dd416285565ffc
   int _step = 0;
 
   String _alamat = '';
@@ -82,6 +100,7 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     super.initState();
     _loadAlamat();
     _loadRekeningPenjual();
+    _loadLocationsAndCalculateOngkir();
   }
 
   @override
@@ -150,6 +169,157 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     }
   }
 
+<<<<<<< HEAD
+=======
+  Future<void> _loadLocationsAndCalculateOngkir() async {
+    setState(() => _isLoadingOngkir = true);
+    
+    try {
+      // 1. Ambil lokasi penjual dari database
+      final sellerData = await _supabase
+          .from('penjual')
+          .select('alamat_penjual, latitude, longitude, nama_penjual')
+          .eq('nama_penjual', widget.namaPenjual)
+          .maybeSingle();
+      
+      if (sellerData != null) {
+        _sellerLocation = LocationData2(
+          latitude: (sellerData['latitude'] as num).toDouble(),
+          longitude: (sellerData['longitude'] as num).toDouble(),
+          address: sellerData['alamat_penjual'] ?? '',
+          districtName: _extractDistrict(sellerData['alamat_penjual'] ?? ''),
+        );
+      }
+      
+      // 2. Ambil lokasi pengguna dari database
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId != null) {
+        final userData = await _supabase
+            .from('pengguna')
+            .select('alamat_detail, latitude, longitude')
+            .eq('id_pengguna', userId)
+            .maybeSingle();
+        
+        if (userData != null && userData['latitude'] != null) {
+          _userLocation = LocationData2(
+            latitude: (userData['latitude'] as num).toDouble(),
+            longitude: (userData['longitude'] as num).toDouble(),
+            address: userData['alamat_detail'] ?? '',
+            districtName: _extractDistrict(userData['alamat_detail'] ?? ''),
+          );
+        }
+      }
+      
+      // 3. Hitung ongkir jika kedua lokasi ada
+      if (_sellerLocation != null && _userLocation != null) {
+        await _calculateOngkir();
+      }
+      
+      setState(() => _isLoadingOngkir = false);
+    } catch (e) {
+      debugPrint('Error loading locations: $e');
+      setState(() => _isLoadingOngkir = false);
+    }
+  }
+
+  String _extractDistrict(String address) {
+    final patterns = [
+      RegExp(r'Kec\.?\s+([^,]+)', caseSensitive: false),
+      RegExp(r'Kecamatan\s+([^,]+)', caseSensitive: false),
+    ];
+    
+    for (var pattern in patterns) {
+      final match = pattern.firstMatch(address);
+      if (match != null) {
+        return match.group(1)?.trim() ?? '';
+      }
+    }
+    
+    final parts = address.split(',');
+    for (var part in parts) {
+      final lowerPart = part.toLowerCase();
+      if (lowerPart.contains('kec')) {
+        return part.replaceAll(RegExp(r'Kec\.?\s*', caseSensitive: false), '').trim();
+      }
+    }
+    
+    return '';
+  }
+
+  Future<void> _calculateOngkir() async {
+    if (_sellerLocation == null || _userLocation == null) return;
+    
+    try {
+      final weight = widget.jumlah * 250;
+      
+      // Hitung jarak antar koordinat
+      final distance = _calculateDistance(
+        _sellerLocation!.latitude, _sellerLocation!.longitude,
+        _userLocation!.latitude, _userLocation!.longitude,
+      );
+
+      int estimatedOngkir;
+      String service;
+      String etd;
+      
+      if (distance <= 5) {
+        estimatedOngkir = 10000;
+        service = 'JNE REG (Same Day)';
+        etd = '1';
+      } else if (distance <= 10) {
+        estimatedOngkir = 15000;
+        service = 'JNE REG (Next Day)';
+        etd = '1-2';
+      } else if (distance <= 20) {
+        estimatedOngkir = 25000;
+        service = 'JNE REG';
+        etd = '2-3';
+      } else {
+        estimatedOngkir = 35000;
+        service = 'JNE OKE';
+        etd = '3-4';
+      }
+      
+      setState(() {
+        _ongkir = estimatedOngkir;
+        _shippingService = service;
+        _shippingEtd = etd;
+      });
+      
+    } catch (e) {
+      debugPrint('Error calculate ongkir: $e');
+      setState(() {
+        _ongkir = 15000;
+        _shippingService = 'JNE REG';
+        _shippingEtd = '2-3';
+      });
+    }
+  }
+
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const double R = 6371;
+    
+    final dLat = _toRadians(lat2 - lat1);
+    final dLon = _toRadians(lon2 - lon1);
+    
+    final a = _sin(dLat / 2) * _sin(dLat / 2) +
+              _cos(_toRadians(lat1)) * _cos(_toRadians(lat2)) *
+              _sin(dLon / 2) * _sin(dLon / 2);
+    
+    final c = 2 * _atan2(_sqrt(a), _sqrt(1 - a));
+    
+    return R * c;
+  }
+
+  double _toRadians(double degree) => degree * 3.141592653589793 / 180;
+  double _sin(double x) => math.sin(x);
+  double _cos(double x) => math.cos(x);
+  double _sqrt(double x) => math.sqrt(x);
+  double _atan2(double y, double x) => math.atan2(y, x);
+
+  // ── Navigation ───────────────────────────────────────────────────────────────
+
+>>>>>>> 0d16d9ca67049f6416786d1e86dd416285565ffc
   void _nextStep() {
     if (_step < 2) {
       setState(() => _step++);
@@ -187,19 +357,27 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     setState(() => _isConfirming = true);
 
     try {
+<<<<<<< HEAD
+=======
+      // 1. Upload bukti ke storage
+>>>>>>> 0d16d9ca67049f6416786d1e86dd416285565ffc
       setState(() => _isUploading = true);
-      final fileName =
-          'bukti_pembayaran/${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final fileName = 'bukti_pembayaran/${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       await _supabase.storage.from('media').upload(fileName, _buktiBayar!);
       setState(() => _isUploading = false);
 
+<<<<<<< HEAD
+=======
+      // 2. Insert pesanan - total_bayar SUDAH termasuk ongkir
+>>>>>>> 0d16d9ca67049f6416786d1e86dd416285565ffc
       final inserted = await _supabase.from('pesanan').insert({
         'id_produk': widget.idProduk,
         'id_pengguna': userId,
         'alamat_pengiriman': _alamat,
-        'total_bayar': _totalBayar.toString(),
+        'total_bayar': _totalBayarDenganOngkir.toString(), // SUDAH termasuk ongkir
         'bukti_pembayaran': fileName,
         'status': 'menunggu',
+        'jasa_kirim': _shippingService ?? 'JNE', // TAMBAHKAN jasa kirim
         'created_at': DateTime.now().toIso8601String(),
       }).select('id_pesanan').single();
 
@@ -210,10 +388,7 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
         'jenis_aktivitas': 'pesanan',
         'id_referensi': idPesanan,
         'judul': 'Pesanan ${widget.namaProduk}',
-        'deskripsi':
-            'Pesanan ${widget.namaProduk} dari ${widget.namaPenjual} '
-            'senilai ${_rupiah(_totalBayar)} sedang menunggu '
-            'konfirmasi pembayaran.',
+        'deskripsi': 'Pesanan ${widget.namaProduk} dari ${widget.namaPenjual} senilai ${_rupiah(_totalBayarDenganOngkir)} sedang menunggu konfirmasi pembayaran.',
         'status': 'menunggu',
         'perubahan_poin': null,
         'perubahan_saldo': null,
@@ -548,6 +723,9 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
   }
 
   Widget _cardTotal() {
+    final subtotal = widget.harga * widget.jumlah;
+    final total = _totalBayarDenganOngkir;
+    
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingM),
       decoration: BoxDecoration(
@@ -557,12 +735,37 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
       ),
       child: Column(
         children: [
-          _rowBiaya('Subtotal produk', widget.harga * widget.jumlah),
+          _rowBiaya('Subtotal produk (${widget.jumlah} item)', subtotal),
           const SizedBox(height: AppConstants.paddingM),
+          
+          if (_isLoadingOngkir)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else ...[
+            _rowBiaya('Ongkos Kirim', _ongkir),
+            if (_shippingService != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Jasa kirim: $_shippingService (estimasi $_shippingEtd hari)',
+                style: AppTextStyles.small.copyWith(fontSize: 10, color: Colors.grey),
+                textAlign: TextAlign.right,
+              ),
+            ],
+          ],
+          
+          const SizedBox(height: AppConstants.paddingM),
+          
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppConstants.paddingM, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingM, vertical: 14),
             decoration: BoxDecoration(
               color: AppColors.secondary,
               borderRadius: BorderRadius.circular(AppConstants.radiusM),
@@ -570,10 +773,8 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Total Bayar',
-                    style: AppTextStyles.buttonLabel.copyWith(fontSize: 14)),
-                Text(_rupiah(_totalBayar),
-                    style: AppTextStyles.buttonLabel.copyWith(fontSize: 16)),
+                Text('Total Bayar', style: AppTextStyles.buttonLabel.copyWith(fontSize: 14)),
+                Text(_rupiah(total), style: AppTextStyles.buttonLabel.copyWith(fontSize: 16)),
               ],
             ),
           ),

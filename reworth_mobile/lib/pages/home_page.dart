@@ -11,6 +11,7 @@ import '../services/auth_service.dart';
 import '../pages/lapor_page.dart';
 import '../pages/setor_page.dart';
 import '../pages/belanja_page.dart';
+import '../pages/belanja_detail_page.dart';
 import '../pages/event_page.dart';
 import '../pages/event_detail_page.dart';
 import '../pages/reward_page.dart';
@@ -742,7 +743,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildEventSection() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppConstants.paddingL, 0, AppConstants.paddingL, 20),
+      padding: const EdgeInsets.fromLTRB(AppConstants.paddingL, 0, AppConstants.paddingL, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -993,7 +994,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildEmptyEvent() {
     return Container(
-      height: 220,
+      height: 210,
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppConstants.radiusL),
@@ -1150,7 +1151,9 @@ class _HomePageState extends State<HomePage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const BelanjaPage(),
+            builder: (_) => BelanjaDetailPage(
+              idProduk: product['id_produk'],
+            ),
           ),
         );
       },

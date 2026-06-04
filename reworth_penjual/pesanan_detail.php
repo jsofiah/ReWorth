@@ -50,7 +50,7 @@ $jasaKirimList = ['JNE', 'SiCepat', 'J&T', 'Pos Indonesia', 'Ninja Express', 'Gr
 
 function getStatusBadge($status) {
     switch($status) {
-        case 'menunggu_pembayaran': return '<span class="badge bg-warning text-dark">Menunggu Pembayaran</span>';
+        case 'menunggu_konfirmasi': return '<span class="badge bg-warning text-dark">Menunggu Konfirmasi</span>';
         case 'diproses': return '<span class="badge bg-info text-dark">Diproses</span>';
         case 'dikirim': return '<span class="badge bg-primary">Dikirim</span>';
         case 'selesai': return '<span class="badge bg-success">Selesai</span>';
@@ -86,7 +86,7 @@ function getStatusBadge($status) {
 
 <!-- Tombol Aksi sesuai status -->
 <div class="d-flex gap-3 mt-4">
-    <?php if ($status == 'menunggu_pembayaran'): ?>
+    <?php if ($status == 'menunggu_konfirmasi'): ?>
         <button class="btn btn-success" onclick="konfirmasiPesanan('<?= $pesananId ?>')">
             <i class="bi bi-check-lg"></i> Konfirmasi
         </button>

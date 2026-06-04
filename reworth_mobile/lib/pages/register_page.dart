@@ -9,9 +9,11 @@ import '../widgets/app_primary_button.dart';
 import '../services/location_service.dart';
 import '../services/nominatim_service.dart';
 import '../services/auth_service.dart';
+import '../services/fcm_service.dart';
 import '../models/location_model.dart';
 import 'dart:math';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -50,6 +52,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isLoading = false;
 
   bool _isLoadingWilayah = true;
+  bool _isKetuaRW = false;
 
   @override
   void dispose() {
@@ -86,6 +89,11 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isLoading = true);
 
     try {
+      final token =
+          await FirebaseMessaging.instance.getToken();
+
+      print("FCM TOKEN REGISTER: $token");
+
       await AuthService.register(
         nama: _namaController.text,
         email: _emailController.text,
@@ -95,7 +103,52 @@ class _RegisterPageState extends State<RegisterPage> {
         idWilayah: _selectedWilayahId!,
         latitude: _latitude!,
         longitude: _longitude!,
+        fcmToken: token,
       );
+
+      await FCMService.initialize();
+
+      if (_isKetuaRW) {
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user != null) {
+          // Cek apakah wilayah sudah memiliki ketua RW
+          final existing = await Supabase.instance.client
+              .from('wilayah')
+              .select('id_ketua_rw')
+              .eq('id_wilayah', _selectedWilayahId!)
+              .maybeSingle();
+          
+          // Jika sudah ada ketua RW, tanyakan konfirmasi
+          if (existing != null && 
+              existing['id_ketua_rw'] != null && 
+              existing['id_ketua_rw'] != user.id && 
+              mounted) {
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder: (c) => AlertDialog(
+                title: const Text('Ganti Ketua RW'),
+                content: const Text('RW ini sudah memiliki Ketua RW. Ganti?'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Batal')),
+                  ElevatedButton(onPressed: () => Navigator.pop(c, true), child: const Text('Ganti')),
+                ],
+              ),
+            );
+            
+            if (confirm != true) {
+              setState(() => _isLoading = false);
+              return;
+            }
+          }
+          
+          // Update wilayah dengan id_ketua_rw
+          await Supabase.instance.client
+              .from('wilayah')
+              .update({'id_ketua_rw': user.id})
+              .eq('id_wilayah', _selectedWilayahId!);
+        }
+      }
+
 
       if (!mounted) return;
 
@@ -579,27 +632,57 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
 
-                const SizedBox(height: 24),
-
-                Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => setState(() => _rememberMe = !_rememberMe),
-                    child: Row(
-                      children: [
-                        _CustomCheckbox(
-                          value: _rememberMe,
-                          onChanged: (v) =>
-                              setState(() => _rememberMe = v ?? false),
-                        ),
-                        const SizedBox(width: AppConstants.paddingS),
-                        Text('Remember me', style: AppTextStyles.rememberMe),
-                      ],
-                    ),
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FFF0),
+                    borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
                   ),
-                ]
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Checkbox(
+                        value: _isKetuaRW,
+                        onChanged: (v) => setState(() => _isKetuaRW = v ?? false),
+                        activeColor: const Color(0xFF7CA73B),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 12, right: 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Daftar sebagai Ketua RW',
+                                style: AppTextStyles.body.copyWith(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              if (_isKetuaRW)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    'Reward warga RW ini akan disalurkan melalui Ketua RW',
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(height: 16),
 
               AppPrimaryButton(
                 label: "Sign Up",

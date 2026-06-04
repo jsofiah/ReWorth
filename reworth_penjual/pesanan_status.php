@@ -10,7 +10,6 @@ if (!isset($_SESSION['id_penjual'])) {
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 
-// ========== FUNGSI CURLREQUEST ==========
 function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
@@ -24,7 +23,6 @@ function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
     curl_close($ch);
     return ['response' => $response, 'httpCode' => 200];
 }
-// ========================================
 
 $id_pesanan = $_POST['id_pesanan'] ?? '';
 $status = $_POST['status'] ?? '';
@@ -37,15 +35,21 @@ if (empty($id_pesanan) || empty($status)) {
     exit;
 }
 
+// VALIDASI: Jika status dikirim, wajib ada nomor resi dan jasa kirim
+if ($status === 'dikirim') {
+    if (empty($nomor_resi) || empty($jasa_kirim)) {
+        echo json_encode(['success' => false, 'message' => 'Nomor resi dan jasa kirim wajib diisi']);
+        exit;
+    }
+}
+
 $updateData = ['status' => $status];
 
-// Jika status dikirim, tambah nomor resi dan jasa kirim
 if ($status === 'dikirim') {
     if (!empty($nomor_resi)) $updateData['nomor_resi'] = $nomor_resi;
     if (!empty($jasa_kirim)) $updateData['jasa_kirim'] = $jasa_kirim;
 }
 
-// Jika status ditolak, tambah alasan penolakan
 if ($status === 'ditolak' && !empty($alasan)) {
     $updateData['alasan_penolakan'] = $alasan;
 }
@@ -70,7 +74,6 @@ $success = ($httpCode == 200 || $httpCode == 204);
 
 // Jika konfirmasi (status diproses), catat transaksi dan hitung komisi
 if ($success && $status === 'diproses') {
-    // Ambil data pesanan untuk mendapatkan total_bayar dan id_pengguna
     $getPesanan = curlRequest(
         $supabaseUrl . "/rest/v1/pesanan?id_pesanan=eq.$id_pesanan",
         'GET',
@@ -82,10 +85,9 @@ if ($success && $status === 'diproses') {
     if ($pesanan) {
         $totalBayar = $pesanan['total_bayar'];
         $idPengguna = $pesanan['id_pengguna'];
-        $komisi = $totalBayar * 0.05; // 5% komisi
+        $komisi = $totalBayar * 0.05;
         $periodeBulan = date('Y-m');
         
-        // Catat ke riwayat_aktivitas
         $riwayatData = [
             'jenis_aktivitas' => 'pesanan_selesai',
             'id_referensi' => $id_pesanan,
@@ -102,7 +104,6 @@ if ($success && $status === 'diproses') {
             ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey", "Content-Type: application/json"]
         );
         
-        // Catat komisi
         $komisiData = [
             'id_penjual' => $_SESSION['id_penjual'],
             'periode_bulan' => $periodeBulan,
@@ -117,7 +118,6 @@ if ($success && $status === 'diproses') {
             ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey", "Content-Type: application/json"]
         );
         
-        // Kirim notifikasi ke pembeli (hanya jika id_pengguna tidak kosong)
         if (!empty($idPengguna)) {
             $notifikasiData = [
                 'id_pengguna' => $idPengguna,
