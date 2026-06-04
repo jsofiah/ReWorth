@@ -48,6 +48,138 @@ curl_close($ch);
 
 if ($httpCode === 200 || $httpCode === 204) {
 
+    $getLaporanForLog = $supabaseUrl . "/rest/v1/lapor_sampah?id_laporan=eq." . urlencode($id)
+                      . "&select=jenis_sampah,lokasi";
+    $chLog = curl_init();
+    curl_setopt($chLog, CURLOPT_URL, $getLaporanForLog);
+    curl_setopt($chLog, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($chLog, CURLOPT_HTTPHEADER, [
+        "apikey: $supabaseKey",
+        "Authorization: Bearer $supabaseKey"
+    ]);
+    $resLog = curl_exec($chLog);
+    curl_close($chLog);
+    $logDataLaporan = json_decode($resLog, true);
+    $laporanInfo = $logDataLaporan[0] ?? null;
+    $jenisSampah = $laporanInfo['jenis_sampah'] ?? 'Tidak diketahui';
+    $lokasiLaporan = $laporanInfo['lokasi'] ?? 'Tidak diketahui';
+
+    $getPetugasForLog = $supabaseUrl . "/rest/v1/petugas_lapangan?id_petugas=eq." . urlencode($id_petugas)
+                      . "&select=nama_petugas";
+    $chPetugasLog = curl_init();
+    curl_setopt($chPetugasLog, CURLOPT_URL, $getPetugasForLog);
+    curl_setopt($chPetugasLog, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($chPetugasLog, CURLOPT_HTTPHEADER, [
+        "apikey: $supabaseKey",
+        "Authorization: Bearer $supabaseKey"
+    ]);
+    $resPetugasLog = curl_exec($chPetugasLog);
+    curl_close($chPetugasLog);
+    $petugasDataLog = json_decode($resPetugasLog, true);
+    $namaPetugasLog = $petugasDataLog[0]['nama_petugas'] ?? 'Petugas';
+
+    $logData = [
+        'id_admin' => $_SESSION['id_admin'] ?? '',
+        'aktivitas' => 'Mengkonfirmasi laporan sampah - Lokasi: ' . $lokasiLaporan . ', Diteruskan ke: ' . $namaPetugasLog,
+        'tabel_terkait' => 'lapor_sampah',
+        'id_data' => $id,
+        'created_at' => date('c')
+    ];
+
+    $chLogInsert = curl_init($supabaseUrl . "/rest/v1/log_admin");
+    curl_setopt($chLogInsert, CURLOPT_CUSTOMREQUEST, "POST");
+    curl_setopt($chLogInsert, CURLOPT_POSTFIELDS, json_encode($logData));
+    curl_setopt($chLogInsert, CURLOPT_HTTPHEADER, [
+        "apikey: $supabaseKey",
+        "Authorization: Bearer $supabaseKey",
+        "Content-Type: application/json",
+        "Prefer: return=representation"
+    ]);
+    curl_setopt($chLogInsert, CURLOPT_RETURNTRANSFER, true);
+    $logResponse = curl_exec($chLogInsert);
+    $logHttpCode = curl_getinfo($chLogInsert, CURLINFO_HTTP_CODE);
+    curl_close($chLogInsert);
+
+    $getLaporanForRiwayat = $supabaseUrl . "/rest/v1/lapor_sampah?id_laporan=eq." . urlencode($id)
+                          . "&select=jenis_sampah,lokasi,deskripsi,id_pengguna";
+    $chRiwayat = curl_init();
+    curl_setopt($chRiwayat, CURLOPT_URL, $getLaporanForRiwayat);
+    curl_setopt($chRiwayat, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($chRiwayat, CURLOPT_HTTPHEADER, [
+        "apikey: $supabaseKey",
+        "Authorization: Bearer $supabaseKey"
+    ]);
+    $resRiwayat = curl_exec($chRiwayat);
+    curl_close($chRiwayat);
+    $riwayatData = json_decode($resRiwayat, true);
+    $laporanRiwayat = $riwayatData[0] ?? null;
+    $idPenggunaRiwayat = $laporanRiwayat['id_pengguna'] ?? null;
+
+    if ($idPenggunaRiwayat) {
+        // Cek apakah sudah ada riwayat dengan id_referensi dan jenis_aktivitas ini
+        $checkRiwayat = $supabaseUrl . "/rest/v1/riwayat_aktivitas?id_referensi=eq." . urlencode($id) 
+                      . "&jenis_aktivitas=eq.lapor_sampah&select=id_riwayat";
+        $chCheck = curl_init();
+        curl_setopt($chCheck, CURLOPT_URL, $checkRiwayat);
+        curl_setopt($chCheck, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($chCheck, CURLOPT_HTTPHEADER, [
+            "apikey: $supabaseKey",
+            "Authorization: Bearer $supabaseKey"
+        ]);
+        $resCheck = curl_exec($chCheck);
+        curl_close($chCheck);
+        $existingRiwayat = json_decode($resCheck, true);
+        
+        $riwayatUpdateData = [
+            'status' => 'diproses',
+            'deskripsi' => 'Laporan sampah ' . ($laporanRiwayat['jenis_sampah'] ?? '') . ' di ' . ($laporanRiwayat['lokasi'] ?? '') . ' telah diterima dan sedang dalam proses penanganan oleh petugas lapangan.',
+        ];
+        
+        if (!empty($existingRiwayat)) {
+            $idRiwayat = $existingRiwayat[0]['id_riwayat'];
+            $updateRiwayatUrl = $supabaseUrl . "/rest/v1/riwayat_aktivitas?id_riwayat=eq." . $idRiwayat;
+            $chRiwayatUpdate = curl_init();
+            curl_setopt($chRiwayatUpdate, CURLOPT_URL, $updateRiwayatUrl);
+            curl_setopt($chRiwayatUpdate, CURLOPT_CUSTOMREQUEST, "PATCH");
+            curl_setopt($chRiwayatUpdate, CURLOPT_POSTFIELDS, json_encode($riwayatUpdateData));
+            curl_setopt($chRiwayatUpdate, CURLOPT_HTTPHEADER, [
+                "apikey: $supabaseKey",
+                "Authorization: Bearer $supabaseKey",
+                "Content-Type: application/json",
+                "Prefer: return=minimal"
+            ]);
+            curl_setopt($chRiwayatUpdate, CURLOPT_RETURNTRANSFER, true);
+            curl_exec($chRiwayatUpdate);
+            curl_close($chRiwayatUpdate);
+        } else {
+            $riwayatInsertData = [
+                'id_pengguna' => $idPenggunaRiwayat,
+                'jenis_aktivitas' => 'lapor_sampah',
+                'id_referensi' => $id,
+                'judul' => 'Laporan Sampah ' . ($laporanRiwayat['jenis_sampah'] ?? ''),
+                'deskripsi' => 'Laporan sampah ' . ($laporanRiwayat['jenis_sampah'] ?? '') . ' di ' . ($laporanRiwayat['lokasi'] ?? '') . ' telah diterima dan sedang dalam proses penanganan oleh petugas lapangan.',
+                'status' => 'diproses',
+                'perubahan_poin' => 0,
+                'perubahan_saldo' => null,
+                'created_at' => date('c')
+            ];
+            
+            $chRiwayatInsert = curl_init($supabaseUrl . "/rest/v1/riwayat_aktivitas");
+            curl_setopt($chRiwayatInsert, CURLOPT_CUSTOMREQUEST, "POST");
+            curl_setopt($chRiwayatInsert, CURLOPT_POSTFIELDS, json_encode($riwayatInsertData));
+            curl_setopt($chRiwayatInsert, CURLOPT_HTTPHEADER, [
+                "apikey: $supabaseKey",
+                "Authorization: Bearer $supabaseKey",
+                "Content-Type: application/json",
+                "Prefer: return=minimal"
+            ]);
+            curl_setopt($chRiwayatInsert, CURLOPT_RETURNTRANSFER, true);
+            curl_exec($chRiwayatInsert);
+            curl_close($chRiwayatInsert);
+        }
+    }
+
+
     $getLaporan = $supabaseUrl . "/rest/v1/lapor_sampah?id_laporan=eq." . urlencode($id)
                 . "&select=id_pengguna,lokasi,jenis_sampah,deskripsi,created_at,pengguna!lapor_sampah_id_pengguna_fkey(nama_lengkap)";
     $ch2 = curl_init();
@@ -97,6 +229,41 @@ if ($httpCode === 200 || $httpCode === 204) {
         curl_setopt($ch4, CURLOPT_RETURNTRANSFER, true);
         curl_exec($ch4);
         curl_close($ch4);
+
+        $fcmPayload = [
+            'user_id' => $idPengguna,
+            'title'   => 'Laporan Sampah Diterima',
+            'body'    => 'Laporan sampah Anda telah diterima dan sedang dalam proses penanganan oleh petugas lapangan.'
+        ];
+
+        $chFcm = curl_init();
+
+        curl_setopt(
+            $chFcm,
+            CURLOPT_URL,
+            "https://rxzrbyqqhkxemdjbcntc.supabase.co/functions/v1/send-user-notification"
+        );
+
+        curl_setopt($chFcm, CURLOPT_POST, true);
+        curl_setopt($chFcm, CURLOPT_POSTFIELDS, json_encode($fcmPayload));
+
+        curl_setopt($chFcm, CURLOPT_HTTPHEADER, [
+            "Authorization: Bearer $supabaseKey",
+            "apikey: $supabaseKey",
+            "Content-Type: application/json"
+        ]);
+
+        curl_setopt($chFcm, CURLOPT_RETURNTRANSFER, true);
+
+        $fcmResponse = curl_exec($chFcm);
+
+        $fcmHttpCode = curl_getinfo(
+            $chFcm,
+            CURLINFO_HTTP_CODE
+        );
+
+        curl_close($chFcm);
+
     }
 
     $waLink = null;
@@ -131,7 +298,11 @@ if ($httpCode === 200 || $httpCode === 204) {
     echo json_encode([
         'success' => true,
         'message' => 'Laporan berhasil diterima',
-        'wa_link' => $waLink
+        'wa_link' => $waLink,
+
+        'fcm_http_code' => $fcmHttpCode,
+        'fcm_response' => json_decode($fcmResponse, true)
+
     ]);
 
 } else {
