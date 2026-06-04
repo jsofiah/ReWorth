@@ -12,9 +12,9 @@ import '../utils/app_image_helper.dart';
 import '../models/location_model2.dart';
 
 class _RekeningPenjual {
-  final String namaBank;  
+  final String namaBank;   
   final String noRekening; 
-  final String atasNama;   
+  final String atasNama;  
 
   const _RekeningPenjual({
     required this.namaBank,
@@ -38,6 +38,7 @@ class _RekeningPenjual {
     return map[namaBank] ?? '';
   }
 }
+
 
 class BelanjaCheckoutPage extends StatefulWidget {
   final String idProduk;
@@ -66,8 +67,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
   final _picker = ImagePicker();
   final _scrollController = ScrollController();
 
-<<<<<<< HEAD
-=======
   LocationData2? _sellerLocation;
   LocationData2? _userLocation;
 
@@ -79,21 +78,23 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
   int get _totalBayarDenganOngkir => _totalBayar + _ongkir;
 
 
-  // Step: 0 = Keranjang, 1 = Ringkasan, 2 = Pembayaran
->>>>>>> 0d16d9ca67049f6416786d1e86dd416285565ffc
   int _step = 0;
 
   String _alamat = '';
   bool _isLoadingAlamat = true;
 
+  // Rekening penjual dari DB
   _RekeningPenjual? _rekening;
   bool _isLoadingRekening = true;
 
+  // Upload bukti
   File? _buktiBayar;
   bool _isUploading = false;
   bool _isConfirming = false;
 
+
   int get _totalBayar => widget.harga * widget.jumlah;
+
 
   @override
   void initState() {
@@ -108,6 +109,7 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     _scrollController.dispose();
     super.dispose();
   }
+
 
   Future<void> _loadAlamat() async {
     try {
@@ -140,8 +142,10 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     }
   }
 
+
   Future<void> _loadRekeningPenjual() async {
     try {
+      // Ambil id_penjual dari tabel produk, lalu join ke tabel penjual
       final res = await _supabase
           .from('produk')
           .select('penjual(nama_penjual, akun_rekening, nama_bank)')
@@ -169,8 +173,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     }
   }
 
-<<<<<<< HEAD
-=======
   Future<void> _loadLocationsAndCalculateOngkir() async {
     setState(() => _isLoadingOngkir = true);
     
@@ -210,7 +212,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
         }
       }
       
-      // 3. Hitung ongkir jika kedua lokasi ada
       if (_sellerLocation != null && _userLocation != null) {
         await _calculateOngkir();
       }
@@ -317,9 +318,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
   double _sqrt(double x) => math.sqrt(x);
   double _atan2(double y, double x) => math.atan2(y, x);
 
-  // ── Navigation ───────────────────────────────────────────────────────────────
-
->>>>>>> 0d16d9ca67049f6416786d1e86dd416285565ffc
   void _nextStep() {
     if (_step < 2) {
       setState(() => _step++);
@@ -357,19 +355,11 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     setState(() => _isConfirming = true);
 
     try {
-<<<<<<< HEAD
-=======
-      // 1. Upload bukti ke storage
->>>>>>> 0d16d9ca67049f6416786d1e86dd416285565ffc
       setState(() => _isUploading = true);
       final fileName = 'bukti_pembayaran/${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       await _supabase.storage.from('media').upload(fileName, _buktiBayar!);
       setState(() => _isUploading = false);
 
-<<<<<<< HEAD
-=======
-      // 2. Insert pesanan - total_bayar SUDAH termasuk ongkir
->>>>>>> 0d16d9ca67049f6416786d1e86dd416285565ffc
       final inserted = await _supabase.from('pesanan').insert({
         'id_produk': widget.idProduk,
         'id_pengguna': userId,
@@ -498,6 +488,7 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
             ),
           ),
 
+          // Tombol bawah fixed
           Positioned(
             left: 0,
             right: 0,
@@ -905,7 +896,7 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
       ),
       child: Row(
         children: [
-          // Logo bank
+
           Container(
             width: 54,
             height: 36,
@@ -952,7 +943,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
             ),
           ),
 
-          // Tombol salin
           GestureDetector(
             onTap: () {
               Clipboard.setData(
