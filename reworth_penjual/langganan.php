@@ -35,59 +35,87 @@ function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
     return ['response' => $response, 'httpCode' => $httpCode];
 }
 
-// Ambil data langganan
-$getLangganan = curlRequest(
-    $supabaseUrl . "/rest/v1/langganan?id_penjual=eq.$userId&order=created_at.desc",
-    'GET',
-    null,
-    ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
-);
-
-$allData = json_decode($getLangganan['response'], true);
-$langgananList = is_array($allData) ? $allData : [];
-
-// Cek langganan aktif
-$tanggalMulai = '';
-$tanggalSelesai = '';
-$isExpired = true;
-$hariTersisa = 0;
-$isPremium = false;
-
-$today = date('Y-m-d');
-foreach ($langgananList as $l) {
-    if ($l['status'] === 'aktif') {
-        $tanggalMulai = $l['tanggal_mulai'];     
-        $tanggalSelesai = $l['tanggal_selesai']; 
-        if ($l['tanggal_selesai'] >= $today) {
-            $isPremium = true;
-            $isExpired = false;
-            $sekarang = new DateTime();
-            $tSelesai = new DateTime($tanggalSelesai);
-            $hariTersisa = $sekarang->diff($tSelesai)->days;
-        } else {
-            $isPremium = false;
-            $isExpired = true;
-        }
-        break;
+function formatTanggal($date) {
+    if (empty($date)) {
+        return '-';
     }
+    return date('d F Y', strtotime($date));
 }
 
-// Ambil notifikasi dari session (null jika belum pernah pilih)
-$notifikasiHari = $_SESSION['notifikasi_hari'] ?? null;
-
-// Peringatan
-$warningMessage = '';
-$warningType = '';
-
-if (empty($langgananList)) {
-    $warningMessage = '';
-} elseif ($isExpired) {
-    $warningMessage = "Langganan Anda telah berakhir! Segera lakukan perpanjangan agar layanan anda tidak terputus.";
-    $warningType = "danger";
-} elseif ($notifikasiHari !== null && $hariTersisa <= $notifikasiHari && $hariTersisa > 0) {
-    $warningMessage = "Masa aktif langganan anda akan berakhir dalam <strong>$hariTersisa hari</strong>, lakukan pembayaran perpanjangan agar layanan anda tidak terputus. Jika tidak, layanan langganan ini akan dinonaktifkan secara otomatis pada <strong>" . date('d F Y', strtotime($tanggalSelesai)) . "</strong>!";
-    $warningType = "warning";
+// ========== FUNGSI CEK LANGGANAN ==========
+function cekStatusLangganan($supabaseUrl, $supabaseKey, $userId) {
+    $getLangganan = curlRequest(
+        $supabaseUrl . "/rest/v1/langganan?id_penjual=eq.$userId&order=created_at.desc",
+        'GET',
+        null,
+        ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
+    );
+    
+    $allData = json_decode($getLangganan['response'], true);
+    $langgananList = is_array($allData) ? $allData : [];
+    
+    $result = [
+        'status' => 'tidak_ada',
+        'warning_message' => '',
+        'warning_type' => '',
+        'tanggal_mulai' => null,
+        'tanggal_selesai' => null,
+        'hari_tersisa' => 0
+    ];
+    
+    $today = date('Y-m-d');
+    
+    foreach ($langgananList as $l) {
+        if ($l['status'] === 'aktif') {
+            $tanggalSelesai = $l['tanggal_selesai'];
+            
+            if ($tanggalSelesai >= $today) {
+                $sekarang = new DateTime();
+                $tSelesai = new DateTime($tanggalSelesai);
+                $hariTersisa = $sekarang->diff($tSelesai)->days;
+                
+                $result['status'] = 'aktif';
+                $result['tanggal_mulai'] = $l['tanggal_mulai'];
+                $result['tanggal_selesai'] = $tanggalSelesai;
+                $result['hari_tersisa'] = $hariTersisa;
+                
+                if ($hariTersisa <= 7 && $hariTersisa > 3) {
+                    $result['warning_message'] = "⏰ Peringatan! Langganan Anda akan berakhir dalam <strong>$hariTersisa hari</strong> (tanggal " . date('d F Y', strtotime($tanggalSelesai)) . "). Segera perpanjang!";
+                    $result['warning_type'] = "warning";
+                } elseif ($hariTersisa <= 3 && $hariTersisa > 1) {
+                    $result['warning_message'] = "⚠️ Peringatan Keras! Langganan akan berakhir dalam <strong>$hariTersisa hari</strong>! Segera perpanjang sebelum layanan terputus.";
+                    $result['warning_type'] = "warning-orange";
+                } elseif ($hariTersisa == 1) {
+                    $result['warning_message'] = "🔥 PERINGATAN! Langganan Anda akan berakhir <strong>BESOK</strong>! Perpanjang sekarang juga!";
+                    $result['warning_type'] = "danger";
+                }
+                break;
+            } else {
+                $result['status'] = 'expired';
+                $result['warning_message'] = "❌ Langganan Anda telah berakhir! Segera lakukan perpanjangan agar layanan Anda tidak terputus.";
+                $result['warning_type'] = "danger";
+                break;
+            }
+        }
+    }
+    
+    if (empty($langgananList)) {
+        $result['status'] = 'tidak_ada';
+        $result['warning_message'] = "💡 Anda belum memiliki langganan. Segera berlangganan untuk menikmati fitur premium!";
+        $result['warning_type'] = "info";
+    }
+    
+    return $result;
 }
+
+// ========== CEK STATUS LANGGANAN ==========
+$langgananStatus = cekStatusLangganan($supabaseUrl, $supabaseKey, $userId);
+$warningMessage = $langgananStatus['warning_message'];
+$warningType = $langgananStatus['warning_type'];
+$isExpired = ($langgananStatus['status'] == 'expired');
+$tanggalMulai = $langgananStatus['tanggal_mulai'];
+$tanggalSelesai = $langgananStatus['tanggal_selesai'];
+$hariTersisa = $langgananStatus['hari_tersisa'];
 ?>
 
 <!DOCTYPE html>
@@ -111,7 +139,7 @@ if (empty($langgananList)) {
             <div class="nav-item"><a href="langganan.php" class="nav-link-custom active"><i class="bi bi-stars"></i><span>Langganan</span></a></div>
             <div class="nav-item"><a href="laporan_keuangan.php" class="nav-link-custom"><i class="bi bi-bar-chart-line-fill"></i><span>Laporan dan Keuangan</span></a></div>
             <div class="nav-item"><a href="pengaturan_toko.php" class="nav-link-custom"><i class="bi bi-shop-window"></i><span>Pengaturan Toko</span></a></div>
-            <div class="nav-item"><a href="pengaturan_premium.php" class="nav-link-custom"><i class="bi bi-gem"></i><span>Pengaturan Premium</span></a></div>
+            <!-- <div class="nav-item"><a href="pengaturan_premium.php" class="nav-link-custom"><i class="bi bi-gem"></i><span>Pengaturan Premium</span></a></div> -->
         </nav>
         <div class="sidebar-logout"><a class="logout-btn" href="logout.php"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></div>
     </aside>
@@ -156,14 +184,14 @@ if (empty($langgananList)) {
                     <div class="d-flex justify-content-between">
                         <!-- Bagian Kiri: Tanggal dan Status (atas ke bawah) -->
                         <div class="flex-grow-1">
-                            <div class="mb-4">
-                                <div class="text-muted small text-uppercase">TANGGAL MULAI</div>
-                                <div class="fw-bold fs-5"><?= !$isExpired ? date('d F Y', strtotime($tanggalMulai)) : '-' ?></div>
-                            </div>
-                            <div class="mb-4">
-                                <div class="text-muted small text-uppercase">TANGGAL SELESAI</div>
-                                <div class="fw-bold fs-5"><?= !$isExpired ? date('d F Y', strtotime($tanggalSelesai)) : '-' ?></div>
-                            </div>
+<div class="mb-4">
+    <div class="text-muted small text-uppercase">TANGGAL MULAI</div>
+    <div class="fw-bold fs-5"><?= !$isExpired ? formatTanggal($tanggalMulai) : '-' ?></div>
+</div>
+<div class="mb-4">
+    <div class="text-muted small text-uppercase">TANGGAL SELESAI</div>
+    <div class="fw-bold fs-5"><?= !$isExpired ? formatTanggal($tanggalSelesai) : '-' ?></div>
+</div>
                             <div>
                                 <div class="text-muted small text-uppercase">STATUS</div>
                                 <div>
