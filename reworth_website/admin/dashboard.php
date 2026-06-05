@@ -44,7 +44,7 @@
     $totalReward   = count(sbGet($supabaseUrl, $supabaseKey, "/rest/v1/reward?select=id_reward"));
 
     $langgananMenunggu = sbGet($supabaseUrl, $supabaseKey, 
-        "/rest/v1/langganan?select=id_langganan,penjual(nama_penjual),jumlah_bayar&status=eq.menunggu");
+        "/rest/v1/langganan?select=id_langganan,penjual(nama_penjual),jumlah_bayar&status=eq.menunggu_verifikasi");
     $komisiMenunggu = sbGet($supabaseUrl, $supabaseKey, 
         "/rest/v1/komisi?select=id_komisi,penjual(nama_penjual),total_komisi&status_pembayaran=eq.pending");
     

@@ -106,7 +106,7 @@
             return '<span class="status-badge status-selesai">Aktif</span>';
         } elseif ($status == 'expired') {
             return '<span class="status-badge status-akan_datang">Expired</span>';
-        } elseif ($status == 'menunggu') {
+        } elseif ($status == 'menunggu_verifikasi') {
             return '<span class="status-badge status-berlangsung">Menunggu Verifikasi</span>';
         } else {
             return '<span class="status-badge status-berlangsung">' . htmlspecialchars($status) . '</span>';
@@ -153,7 +153,7 @@
     $tanggalMulai = $langganan['tanggal_mulai'] ?? null;
     $tanggalSelesai = $langganan['tanggal_selesai'] ?? null;
     $jumlahBayar = $langganan['jumlah_bayar'] ?? 0;
-    $status = $langganan['status'] ?? 'menunggu';
+    $status = $langganan['status'] ?? 'menunggu_verifikasi';
     $buktiPembayaran = $langganan['bukti_pembayaran'] ?? null;
     $createdAt = $langganan['created_at'] ?? null;
 
@@ -161,7 +161,7 @@
     $tglSelesaiFormatted = $tanggalSelesai ? formatTanggalIndonesia($tanggalSelesai) : '-';
     $fotoBuktiUrl = getSupabaseImageUrl($buktiPembayaran);
     
-    $isStatusMenunggu = (strtolower(trim($status)) == 'menunggu');
+    $isStatusMenunggu = (strtolower(trim($status)) == 'menunggu_verifikasi');
 ?>
 
 <!DOCTYPE html>

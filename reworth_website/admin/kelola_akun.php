@@ -410,6 +410,54 @@
                 if (e.target === m) m.classList.remove('show');
             });
         });
+
+        function verifikasiPenjual(idPenjual) {
+            console.log('Tombol diklik, ID:', idPenjual);
+            
+            if (!confirm('Verifikasi penjual ini? Setelah diverifikasi, penjual dapat mengakses semua fitur.')) {
+                return;
+            }
+            
+            const btn = event.currentTarget;
+            const originalHTML = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Memproses...';
+            
+            fetch('penjual_verifikasi.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'id=' + idPenjual
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Response:', data);
+                
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    
+                    setTimeout(() => {
+                        if (typeof loadTabContent === 'function') {
+                            loadTabContent('penjual', currentPage || 1);
+                        } else {
+                            location.reload();
+                        }
+                    }, 1000);
+                } else {
+                    showToast((data.message || 'Gagal verifikasi'), 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Terjadi kesalahan server', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            });
+        }
     </script>
 </body>
 </html>
