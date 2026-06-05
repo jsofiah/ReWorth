@@ -21,6 +21,22 @@
         exit;
     }
 
+    $getUrl = $supabaseUrl . "/rest/v1/apresiasi?id_apresiasi=eq." . urlencode($id);
+    $getCh = curl_init();
+    curl_setopt($getCh, CURLOPT_URL, $getUrl);
+    curl_setopt($getCh, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($getCh, CURLOPT_HTTPHEADER, [
+        "apikey: $supabaseKey",
+        "Authorization: Bearer $supabaseKey"
+    ]);
+    $getResponse = curl_exec($getCh);
+    $getHttpCode = curl_getinfo($getCh, CURLINFO_HTTP_CODE);
+    curl_close($getCh);
+    
+    $apresiasiData = json_decode($getResponse, true);
+    $namaApresiasi = $apresiasiData[0]['nama_apresiasi'] ?? 'Apresiasi';
+    $rwName = $apresiasiData[0]['rw_name'] ?? '';
+
     $deleteUrl = $supabaseUrl . "/rest/v1/apresiasi?id_apresiasi=eq." . urlencode($id);
 
     $ch = curl_init();
@@ -38,7 +54,37 @@
     curl_close($ch);
 
     if ($code === 200 || $code === 204) {
-        echo json_encode(['success' => true, 'message' => 'Apresiasi berhasil dihapus']);
+        $logData = [
+            'id_admin' => $_SESSION['id_admin'] ?? '',
+            'aktivitas' => 'Menghapus apresiasi: ' . $namaApresiasi . ' - RW ' . $rwName,
+            'tabel_terkait' => 'apresiasi',
+            'id_data' => $id,
+            'created_at' => date('c')
+        ];
+
+        $logCh = curl_init($supabaseUrl . "/rest/v1/log_admin");
+        curl_setopt($logCh, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($logCh, CURLOPT_POSTFIELDS, json_encode($logData));
+        curl_setopt($logCh, CURLOPT_HTTPHEADER, [
+            "apikey: $supabaseKey",
+            "Authorization: Bearer $supabaseKey",
+            "Content-Type: application/json",
+            "Prefer: return=representation"
+        ]);
+        curl_setopt($logCh, CURLOPT_RETURNTRANSFER, true);
+        $logResponse = curl_exec($logCh);
+        $logHttpCode = curl_getinfo($logCh, CURLINFO_HTTP_CODE);
+        curl_close($logCh);
+
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Apresiasi berhasil dihapus',
+            'debug_log' => [
+                'log_http_code' => $logHttpCode,
+                'log_response' => $logResponse
+            ]
+        ]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Gagal menghapus data', 'debug' => $response]);
     }
+?>

@@ -79,7 +79,8 @@ $saldoBersih = $totalNilaiSetor - $totalPenarikan;
 <meta charset="UTF-8">
 <title>Laporan Keuangan Bank Sampah</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'Times New Roman', Times, serif;
     font-size: 11pt;
@@ -191,6 +192,7 @@ $saldoBersih = $totalNilaiSetor - $totalPenarikan;
   .page-break { page-break-before: always; }
   .avoid-break { page-break-inside: avoid; }
 </style>
+
 </head>
 <body>
 

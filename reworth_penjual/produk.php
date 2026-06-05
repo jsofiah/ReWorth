@@ -144,12 +144,12 @@
                     <span>Pengaturan Toko</span>
                 </a>
             </div>
-            <div class="nav-item">
+            <!-- <div class="nav-item">
                 <a href="pengaturan_premium.php" class="nav-link-custom">
                     <i class="bi bi-gem"></i>
                     <span>Pengaturan Premium</span>
                 </a>
-            </div>
+            </div> -->
         </nav>
 
         <div class="sidebar-logout">

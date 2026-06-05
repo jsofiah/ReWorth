@@ -55,9 +55,9 @@ $getProduk = curlRequest(
 $produkList = json_decode($getProduk['response'], true) ?? [];
 $totalProduk = count($produkList);
 
-// ========== AMBIL PESANAN SELESAI (PENDAPATAN) ==========
+// ========== AMBIL PESANAN (PENDAPATAN) ==========
 $getPesanan = curlRequest(
-    $supabaseUrl . "/rest/v1/pesanan?select=*,produk(*)&status=eq.selesai&order=created_at.desc",
+    $supabaseUrl . "/rest/v1/pesanan?select=*,produk(*)&order=created_at.desc",
     'GET',
     null,
     ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
@@ -70,7 +70,9 @@ foreach ($semuaPesanan as $p) {
     if ($p['produk'] && $p['produk']['id_penjual'] == $userId) {
         $tgl = substr($p['created_at'], 0, 10);
         if ($tgl >= $dateFrom && $tgl <= $dateTo) {
-            $pesananList[] = $p;
+            if ($p['status'] == 'dikirim' || $p['status'] == 'selesai') {
+                $pesananList[] = $p;
+            }
         }
     }
 }
@@ -113,13 +115,18 @@ $monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AGU', 'SEP', 'O
 $trendLabels = [];
 $trendValues = [];
 for ($m = 1; $m <= $curMonth; $m++) {
-    $trendLabels[] = $monthNames[$m-1];
+    $trendLabels[] = $monthNames[$m - 1];
     $trendValues[] = $monthlyIncome[$m];
 }
 
 // ========== FUNGSI FORMAT ==========
-function fmtRp($n) { return 'Rp ' . number_format((float)$n, 0, ',', '.'); }
-function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
+function fmtRp($n) { 
+    return 'Rp ' . number_format((float)$n, 0, ',', '.'); 
+}
+
+function fmtNum($n) { 
+    return number_format((int)$n, 0, ',', '.'); 
+}
 ?>
 
 <!DOCTYPE html>
@@ -143,7 +150,7 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
             <div class="nav-item"><a href="langganan.php" class="nav-link-custom"><i class="bi bi-stars"></i><span>Langganan</span></a></div>
             <div class="nav-item"><a href="laporan_keuangan.php" class="nav-link-custom active"><i class="bi bi-bar-chart-line-fill"></i><span>Laporan dan Keuangan</span></a></div>
             <div class="nav-item"><a href="pengaturan_toko.php" class="nav-link-custom"><i class="bi bi-shop-window"></i><span>Pengaturan Toko</span></a></div>
-            <div class="nav-item"><a href="pengaturan_premium.php" class="nav-link-custom"><i class="bi bi-gem"></i><span>Pengaturan Premium</span></a></div>
+            <!-- <div class="nav-item"><a href="pengaturan_premium.php" class="nav-link-custom"><i class="bi bi-gem"></i><span>Pengaturan Premium</span></a></div> -->
         </nav>
         <div class="sidebar-logout"><a class="logout-btn" href="logout.php"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></div>
     </aside>
@@ -186,13 +193,11 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
         </div>
 
         <div class="content-area">
-            <!-- Info periode -->
             <div class="alert alert-info mb-4">
                 <i class="bi bi-info-circle"></i>
                 Menampilkan data periode <strong><?= $labelFrom ?> – <?= $labelTo ?></strong>
             </div>
 
-            <!-- Statistik -->
             <div class="row mb-4">
                 <div class="col-md-3 mb-3">
                     <div class="card-custom p-3">
@@ -230,7 +235,6 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
                 </div>
             </div>
 
-            <!-- Grafik Pendapatan -->
             <div class="card-custom mb-4">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-3"><i class="bi bi-graph-up"></i> Grafik Pendapatan per Bulan</h5>
@@ -238,7 +242,6 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
                 </div>
             </div>
 
-            <!-- Tabel Riwayat Transaksi -->
             <div class="card-custom">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-3"><i class="bi bi-clock-history"></i> Riwayat Transaksi</h5>
@@ -256,19 +259,21 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
                             </thead>
                             <tbody>
                                 <?php if (empty($pesananList)): ?>
-                                    <tr><td colspan="6" class="text-center">Belum ada transaksi</td></tr>
+                                    <tr>
+                                        <td colspan="6" class="text-center">Belum ada transaksi</td>
+                                    </tr>
                                 <?php else: ?>
                                     <?php $no = 1; foreach ($pesananList as $p): 
                                         $komisiItem = $p['total_bayar'] * 0.05;
                                     ?>
-                                    <tr>
-                                        <td><?= $no++ ?></td>
-                                        <td><?= htmlspecialchars($p['produk']['nama_produk'] ?? '-') ?></td>
-                                        <td>Rp <?= number_format($p['total_bayar'], 0, ',', '.') ?></td>
-                                        <td>Rp <?= number_format($komisiItem, 0, ',', '.') ?></td>
-                                        <td><?= date('d M Y H:i', strtotime($p['created_at'])) ?></td>
-                                        <td><span class="badge bg-success">Selesai</span></td>
-                                    </tr>
+                                        <tr>
+                                            <td><?= $no++ ?></td>
+                                            <td><?= htmlspecialchars($p['produk']['nama_produk'] ?? '-') ?></td>
+                                            <td>Rp <?= number_format($p['total_bayar'], 0, ',', '.') ?></td>
+                                            <td>Rp <?= number_format($komisiItem, 0, ',', '.') ?></td>
+                                            <td><?= date('d M Y H:i', strtotime($p['created_at'])) ?></td>
+                                            <td><span class="badge bg-success">Selesai</span></td>
+                                        </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </tbody>
@@ -299,10 +304,19 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
                 maintainAspectRatio: true,
                 plugins: {
                     legend: { position: 'top' },
-                    tooltip: { callbacks: { label: (c) => 'Rp ' + c.parsed.y.toLocaleString('id-ID') } }
+                    tooltip: { 
+                        callbacks: { 
+                            label: (c) => 'Rp ' + c.parsed.y.toLocaleString('id-ID') 
+                        } 
+                    }
                 },
                 scales: {
-                    y: { beginAtZero: true, ticks: { callback: (v) => 'Rp ' + v.toLocaleString('id-ID') } }
+                    y: { 
+                        beginAtZero: true, 
+                        ticks: { 
+                            callback: (v) => 'Rp ' + v.toLocaleString('id-ID') 
+                        } 
+                    }
                 }
             }
         });

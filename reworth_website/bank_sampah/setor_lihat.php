@@ -71,195 +71,8 @@ $canEdit    = in_array($userRole, ['bank sampah', 'admin', 'dlh']);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style/root.css">
-    <style>
-        /* ── main card ── */
-        .detail-card {
-            background: #fff;
-            border-radius: 20px;
-            box-shadow: 0 6px 28px rgba(0,0,0,.07);
-            position: relative;
-            overflow: hidden;
-            width: 100%;
-            max-width: 860px;
-            margin: -56px auto 0;
-            z-index: 10;
-        }
-        .card-accent-bar {
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 7px;
-            background: #ED985A;
-            border-radius: 20px 0 0 20px;
-        }
-        .card-inner {
-            padding: 32px 36px 32px 44px;
-        }
-        .card-title {
-            font-size: 26px;
-            font-weight: 800;
-            color: var(--text-main);
-            margin-bottom: 28px;
-        }
-
-        /* ── read-only fields ── */
-        .field-label {
-            font-size: 12px;
-            font-weight: 700;
-            color: #2C3E2F;
-            letter-spacing: .6px;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            display: block;
-        }
-        .field-readonly {
-            width: 100%;
-            border: none;
-            border-bottom: 2px solid #D6DEDA;
-            background: transparent;
-            padding: 4px 0 10px;
-            font-size: 14px;
-            font-family: inherit;
-            color: #9AA7A2;
-            outline: none;
-            pointer-events: none;
-        }
-        .field-select-readonly {
-            width: 100%;
-            padding: 11px 40px 11px 14px;
-            border: 1.5px solid #E2E8F0;
-            border-radius: 12px;
-            font-size: 14px;
-            font-family: inherit;
-            color: #9AA7A2;
-            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236B8A7E' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 14px center;
-            appearance: none;
-            pointer-events: none;
-        }
-
-        /* ── 2-col row ── */
-        .row-2cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-bottom: 24px; }
-        @media(max-width:640px){ .row-2cols{ grid-template-columns:1fr; } }
-
-        /* ── section label ── */
-        .section-label {
-            font-size: 12px; font-weight: 700; color: #2C3E2F;
-            letter-spacing: .6px; text-transform: uppercase;
-            margin-bottom: 14px;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .total-label { font-size: 15px; font-weight: 700; color: var(--text-main); }
-        .total-label span { color: var(--green); }
-
-        /* ── detail table ── */
-        .detail-wrap {
-            border: 1.5px solid #D8EDE6;
-            border-radius: 14px;
-            overflow: hidden;
-            margin-bottom: 28px;
-        }
-        .detail-head {
-            display: grid;
-            grid-template-columns: 1fr 130px 150px 150px;
-            background: var(--btn-lihat);
-            padding: 12px 14px;
-            gap: 10px;
-        }
-        .detail-head span {
-            font-size: 12px; font-weight: 700; color: #fff;
-            text-align: center; letter-spacing: .3px;
-        }
-        .detail-head span:first-child { text-align: left; }
-        .detail-body { background: #fff; }
-        .detail-row {
-            display: grid;
-            grid-template-columns: 1fr 130px 150px 150px;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            border-bottom: 1px solid #EEF5F1;
-        }
-        .detail-row:last-child { border-bottom: none; }
-
-        /* ── cell readonly boxes ── */
-        .cell-box {
-            width: 100%; padding: 8px 10px;
-            border: 1.5px solid #E2EDE8;
-            border-radius: 10px;
-            font-size: 13px; font-family: inherit;
-            color: #9AA7A2; background: #fff;
-            text-align: center;
-        }
-        .cell-select-box {
-            width: 100%; padding: 8px 32px 8px 12px;
-            border: 1.5px solid #E2EDE8;
-            border-radius: 10px;
-            font-size: 13px; font-family: inherit;
-            color: #9AA7A2; background: #fff
-                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%236B8A7E' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E")
-                no-repeat right 10px center;
-            appearance: none;
-            pointer-events: none;
-        }
-
-        /* ── actions ── */
-        .card-actions {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-            padding-top: 4px;
-        }
-        .btn-valid {
-            padding: 12px 52px;
-            border: none; border-radius: 12px;
-            background: var(--green);
-            color: #fff;
-            font-size: 13px; font-weight: 700;
-            letter-spacing: .8px;
-            cursor: pointer; font-family: inherit;
-            box-shadow: 0 4px 16px rgba(0,145,110,.3);
-            transition: all .2s;
-        }
-        .btn-valid:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(0,145,110,.4); }
-        .btn-valid:disabled { opacity: .6; pointer-events: none; }
-        .btn-selesai {
-            padding: 12px 44px;
-            border: none; border-radius: 12px;
-            background: #8EA604;
-            color: #fff;
-            font-size: 13px; font-weight: 700;
-            letter-spacing: .8px;
-            cursor: pointer; font-family: inherit;
-            box-shadow: 0 4px 14px rgba(142,166,4,.3);
-            transition: all .2s;
-        }
-        .btn-selesai:hover { transform: translateY(-1px); }
-        .btn-selesai:disabled { opacity: .6; pointer-events: none; }
-        .btn-outline-red {
-            padding: 12px 28px;
-            border: 1.5px solid var(--btn-hapus);
-            border-radius: 12px;
-            background: #fff;
-            color: var(--btn-hapus);
-            font-size: 13px; font-weight: 700;
-            letter-spacing: .5px;
-            cursor: pointer; font-family: inherit;
-            transition: all .2s;
-        }
-        .btn-outline-red:hover { background: var(--btn-hapus); color: #fff; }
-
-        /* status info line */
-        .status-line {
-            display: inline-flex; align-items: center; gap: 6px;
-            font-size: 13px; font-weight: 600;
-            padding: 6px 16px; border-radius: 30px;
-            border: 1.5px solid;
-        }
-
-        /* form wrap */
-        .form-wrap { display: flex; justify-content: center; padding: 0 40px 40px; }
-    </style>
-</head>
+    <link rel="stylesheet" href="style/form.css">
+    </head>
 <body>
 
 <!-- SIDEBAR -->
@@ -289,6 +102,12 @@ $canEdit    = in_array($userRole, ['bank sampah', 'admin', 'dlh']);
         <div class="nav-item">
             <a href="event_lingkungan.php" class="nav-link-custom">
                 <i class="bi bi-calendar-event-fill"></i><span>Event Lingkungan</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            <a href="jadwal_ambil_sampah.php" class="nav-link-custom">
+                <i class="bi bi-calendar2-week-fill"></i>                    <span>Jadwal Ambil Sampah</span>
             </a>
         </div>
 

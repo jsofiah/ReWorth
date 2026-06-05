@@ -11,12 +11,10 @@ import '../utils/app_text_styles.dart';
 import '../utils/app_image_helper.dart';
 import '../models/location_model2.dart';
 
-// ─── Model rekening penjual ───────────────────────────────────────────────────
-
 class _RekeningPenjual {
-  final String namaBank;   // dari kolom nama_bank di tabel penjual
-  final String noRekening; // dari kolom akun_rekening
-  final String atasNama;   // dari kolom nama_penjual
+  final String namaBank;   
+  final String noRekening; 
+  final String atasNama;  
 
   const _RekeningPenjual({
     required this.namaBank,
@@ -24,7 +22,6 @@ class _RekeningPenjual {
     required this.atasNama,
   });
 
-  // Mapping nama_bank → nama file logo di storage media/bank/
   String get namaFile {
     const map = {
       'BCA': 'BCA.webp',
@@ -42,7 +39,6 @@ class _RekeningPenjual {
   }
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 class BelanjaCheckoutPage extends StatefulWidget {
   final String idProduk;
@@ -82,10 +78,8 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
   int get _totalBayarDenganOngkir => _totalBayar + _ongkir;
 
 
-  // Step: 0 = Keranjang, 1 = Ringkasan, 2 = Pembayaran
   int _step = 0;
 
-  // Alamat pengguna dari DB — kolom alamat_detail
   String _alamat = '';
   bool _isLoadingAlamat = true;
 
@@ -98,11 +92,9 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
   bool _isUploading = false;
   bool _isConfirming = false;
 
-  // ── Computed ─────────────────────────────────────────────────────────────────
 
   int get _totalBayar => widget.harga * widget.jumlah;
 
-  // ── Init ─────────────────────────────────────────────────────────────────────
 
   @override
   void initState() {
@@ -118,7 +110,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     super.dispose();
   }
 
-  // ── Load alamat pengguna — kolom alamat_detail ────────────────────────────────
 
   Future<void> _loadAlamat() async {
     try {
@@ -151,7 +142,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     }
   }
 
-  // ── Load rekening penjual dari tabel penjual via id_produk ────────────────────
 
   Future<void> _loadRekeningPenjual() async {
     try {
@@ -222,7 +212,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
         }
       }
       
-      // 3. Hitung ongkir jika kedua lokasi ada
       if (_sellerLocation != null && _userLocation != null) {
         await _calculateOngkir();
       }
@@ -329,8 +318,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
   double _sqrt(double x) => math.sqrt(x);
   double _atan2(double y, double x) => math.atan2(y, x);
 
-  // ── Navigation ───────────────────────────────────────────────────────────────
-
   void _nextStep() {
     if (_step < 2) {
       setState(() => _step++);
@@ -346,8 +333,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
       Navigator.pop(context);
     }
   }
-
-  // ── Upload & Konfirmasi ───────────────────────────────────────────────────────
 
   Future<void> _pickBukti() async {
     final picked =
@@ -370,13 +355,11 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     setState(() => _isConfirming = true);
 
     try {
-      // 1. Upload bukti ke storage
       setState(() => _isUploading = true);
       final fileName = 'bukti_pembayaran/${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       await _supabase.storage.from('media').upload(fileName, _buktiBayar!);
       setState(() => _isUploading = false);
 
-      // 2. Insert pesanan - total_bayar SUDAH termasuk ongkir
       final inserted = await _supabase.from('pesanan').insert({
         'id_produk': widget.idProduk,
         'id_pengguna': userId,
@@ -390,7 +373,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
 
       final idPesanan = inserted['id_pesanan'] as String;
 
-      // 3. Insert riwayat_aktivitas
       await _supabase.from('riwayat_aktivitas').insert({
         'id_pengguna': userId,
         'jenis_aktivitas': 'pesanan',
@@ -428,8 +410,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     ));
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
@@ -439,7 +419,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
       backgroundColor: const Color(0xFFF2F2F2),
       body: Stack(
         children: [
-          // ── Gradient identik EventPage ─────────────────────────────────────
           Positioned(
             top: 0,
             left: 0,
@@ -521,8 +500,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     );
   }
 
-  // ── AppBar ────────────────────────────────────────────────────────────────────
-
   Widget _buildAppBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -559,8 +536,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
       ),
     );
   }
-
-  // ── Step Indicator ────────────────────────────────────────────────────────────
 
   Widget _buildStepIndicator() {
     const labels = ['Keranjang', 'Ringkasan', 'Pembayaran'];
@@ -632,8 +607,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     );
   }
 
-  // ── Step Router ───────────────────────────────────────────────────────────────
-
   Widget _buildStepContent() {
     return switch (_step) {
       0 => _buildStepKeranjang(),
@@ -642,10 +615,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
       _ => const SizedBox(),
     };
   }
-
-  // ════════════════════════════════════════════════════════════════════════════
-  // STEP 0 — KERANJANG
-  // ════════════════════════════════════════════════════════════════════════════
 
   Widget _buildStepKeranjang() {
     return Column(
@@ -668,10 +637,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
       ],
     );
   }
-
-  // ════════════════════════════════════════════════════════════════════════════
-  // STEP 1 — RINGKASAN
-  // ════════════════════════════════════════════════════════════════════════════
 
   Widget _buildStepRingkasan() {
     return Column(
@@ -820,10 +785,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════════════════
-  // STEP 2 — PEMBAYARAN
-  // ════════════════════════════════════════════════════════════════════════════
-
   Widget _buildStepPembayaran() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -859,7 +820,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
 
         const SizedBox(height: AppConstants.paddingM),
 
-        // Card rekening penjual (dari DB)
         _isLoadingRekening
             ? const Center(
                 child: Padding(
@@ -885,7 +845,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
 
         const SizedBox(height: AppConstants.paddingS),
 
-        // Warning 24 jam
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(
@@ -937,7 +896,7 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
       ),
       child: Row(
         children: [
-          // Logo bank
+
           Container(
             width: 54,
             height: 36,
@@ -984,7 +943,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
             ),
           ),
 
-          // Tombol salin
           GestureDetector(
             onTap: () {
               Clipboard.setData(
@@ -1097,8 +1055,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     );
   }
 
-  // ── Shared ────────────────────────────────────────────────────────────────────
-
   Widget _cardProduk() {
     final url = AppImageHelper.fotoProduk(widget.fotoProduk);
     return Container(
@@ -1153,8 +1109,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
       ),
     );
   }
-
-  // ── Tombol bawah ──────────────────────────────────────────────────────────────
 
   Widget _buildBottomButton(double bottomPad) {
     final isLastStep = _step == 2;
@@ -1236,8 +1190,6 @@ class _BelanjaCheckoutPageState extends State<BelanjaCheckoutPage> {
     );
   }
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 String _rupiah(int angka) {
   final s = angka.toString();
