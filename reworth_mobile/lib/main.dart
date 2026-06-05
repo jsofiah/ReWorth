@@ -5,9 +5,14 @@ import 'pages/login_page.dart';
 import 'pages/home_page.dart';
 import 'pages/profil_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'services/fcm_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  await Firebase.initializeApp();
 
   await Supabase.initialize(
     url: 'https://rxzrbyqqhkxemdjbcntc.supabase.co',

@@ -9,9 +9,11 @@ import '../widgets/app_primary_button.dart';
 import '../services/location_service.dart';
 import '../services/nominatim_service.dart';
 import '../services/auth_service.dart';
+import '../services/fcm_service.dart';
 import '../models/location_model.dart';
 import 'dart:math';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -87,6 +89,11 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isLoading = true);
 
     try {
+      final token =
+          await FirebaseMessaging.instance.getToken();
+
+      print("FCM TOKEN REGISTER: $token");
+
       await AuthService.register(
         nama: _namaController.text,
         email: _emailController.text,
@@ -96,7 +103,10 @@ class _RegisterPageState extends State<RegisterPage> {
         idWilayah: _selectedWilayahId!,
         latitude: _latitude!,
         longitude: _longitude!,
+        fcmToken: token,
       );
+
+      await FCMService.initialize();
 
       if (_isKetuaRW) {
         final user = Supabase.instance.client.auth.currentUser;

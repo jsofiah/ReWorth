@@ -66,7 +66,7 @@ class _BelanjaPageState extends State<BelanjaPage> {
 
   Future<void> _loadProduk() async {
     try {
-      // Query produk beserta penjual dan foto pertama dari tabel foto_produk
+      // Query produk beserta penjual (hanya penjual dengan status 'aktif') dan foto pertama dari tabel foto_produk
       final response = await supabase.from('produk').select('''
         nama_produk,
         harga,
@@ -75,7 +75,8 @@ class _BelanjaPageState extends State<BelanjaPage> {
 
         penjual (
           nama_penjual,
-          foto_profil
+          foto_profil,
+          status
         ),
 
         foto_produk (
@@ -90,6 +91,14 @@ class _BelanjaPageState extends State<BelanjaPage> {
       final List<_ProdukItem> loaded = [];
 
       for (final item in response) {
+        final penjualData = item['penjual'] as Map<String, dynamic>?;
+        
+        // Skip produk jika penjual tidak ada atau statusnya bukan 'aktif'
+        final penjualStatus = penjualData?['status'] as String? ?? '';
+        if (penjualStatus.toLowerCase() != 'aktif') {
+          continue; // Skip produk ini
+        }
+
         final namaProduk = item['nama_produk'] as String? ?? '';
 
         final fotoList = item['foto_produk'] as List?;
@@ -97,12 +106,9 @@ class _BelanjaPageState extends State<BelanjaPage> {
             ? (fotoList.first['path_foto'] as String? ?? '')
             : '';
 
-        final penjualData = item['penjual'] as Map<String, dynamic>?;
-        final String namaPenjual =
-            penjualData?['nama_penjual'] as String? ?? '';
+        final String namaPenjual = penjualData?['nama_penjual'] as String? ?? '';
 
-        final String fotoPenjual =
-            penjualData?['foto_profil'] as String? ?? '';
+        final String fotoPenjual = penjualData?['foto_profil'] as String? ?? '';
             
         final pesananList = item['pesanan'] as List? ?? [];
         final jumlahTerjual = pesananList.where((p) {
@@ -113,7 +119,7 @@ class _BelanjaPageState extends State<BelanjaPage> {
           _ProdukItem(
             idProduk: item['id_produk'] as String? ?? '',
             nama: namaProduk,
-            harga: item['harga'] as int? ?? 0,
+            harga: (item['harga'] as num?)?.toInt() ?? 0,
             penjual: namaPenjual,
             gambarProduk: gambarProduk,
             gambarPenjual: fotoPenjual,

@@ -249,7 +249,7 @@
                     // Buka WhatsApp Web/Desktop
                     window.open(data.wa_link, '_blank');
                     showToast(
-                        '📱 WhatsApp dibuka. Pesan sudah terisi, tinggal klik Kirim.',
+                        'WhatsApp dibuka. Pesan sudah terisi, tinggal klik Kirim.',
                         'success'
                     );
                     setTimeout(() => {

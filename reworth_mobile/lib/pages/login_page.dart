@@ -8,7 +8,9 @@ import '../utils/app_text_styles.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/app_primary_button.dart';
 import '../services/auth_service.dart';
+import '../services/fcm_service.dart';
 import 'forgot_password_page.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -81,6 +83,8 @@ class _LoginPageState extends State<LoginPage> {
         email: _emailController.text,
         password: _passwordController.text,
       );
+
+      await AuthService.updateFcmToken();
 
       // SIMPAN CREDENTIALS jika remember me dicentang
       await _saveCredentials();

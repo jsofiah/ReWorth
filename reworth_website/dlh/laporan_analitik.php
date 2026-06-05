@@ -64,18 +64,33 @@ $persenDiproses = $totalSemua > 0 ? round((count($statusDiproses) / $totalSemua)
 $persenMenunggu = $totalSemua > 0 ? round((count($statusMenunggu) / $totalSemua) * 100) : 0;
 $persenDitolak = $totalSemua > 0 ? round((count($statusDitolakCount) / $totalSemua) * 100) : 0;
 
-$setorTahun = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/setor_sampah?select=created_at");
-$monthlyCount = array_fill(1, 12, 0);
-foreach ($setorTahun as $s) {
-    $m = (int) date('n', strtotime($s['created_at']));
-    $monthlyCount[$m]++;
+$trendMonths = [];
+for ($i = 2; $i >= 0; $i--) {
+    $bulanTs = mktime(0, 0, 0, date('n') - $i, 1);
+    $trendMonths[] = [
+        'label'  => date('M Y', $bulanTs),
+        'from'   => date('Y-m-01', $bulanTs) . 'T00:00:00',
+        'to'     => date('Y-m-t', $bulanTs) . 'T23:59:59',
+    ];
 }
 
-$trendValues = [];
-for ($i = 1; $i <= 3; $i++) {
-    $trendValues[] = $monthlyCount[$i];
+$trendData = [];
+foreach ($trendMonths as $bln) {
+    $selesai  = count(sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.selesai&created_at=gte." . urlencode($bln['from']) . "&created_at=lte." . urlencode($bln['to'])));
+    $diproses = count(sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.diproses&created_at=gte." . urlencode($bln['from']) . "&created_at=lte." . urlencode($bln['to'])));
+    $menunggu = count(sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.menunggu&created_at=gte." . urlencode($bln['from']) . "&created_at=lte." . urlencode($bln['to'])));
+    $trendData[] = [
+        'label'    => $bln['label'],
+        'selesai'  => $selesai,
+        'diproses' => $diproses,
+        'menunggu' => $menunggu,
+    ];
 }
-$maxVal = max($trendValues) > 0 ? max($trendValues) : 1;
+
+$maxVal = 1;
+foreach ($trendData as $d) {
+    $maxVal = max($maxVal, $d['selesai'], $d['diproses'], $d['menunggu']);
+}
 
 function formatNumber($n)
 {
@@ -175,15 +190,31 @@ function formatNumber($n)
             <div class="chart-card">
                 <div class="chart-title">Tren Laporan Bulanan</div>
                 <div class="bar-chart">
-                    <?php for ($i = 0; $i < 3; $i++): 
-                        $height = ($trendValues[$i] / $maxVal) * 100;
-                    ?>
-                    <div class="bar-item">
-                        <div class="bar-value"><?= formatNumber($trendValues[$i]) ?></div>
-                        <div class="bar" style="height: <?= $height ?>px; min-height: <?= $trendValues[$i] > 0 ? '8px' : '4px' ?>;"></div>
-                        <div class="bar-label">BULAN KE <?= $i + 1 ?></div>
+                    <?php foreach ($trendData as $bln): ?>
+                    <div class="bar-group">
+                        <div class="bar-group-bars">
+                            <div class="bar-col">
+                                <div class="bar-value"><?= $bln['selesai'] > 0 ? $bln['selesai'] : '' ?></div>
+                                <div class="bar bar-selesai" style="height:<?= max(($bln['selesai']/$maxVal)*100, $bln['selesai']>0?8:3) ?>px;"></div>
+                            </div>
+                            <div class="bar-col">
+                                <div class="bar-value"><?= $bln['diproses'] > 0 ? $bln['diproses'] : '' ?></div>
+                                <div class="bar bar-diproses" style="height:<?= max(($bln['diproses']/$maxVal)*100, $bln['diproses']>0?8:3) ?>px;"></div>
+                            </div>
+                            <div class="bar-col">
+                                <div class="bar-value"><?= $bln['menunggu'] > 0 ? $bln['menunggu'] : '' ?></div>
+                                <div class="bar bar-menunggu" style="height:<?= max(($bln['menunggu']/$maxVal)*100, $bln['menunggu']>0?8:3) ?>px;"></div>
+                            </div>
+                        </div>
+                        <div class="bar-label"><?= $bln['label'] ?></div>
                     </div>
-                    <?php endfor; ?>
+                    <?php endforeach; ?>
+                </div>
+
+                <div class="bar-legend">
+                    <span><span class="legend-dot selesai"></span> Selesai</span>
+                    <span><span class="legend-dot diproses"></span> Diproses</span>
+                    <span><span class="legend-dot menunggu"></span> Menunggu</span>
                 </div>
             </div>
             <div class="chart-card">
