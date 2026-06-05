@@ -114,4 +114,5 @@ $messages = [
     'ditolak'  => 'Transaksi berhasil ditolak.',
 ];
 
-echo json_encode(['success' => true, 'message' => $messages[$status]]);
+require_once 'log_helper.php'; logAdminActivity($supabaseUrl, $supabaseKey, $_SESSION['id_admin'] ?? '', 'Mengubah status transaksi setor menjadi: ' . $status, 'setor_sampah', $id ?? '');
+    echo json_encode(['success' => true, 'message' => $messages[$status]]);

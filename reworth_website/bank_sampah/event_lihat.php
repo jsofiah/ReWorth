@@ -92,6 +92,12 @@ $statusClass = $event['status'] ?? 'akan_datang';
                 </a>
             </div>
             <div class="nav-item">
+                <a href="jadwal_ambil_sampah.php" class="nav-link-custom">
+                    <i class="bi bi-calendar2-week-fill"></i>
+                    <span>Jadwal Ambil Sampah</span>
+                </a>
+            </div>
+            <div class="nav-item">
                 <a href="laporan_keuangan.php" class="nav-link-custom">
                     <i class="bi bi-bar-chart-line-fill"></i>
                     <span>Laporan dan Keuangan</span>

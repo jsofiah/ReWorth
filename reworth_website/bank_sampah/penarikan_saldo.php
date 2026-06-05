@@ -59,6 +59,7 @@ $show_to     = min($offset + $per_page, $total);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style/root.css">
+    <link rel="stylesheet" href="style/form.css">
 </head>
 <body>
 
@@ -71,6 +72,7 @@ $show_to     = min($offset + $per_page, $total);
         <div class="nav-item"><a href="transaksi_setor_sampah.php"  class="nav-link-custom"><i class="bi bi-recycle"></i><span>Transaksi Setor Sampah</span></a></div>
         <div class="nav-item"><a href="penarikan_saldo.php"         class="nav-link-custom active"><i class="bi bi-wallet2"></i><span>Penarikan Saldo</span></a></div>
         <div class="nav-item"><a href="event_lingkungan.php"        class="nav-link-custom"><i class="bi bi-calendar-event-fill"></i><span>Event Lingkungan</span></a></div>
+        <div class="nav-item"><a href="jadwal_ambil_sampah.php"     class="nav-link-custom"><i class="bi bi-calendar2-week-fill"></i><span>Jadwal Ambil Sampah</span></a></div>
         <div class="nav-item"><a href="laporan_keuangan.php"        class="nav-link-custom"><i class="bi bi-bar-chart-line-fill"></i><span>Laporan dan Keuangan</span></a></div>
         <div class="nav-item"><a href="data_nasabah.php"            class="nav-link-custom"><i class="bi bi-people-fill"></i><span>Data Nasabah</span></a></div>
         <div class="nav-item"><a href="data_sampah.php"             class="nav-link-custom"><i class="bi bi-trash-fill"></i><span>Data Sampah</span></a></div>

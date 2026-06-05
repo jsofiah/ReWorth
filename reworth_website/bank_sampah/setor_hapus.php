@@ -83,4 +83,5 @@ if (!empty($idAdmin)) {
     );
 }
 
-echo json_encode(['success' => true, 'message' => 'Transaksi berhasil dihapus.']);
+require_once 'log_helper.php'; logAdminActivity($supabaseUrl, $supabaseKey, $_SESSION['id_admin'] ?? '', 'Menghapus transaksi setor', 'setor_sampah', $id ?? '');
+    echo json_encode(['success' => true, 'message' => 'Transaksi berhasil dihapus.']);
