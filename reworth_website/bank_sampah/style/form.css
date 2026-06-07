@@ -1267,3 +1267,104 @@ input[type="file"] {
 
 .form-card.form-card-padded { padding: 32px; overflow: visible; }
 .card-header-orange.card-header-rounded { border-radius: 18px; padding: 18px 24px; margin-bottom: 28px; }
+
+.edit-input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #D0DBD6;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'Poppins', sans-serif;
+    text-align: right;
+}
+.edit-input:focus {
+    outline: none;
+    border-color: var(--green);
+    box-shadow: 0 0 0 2px rgba(0,145,110,0.1);
+}
+.detail-row.editing {
+    background: #F8FFFB;
+    border-left: 3px solid var(--green);
+}
+.btn-edit-row {
+    background: none;
+    border: none;
+    color: #5B8C7A;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+.btn-edit-row:hover {
+    background: rgba(91,140,122,0.1);
+    color: var(--green);
+}
+.btn-save-row {
+    background: var(--green);
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+.btn-save-row:hover {
+    background: #0A6B4F;
+}
+.btn-cancel-row {
+    background: #E8EDEA;
+    border: none;
+    color: #6B8A7E;
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    margin-left: 6px;
+}
+.detail-head, .detail-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 0.5fr;
+    gap: 12px;
+    align-items: center;
+}
+@media (max-width: 768px) {
+    .detail-head, .detail-row {
+        grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr 0.5fr;
+        gap: 8px;
+    }
+}
+
+.log-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.log-icon {
+    width: 36px;
+    height: 36px;
+    background: #F0FDF4;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--green);
+}
+
+.log-content {
+    flex: 1;
+}
+
+.log-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1A2E24;
+}
+
+.log-time {
+    font-size: 11px;
+    color: #6B8A7E;
+}
