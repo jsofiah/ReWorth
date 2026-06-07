@@ -10,8 +10,9 @@ if (!isset($_SESSION['role'])) {
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 $adminId     = $_SESSION['id_admin'] ?? null;
+$adminName   = $_SESSION['nama_admin'] ?? 'Admin';
 
-/* ── helper cURL ── */
+
 function sbRequest($url, $key, $endpoint, $method, $payload = null, $extraHeaders = []) {
     $ch = curl_init($url . $endpoint);
     $headers = array_merge([
@@ -50,27 +51,26 @@ function sbGet($url, $key, $endpoint) {
     return [$httpCode, json_decode($resp, true)];
 }
 
-function logAdmin($url, $key, $adminId, $aksi) {
-    $ch = curl_init($url . "/rest/v1/log_admin");
+function sbPatch($url, $key, $endpoint, $body) {
+    $ch = curl_init($url . $endpoint);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => json_encode([
-            'id_admin'   => $adminId,
-            'aksi'       => $aksi,
-            'created_at' => date('c'),
-        ]),
-        CURLOPT_HTTPHEADER => [
+        CURLOPT_CUSTOMREQUEST  => 'PATCH',
+        CURLOPT_POSTFIELDS     => json_encode($body),
+        CURLOPT_HTTPHEADER     => [
             "apikey: $key",
             "Authorization: Bearer $key",
             "Content-Type: application/json",
-        ],
+            "Prefer: return=minimal"
+        ]
     ]);
-    curl_exec($ch);
+    $res      = curl_exec($ch);
+    $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+    return $code;
 }
 
-/* ── Baca input JSON ── */
+
 $raw   = file_get_contents('php://input');
 $input = json_decode($raw, true);
 
@@ -79,7 +79,7 @@ if (!$input) {
     exit;
 }
 
-/* ── Validasi field wajib ── */
+
 $idPengguna = trim($input['id_pengguna'] ?? '');
 $idJadwal   = trim($input['id_jadwal']   ?? '');
 $alamat     = trim($input['alamat']      ?? '');
@@ -103,7 +103,10 @@ if (empty($details)) {
     exit;
 }
 
-/* ── Validasi setiap detail row ── */
+
+$totalPoin = 10;
+
+
 foreach ($details as $i => $d) {
     if (empty($d['id_jenis'])) {
         echo json_encode(['success' => false, 'message' => 'Jenis sampah pada baris ' . ($i + 1) . ' belum dipilih.']);
@@ -115,7 +118,7 @@ foreach ($details as $i => $d) {
     }
 }
 
-/* ── Cek apakah pengguna sudah punya setor aktif di jadwal yang sama ── */
+
 [$cekCode, $cekData] = sbGet($supabaseUrl, $supabaseKey,
     "/rest/v1/setor_sampah?id_pengguna=eq.$idPengguna&id_jadwal=eq.$idJadwal&status=in.(menunggu,diproses)&select=id_setor&limit=1"
 );
@@ -124,15 +127,12 @@ if ($cekCode === 200 && !empty($cekData)) {
     exit;
 }
 
-/* ════════════════════════════════════════
-   STEP 1 – Insert ke tabel setor_sampah
-   ════════════════════════════════════════ */
 $setorPayload = [
     'id_pengguna'     => $idPengguna,
     'id_jadwal'       => $idJadwal,
     'alamat'          => $alamat,
     'total_uang'      => $totalUang,
-    'status'          => 'menunggu',
+    'status'          => 'selesai',  
     'created_at'      => date('c'),
 ];
 
@@ -153,9 +153,7 @@ if (!$idSetor) {
     exit;
 }
 
-/* ════════════════════════════════════════
-   STEP 2 – Insert detail_setor_sampah
-   ════════════════════════════════════════ */
+
 $detailRows = [];
 foreach ($details as $d) {
     $detailRows[] = [
@@ -172,7 +170,7 @@ foreach ($details as $d) {
 );
 
 if ($codeDetail !== 201) {
-    // Rollback: hapus setor_sampah yang sudah dibuat
+    
     sbRequest($supabaseUrl, $supabaseKey,
         "/rest/v1/setor_sampah?id_setor=eq.$idSetor", 'DELETE'
     );
@@ -181,10 +179,91 @@ if ($codeDetail !== 201) {
     exit;
 }
 
-/* ════════════════════════════════════════
-   STEP 3 – Log admin
-   ════════════════════════════════════════ */
-// Ambil nama pengguna untuk log
+
+[$getUserCode, $userData] = sbGet($supabaseUrl, $supabaseKey,
+    "/rest/v1/pengguna?id_pengguna=eq.$idPengguna&select=saldo_tabungan,poin&limit=1"
+);
+
+$saldoLama = 0;
+$poinLama = 0;
+if ($getUserCode === 200 && !empty($userData)) {
+    $saldoLama = (float)($userData[0]['saldo_tabungan'] ?? 0);
+    $poinLama = (int)($userData[0]['poin'] ?? 0);
+}
+
+$saldoBaru = $saldoLama + $totalUang;
+$poinBaru = $poinLama + $totalPoin;
+
+
+$updateUser = sbPatch($supabaseUrl, $supabaseKey,
+    "/rest/v1/pengguna?id_pengguna=eq.$idPengguna",
+    [
+        'saldo_tabungan' => $saldoBaru,
+        'poin' => $poinBaru
+    ]
+);
+
+if ($updateUser !== 204) {
+    
+    error_log("Gagal update saldo pengguna: $idPengguna");
+}
+
+$riwayatData = [
+    'id_pengguna' => $idPengguna,
+    'jenis_aktivitas' => 'setor_sampah',
+    'id_referensi' => $idSetor,
+    'judul' => 'Setor Sampah Berhasil',
+    'deskripsi' => "Setor sampah Anda dengan total Rp" . number_format($totalUang, 0, ',', '.') . " telah berhasil dicatat oleh admin $adminName dan saldo telah ditambahkan.",
+    'status' => 'selesai',
+    'perubahan_poin' => $totalPoin,
+    'perubahan_saldo' => $totalUang,
+    'created_at' => date('c')
+];
+
+[$codeRiwayat, $dataRiwayat] = sbRequest($supabaseUrl, $supabaseKey,
+    "/rest/v1/riwayat_aktivitas", 'POST', $riwayatData
+);
+
+$notifData = [
+    'id_pengguna' => $idPengguna,
+    'judul' => 'Setor Sampah Berhasil',
+    'deskripsi' => "Setor sampah Anda senilai Rp" . number_format($totalUang, 0, ',', '.') . " telah berhasil dicatat. Saldo Anda bertambah Rp" . number_format($totalUang, 0, ',', '.') . " dan Anda mendapatkan +$totalPoin poin.",
+    'is_read' => false,
+    'created_at' => date('c')
+];
+
+[$codeNotif, $dataNotif] = sbRequest($supabaseUrl, $supabaseKey,
+    "/rest/v1/notifikasi", 'POST', $notifData
+);
+
+$fcmSent = false;
+$fcmHttpCode = null;
+
+$fcmPayload = [
+    'user_id' => $idPengguna,
+    'title' => 'Setor Sampah Berhasil',
+    'body' => "Setor sampah Anda senilai Rp" . number_format($totalUang, 0, ',', '.') . " telah berhasil dicatat. Saldo Anda bertambah!"
+];
+
+$chFcm = curl_init();
+curl_setopt($chFcm, CURLOPT_URL, "https://rxzrbyqqhkxemdjbcntc.supabase.co/functions/v1/send-user-notification");
+curl_setopt($chFcm, CURLOPT_POST, true);
+curl_setopt($chFcm, CURLOPT_POSTFIELDS, json_encode($fcmPayload));
+curl_setopt($chFcm, CURLOPT_HTTPHEADER, [
+    "Authorization: Bearer $supabaseKey",
+    "apikey: $supabaseKey",
+    "Content-Type: application/json"
+]);
+curl_setopt($chFcm, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($chFcm, CURLOPT_TIMEOUT, 10);
+
+$fcmResponse = curl_exec($chFcm);
+$fcmHttpCode = curl_getinfo($chFcm, CURLINFO_HTTP_CODE);
+curl_close($chFcm);
+
+$fcmSent = ($fcmHttpCode === 200);
+
+
 [$cNama, $dNama] = sbGet($supabaseUrl, $supabaseKey,
     "/rest/v1/pengguna?id_pengguna=eq.$idPengguna&select=nama_lengkap&limit=1"
 );
@@ -192,16 +271,16 @@ $namaPenyetor = (!empty($dNama) && $cNama === 200) ? ($dNama[0]['nama_lengkap'] 
 
 require_once 'log_helper.php';
 logAdminActivity($supabaseUrl, $supabaseKey, $adminId,
-    "Menambahkan setor sampah: $namaPenyetor (Rp" . number_format($totalUang, 0, ',', '.') . ")",
+    "Menambahkan setor sampah: $namaPenyetor (Rp" . number_format($totalUang, 0, ',', '.') . ") - Saldo bertambah, Poin +$totalPoin",
     "setor_sampah",
     $idSetor
 );
 
-/* ════════════════════════════════════════
-   SUKSES
-   ════════════════════════════════════════ */
 echo json_encode([
     'success'  => true,
-    'message'  => 'Transaksi setor sampah berhasil disimpan.',
+    'message'  => 'Transaksi setor sampah berhasil disimpan. Saldo dan poin telah ditambahkan.',
     'id_setor' => $idSetor,
+    'fcm_sent' => $fcmSent,
+    'saldo_baru' => $saldoBaru,
+    'poin_baru' => $poinBaru
 ]);
