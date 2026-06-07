@@ -67,6 +67,10 @@ $verifikasiList = array_values(
     array_filter($allTransaksi, fn($t) => ($t['status'] ?? '') === 'menunggu')
 );
 
+$allTransaksi = array_values(
+    array_filter($allTransaksi, fn($t) => ($t['status'] ?? '') !== 'menunggu')
+);
+
 /* ── pagination ── */
 $per_page = 10;
 
