@@ -79,7 +79,7 @@
     $saldoAkhir = $totalPemasukan - $totalPengeluaran;
 
     $logAktivitas = sbGet($supabaseUrl, $supabaseKey, 
-        "/rest/v1/log_admin?select=*,admin(nama_admin)&order=created_at.desc&limit=5");
+        "/rest/v1/log_admin?select=*,admin(nama_admin)&id_admin=eq.$userId&order=created_at.desc&limit=5");
 
     function fmtRp($n) { 
         return 'Rp ' . number_format((float)$n, 0, ',', '.'); 

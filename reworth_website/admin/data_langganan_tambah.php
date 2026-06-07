@@ -111,7 +111,7 @@
         if ($httpCode === 201 || $httpCode === 200 || $httpCode === 204) {
             $logData = [
                 'id_admin' => $_SESSION['id_admin'] ?? '',
-                'aktivitas' => 'Menambahkan data langganan baru',
+                'aktivitas' => 'Menambahkan data langganan baru: ' . ($penjualList['nama_penjual'] ?? '-'),
                 'tabel_terkait' => 'langganan',
                 'id_data' => $id_penjual,
             ];

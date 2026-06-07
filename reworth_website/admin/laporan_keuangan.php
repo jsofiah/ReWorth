@@ -137,6 +137,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="style/form.css">
 </head>
 <body>
     <aside class="sidebar">
@@ -229,14 +230,14 @@
 
         <div class="action-bar-wrap">
             <form method="GET" action="" class="laporan-bar" id="filterForm" style="background:#fff;border-radius:20px;padding:16px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-                <div style="display:flex;align-items:center;gap:8px;">
+                <div class="date-range-wrap">
                     <i class="bi bi-calendar3" style="font-size:22px;color:var(--green);"></i>
                     <input type="date" name="date_from" value="<?= htmlspecialchars($dateFrom) ?>" style="padding:8px 12px;border:1px solid #E5E7EB;border-radius:8px;font-family:'Poppins',sans-serif;">
                     <span>–</span>
                     <input type="date" name="date_to" value="<?= htmlspecialchars($dateTo) ?>" style="padding:8px 12px;border:1px solid #E5E7EB;border-radius:8px;font-family:'Poppins',sans-serif;">
                 </div>
-                <button type="submit" class="btn-generate" style="padding:10px 28px;border:2px solid var(--green);border-radius:12px;background:transparent;color:var(--green);font-weight:700;cursor:pointer;">Generate</button>
-                <button type="button" class="btn-export" onclick="exportPDF()" style="display:flex;align-items:center;gap:6px;padding:10px 22px;border:none;border-radius:12px;background:#FFCF00;color:#1A2E24;font-weight:700;cursor:pointer;">
+                <button type="submit" class="btn-generate">Generate</button>
+                <button type="button" class="btn-export" onclick="exportPDF()">
                     <i class="bi bi-file-earmark-pdf"></i> Export PDF
                 </button>
             </form>

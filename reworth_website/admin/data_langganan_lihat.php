@@ -52,7 +52,7 @@
         if ($httpCode === 200 || $httpCode === 204) {
             $logData = [
                 'id_admin' => $_SESSION['id_admin'] ?? '',
-                'aktivitas' => 'Mengkonfirmasi langganan penjual',
+                'aktivitas' => 'Mengkonfirmasi langganan penjual: ' . ($penjual['nama_penjual'] ?? '-'),
                 'tabel_terkait' => 'langganan',
                 'id_data' => $idLangganan,
             ];

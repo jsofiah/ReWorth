@@ -539,6 +539,7 @@ tbody td {
 .btn-aksi i { font-size: 13px; }
 
 .btn-lihat  { background: var(--btn-lihat);  color: #fff; box-shadow: 0 3px 10px rgba(78,172,145,.3); }
+.btn-verifikasi  { background: var(--btn-lihat);  color: #fff; box-shadow: 0 3px 10px rgba(78,172,145,.3); }
 .btn-edit   { background: var(--btn-edit);   color: #fff; box-shadow: 0 3px 10px rgba(226,152,2,.3); }
 .btn-hapus  { background: var(--btn-hapus);  color: #fff; box-shadow: 0 3px 10px rgba(217,93,57,.3); }
 
