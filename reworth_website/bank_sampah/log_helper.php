@@ -20,3 +20,4 @@ function logAdminActivity($supabaseUrl, $supabaseKey, $idAdmin, $aktivitas, $tab
     curl_exec($ch);
     curl_close($ch);
 }
+?>
