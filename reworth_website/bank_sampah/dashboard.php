@@ -31,11 +31,42 @@ function sbGet($url, $key, $ep) {
 }
 
 // 1. Fetch jumlah event
-$events = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/event?select=id_event");
-$totalEvent = count($events);
+function getEventsWithFilter($supabaseUrl, $supabaseKey, $role = '', $userId = '') {
+    $baseUrl = $supabaseUrl . "/rest/v1/event?select=*,admin!inner(nama_admin,email,id_role,role!inner(nama_role))&order=tanggal.desc";
+    
+    if ($role === 'bank sampah') {
+        $baseUrl .= "&admin.role.nama_role=eq.bank%20sampah";
+    }
+    elseif ($role === 'dlh') {
+        $baseUrl .= "&admin.role.nama_role=eq.dlh";
+    }
+
+    $headers = [
+        "apikey: $supabaseKey",
+        "Authorization: Bearer $supabaseKey",
+        "Content-Type: application/json"
+    ];
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $baseUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode === 200 && $response !== false) {
+        return json_decode($response, true) ?: [];
+    }
+    return [];
+}
+
+$eventsBankSampah = getEventsWithFilter($supabaseUrl, $supabaseKey, 'bank sampah');
+$totalEventBankSampah = count($eventsBankSampah);
 
 // 2. Fetch jumlah transaksi setor
-$setor = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/setor_sampah?select=id_setor");
+$setor = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/setor_sampah?select=id_setor&status=eq.selesai");
 $totalSetor = count($setor);
 
 // 3. Fetch jumlah data nasabah
@@ -43,11 +74,25 @@ $nasabah = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/pengguna?select=id_penggu
 $totalNasabah = count($nasabah);
 
 // 4. Fetch jumlah data setor menunggu konfirmasi
-$menunggu = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/setor_sampah?select=id_setor&status=in.(menunggu,diproses)");
+$menunggu = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/setor_sampah?select=id_setor&status=in.(menunggu)");
 $totalMenunggu = count($menunggu);
 
 // 5. Fetch 5 aktivitas terbaru (Transaksi Setor Sampah)
-$aktivitas = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/setor_sampah?select=id_setor,created_at,status,pengguna(nama_lengkap)&order=created_at.desc&limit=5");
+$aktivitas = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/log_admin?select=*,admin(nama_admin)&order=created_at.desc&limit=5");
+
+
+function formatTanggalIndonesia($date) {
+    if (empty($date)) return '-';
+    $bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    $timestamp = strtotime($date);
+    $tanggal = date('d', $timestamp);
+    $bulanNum = (int)date('m', $timestamp);
+    $tahun = date('Y', $timestamp);
+    $jam = date('H:i', $timestamp);
+    return "$tanggal " . $bulan[$bulanNum] . " $tahun, $jam";
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -103,7 +148,7 @@ $aktivitas = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/setor_sampah?select=id_
             </div>
         </div>
 
-        <div class="content-area" style="padding: 24px;">
+        <div class="action-bar-wrap" style="padding: 24px;">
             <!-- Top Stats -->
             <div class="stats-grid dashboard-stats">
                 <div class="stat-card">
@@ -116,7 +161,7 @@ $aktivitas = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/setor_sampah?select=id_
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Jumlah Event</div>
-                    <div class="stat-value"><i class="bi bi-calendar-event-fill me-2" style="font-size: 24px; color: #6B8A7E;"></i><?= $totalEvent ?></div>
+                    <div class="stat-value"><i class="bi bi-calendar-event-fill me-2" style="font-size: 24px; color: #6B8A7E;"></i><?= $totalEventBankSampah ?></div>
                 </div>
                 <div class="stat-card alert-card" onclick="window.location.href='transaksi_setor_sampah.php'">
                     <div class="stat-label" style="color:#D97706;">Butuh Konfirmasi</div>
@@ -148,47 +193,41 @@ $aktivitas = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/setor_sampah?select=id_
 
                 <!-- Aktivitas Terbaru -->
                 <div class="chart-card">
-                    <div class="chart-title"><i class="bi bi-activity me-2" style="color:var(--green);"></i>Aktivitas Setor Terbaru</div>
+                    <div class="chart-title"><i class="bi bi-activity me-2" style="color:var(--green);"></i>Aktivitas Admin Terbaru</div>
                     <div class="aktivitas-list">
-                            <?php if (empty($aktivitas)): ?>
-                                <div style="text-align:center; color:#9AA7A2; font-size:13px; padding:20px;">Belum ada aktivitas.</div>
-                            <?php else: ?>
-                                <?php foreach ($aktivitas as $akt): 
-                                    $status = strtolower($akt['status'] ?? '');
-                                    $nama = htmlspecialchars($akt['pengguna']['nama_lengkap'] ?? 'Tanpa Nama');
-                                    $waktu = !empty($akt['created_at']) ? date('d M Y, H:i', strtotime($akt['created_at'])) : '-';
-                                    
-                                    $iconClass = 'akt-icon';
-                                    $iconBi = 'bi-check2-circle';
-                                    $pesan = "Transaksi setor selesai oleh $nama";
-                                    
-                                    if ($status === 'menunggu' || $status === 'diproses') {
-                                        $iconClass .= ' warn';
-                                        $iconBi = 'bi-clock-history';
-                                        $pesan = "Menunggu konfirmasi setor dari $nama";
-                                    } elseif ($status === 'ditolak') {
-                                        $iconClass .= ' danger';
-                                        $iconBi = 'bi-x-circle';
-                                        $pesan = "Transaksi setor oleh $nama ditolak";
-                                    }
+                        <?php if (!empty($aktivitas)): ?>
+                            <?php foreach ($aktivitas as $log): 
+                                $namaAdmin = $log['admin']['nama_admin'] ?? 'Admin';
+                            ?>
+                            <div class="log-item">
+                                <div class="log-icon">
+                                <?php if (!empty($userFoto)):
+                                    $fotoUrl = getSupabaseImageUrl($userFoto);
                                 ?>
-                                <div class="aktivitas-item">
-                                    <div class="<?= $iconClass ?>">
-                                        <i class="bi <?= $iconBi ?>"></i>
-                                    </div>
-                                    <div class="akt-content">
-                                        <div class="akt-title"><?= $pesan ?></div>
-                                        <div class="akt-time"><?= $waktu ?></div>
+                                    <img src="<?= htmlspecialchars($fotoUrl) ?>"
+                                        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"
+                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <i class="bi bi-person-fill" style="display: none;"></i>
+                                <?php else: ?>
+                                    <i class="bi bi-person-fill"></i>
+                                <?php endif; ?>
+                            </div>
+                                <div class="log-content">
+                                    <div class="log-text"><?= htmlspecialchars($log['aktivitas'] ?? '-') ?></div>
+                                    <div class="log-time">
+                                        <i class="bi bi-clock"></i> <?= formatTanggalIndonesia($log['created_at'] ?? '') ?>
+                                        <span style="margin-left: 8px;">by <?= htmlspecialchars($namaAdmin) ?></span>
                                     </div>
                                 </div>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+                            </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div style="text-align: center; padding: 30px 0; color: #6B8A7E;">
+                                <i class="bi bi-inbox" style="font-size: 40px;"></i>
+                                <p style="margin-top: 12px;">Belum ada aktivitas admin</p>
+                            </div>
+                        <?php endif; ?>
                     </div>
-                    <?php if (!empty($aktivitas)): ?>
-                    <div style="text-align:center; margin-top:16px;">
-                        <a href="transaksi_setor_sampah.php" style="font-size:12px; color:var(--green); font-weight:600; text-decoration:none;">Lihat semua aktivitas &rarr;</a>
-                    </div>
-                    <?php endif; ?>
                 </div>
             </div>
             
