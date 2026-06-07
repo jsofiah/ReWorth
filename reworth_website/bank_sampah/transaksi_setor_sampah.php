@@ -67,6 +67,10 @@ $verifikasiList = array_values(
     array_filter($allTransaksi, fn($t) => ($t['status'] ?? '') === 'menunggu')
 );
 
+$allTransaksi = array_values(
+    array_filter($allTransaksi, fn($t) => ($t['status'] ?? '') !== 'menunggu')
+);
+
 /* ── pagination ── */
 $per_page = 10;
 
@@ -110,15 +114,8 @@ foreach ($allTransaksi as $t) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style/root.css">
-    <style>
-        .status-ditolak {
-            color: #D95D39; border-color: #D95D39;
-            background: rgba(217,93,57,0.08);
-        }
-        .td-jadwal { font-size: 12px; line-height: 1.5; }
-        .aksi-wrap { display: flex; gap: 8px; flex-wrap: wrap; }
-    </style>
-</head>
+    <link rel="stylesheet" href="style/form.css">
+    </head>
 <body>
 
 <!-- SIDEBAR -->
@@ -148,6 +145,12 @@ foreach ($allTransaksi as $t) {
         <div class="nav-item">
             <a href="event_lingkungan.php" class="nav-link-custom">
                 <i class="bi bi-calendar-event-fill"></i><span>Event Lingkungan</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            <a href="jadwal_ambil_sampah.php" class="nav-link-custom">
+                <i class="bi bi-calendar2-week-fill"></i>                    <span>Jadwal Ambil Sampah</span>
             </a>
         </div>
 

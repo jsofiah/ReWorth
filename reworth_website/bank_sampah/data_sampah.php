@@ -10,7 +10,7 @@ $userRole = $_SESSION['role']       ?? '';
 $userFoto = $_SESSION['foto_profil']?? '';
 
 function getSupabaseImageUrl($p){return empty($p)?null:"https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/".ltrim($p,'/');}
-function sbGet($url,$key,$ep){$ch=curl_init($url.$ep);curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_HTTPHEADER=>["apikey:$key","Authorization:Bearer $key","Content-Type:application/json"]]);$r=curl_exec($ch);$c=curl_getinfo($ch,CURLINFO_HTTP_CODE);curl_close($ch);return $c===200?(json_decode($r,true)?:[]):[];}
+function sbGet($url,$key,$ep){$ch=curl_init($url.$ep);curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_HTTPHEADER=>["apikey:$key","Authorization:Bearer $key","Content-Type:application/json"]]);$r=curl_exec($ch);$c=curl_getinfo($ch,CURLINFO_HTTP_CODE);curl_close($ch);return $c===200?(json_decode($r,true)?:[]):[]; }
 function fmtRp($n){return 'Rp '.number_format((float)$n,0,',','.');}
 
 $sampahList = sbGet($supabaseUrl, $supabaseKey,
@@ -24,6 +24,7 @@ $start       = ($cur_page - 1) * $per_page;
 $cur_data    = array_slice($sampahList, $start, $per_page);
 $show_from   = $total > 0 ? $start + 1 : 0;
 $show_to     = min($start + $per_page, $total);
+$canEdit     = in_array($userRole, ['bank sampah','admin','dlh']);
 ?>
 <!DOCTYPE html><html lang="id"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -32,11 +33,7 @@ $show_to     = min($start + $per_page, $total);
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style/root.css">
-<style>
-.harga-val { color: var(--green); font-weight: 700; }
-.aksi-wrap { display: flex; gap: 6px; flex-wrap: wrap; }
-
-</style>
+    <link rel="stylesheet" href="style/form.css">
 </head><body>
 <aside class="sidebar">
     <div class="sidebar-logo">
@@ -47,6 +44,7 @@ $show_to     = min($start + $per_page, $total);
         <div class="nav-item"><a href="transaksi_setor_sampah.php" class="nav-link-custom"><i class="bi bi-recycle"></i><span>Transaksi Setor Sampah</span></a></div>
         <div class="nav-item"><a href="penarikan_saldo.php" class="nav-link-custom"><i class="bi bi-wallet2"></i><span>Penarikan Saldo</span></a></div>
         <div class="nav-item"><a href="event_lingkungan.php" class="nav-link-custom"><i class="bi bi-calendar-event-fill"></i><span>Event Lingkungan</span></a></div>
+        <div class="nav-item"><a href="jadwal_ambil_sampah.php" class="nav-link-custom"><i class="bi bi-calendar2-week-fill"></i><span>Jadwal Ambil Sampah</span></a></div>
         <div class="nav-item"><a href="laporan_keuangan.php" class="nav-link-custom"><i class="bi bi-bar-chart-line-fill"></i><span>Laporan dan Keuangan</span></a></div>
         <div class="nav-item"><a href="data_nasabah.php" class="nav-link-custom"><i class="bi bi-people-fill"></i><span>Data Nasabah</span></a></div>
         <div class="nav-item"><a href="data_sampah.php" class="nav-link-custom active"><i class="bi bi-trash-fill"></i><span>Data Sampah</span></a></div>
@@ -58,7 +56,6 @@ $show_to     = min($start + $per_page, $total);
 </aside>
 
 <div class="main-wrap">
-    <!-- Topbar -->
     <div class="topbar">
         <div class="topbar-inner">
             <h1 class="topbar-title">Data Sampah</h1>
@@ -77,7 +74,6 @@ $show_to     = min($start + $per_page, $total);
         </div>
     </div>
 
-    <!-- Action Bar -->
     <div class="action-bar-wrap">
         <div class="action-bar">
             <div class="search-wrap">
@@ -102,16 +98,14 @@ $show_to     = min($start + $per_page, $total);
                     </div>
                 </div>
             </div>
-            <?php if(in_array($userRole, ['bank sampah','admin','dlh'])):?>
-            <button class="btn-tambah"
-                    onclick="window.location.href='sampah_tambah.php'">
+            <?php if($canEdit):?>
+            <button class="btn-tambah" onclick="window.location.href='sampah_tambah.php'">
                 <i class="bi bi-plus-lg"></i> Tambah Jenis Sampah
             </button>
             <?php endif;?>
         </div>
     </div>
 
-    <!-- Table -->
     <div class="content-area">
         <div class="card-custom">
             <div class="table-scroll-wrapper">
@@ -121,7 +115,7 @@ $show_to     = min($start + $per_page, $total);
                         <col style="width:240px;">
                         <col style="width:160px;">
                         <col style="width:160px;">
-                        <col style="width:<?=in_array($userRole,['bank sampah','admin','dlh'])?'200px':'100px'?>;">
+                        <col style="width:<?=$canEdit?'200px':'100px'?>;">
                     </colgroup>
                     <thead><tr>
                         <th>No</th>
@@ -133,27 +127,23 @@ $show_to     = min($start + $per_page, $total);
                     <tbody id="tableBody">
                     <?php if(!empty($cur_data)):?>
                         <?php foreach($cur_data as $i => $s):?>
-                        <tr data-nama="<?=strtolower(htmlspecialchars($s['nama_sampah']??''))?>"
-                            data-harga="<?=(float)($s['harga_per_kg']??0)?>">
-                            <td class="td-no"><?=$start+$i+1?></td>
-                            <td class="td-nama"><?=htmlspecialchars($s['nama_sampah']??'-')?></td>
+                        <tr>
+                            <td><?=$start+$i+1?></td>
+                            <td><?=htmlspecialchars($s['nama_sampah']??'-')?></td>
                             <td class="harga-val"><?=fmtRp($s['harga_per_kg']??0)?></td>
                             <td style="font-size:12px;color:#6B8A7E;">
                                 <?=!empty($s['created_at']) ? date('d M Y', strtotime($s['created_at'])) : '-'?>
                             </td>
                             <td>
                                 <div class="aksi-wrap">
-                                    <button class="btn-aksi btn-lihat"
-                                            onclick="window.location.href='sampah_lihat.php?id=<?=$s['id_jenis']?>'">
+                                    <button class="btn-aksi btn-lihat" onclick="window.location.href='sampah_lihat.php?id=<?=$s['id_jenis']?>'">
                                         <i class="bi bi-file-earmark-text"></i> Lihat
                                     </button>
-                                    <?php if(in_array($userRole,['bank sampah','admin','dlh'])):?>
-                                    <button class="btn-aksi btn-edit"
-                                            onclick="window.location.href='sampah_edit.php?id=<?=$s['id_jenis']?>'">
+                                    <?php if($canEdit):?>
+                                    <button class="btn-aksi btn-edit" onclick="window.location.href='sampah_edit.php?id=<?=$s['id_jenis']?>'">
                                         <i class="bi bi-pencil-square"></i> Edit
                                     </button>
-                                    <button class="btn-aksi btn-hapus"
-                                            onclick="hapusSampah('<?=$s['id_jenis']?>','<?=htmlspecialchars($s['nama_sampah'])?>')">
+                                    <button class="btn-aksi btn-hapus" onclick="hapusSampah('<?=$s['id_jenis']?>','<?=htmlspecialchars($s['nama_sampah']??'', ENT_QUOTES)?>')">
                                         <i class="bi bi-trash3"></i> Hapus
                                     </button>
                                     <?php endif;?>
@@ -171,7 +161,6 @@ $show_to     = min($start + $per_page, $total);
                 </table>
             </div>
 
-            <!-- Pagination -->
             <div class="table-footer">
                 <div class="showing-text">Showing <b><?=$show_from?></b> to <b><?=$show_to?></b> of <b><?=$total?></b> entries</div>
                 <div class="pagination-custom">
@@ -184,54 +173,7 @@ $show_to     = min($start + $per_page, $total);
     </div>
 </div>
 
-<!-- ── Modal Tambah ── -->
-<div class="modal-form-overlay" id="modalTambah">
-    <div class="modal-form-box">
-        <div class="modal-form-header"><h3>Tambah Jenis Sampah</h3></div>
-        <div class="modal-form-body">
-            <div class="field-group">
-                <label class="field-label">Nama Jenis Sampah</label>
-                <input id="tambahNama" type="text" class="field-ul" placeholder="Contoh: Plastik, Kertas, Besi...">
-                <span class="field-err" id="errTambahNama">Nama wajib diisi</span>
-            </div>
-            <div class="field-group">
-                <label class="field-label">Harga per Kg (Rp)</label>
-                <input id="tambahHarga" type="number" class="field-ul" placeholder="Contoh: 2000" min="0">
-                <span class="field-err" id="errTambahHarga">Harga wajib diisi</span>
-            </div>
-        </div>
-        <div class="modal-form-actions">
-            <button class="btn-batal-modal" onclick="closeModal('modalTambah')">BATAL</button>
-            <button class="btn-simpan-modal" id="btnTambahSimpan" onclick="simpanTambah()">SIMPAN</button>
-        </div>
-    </div>
-</div>
-
-<!-- ── Modal Edit ── -->
-<div class="modal-form-overlay" id="modalEdit">
-    <div class="modal-form-box">
-        <div class="modal-form-header"><h3>Edit Jenis Sampah</h3></div>
-        <div class="modal-form-body">
-            <input type="hidden" id="editId">
-            <div class="field-group">
-                <label class="field-label">Nama Jenis Sampah</label>
-                <input id="editNama" type="text" class="field-ul" placeholder="Nama jenis sampah">
-                <span class="field-err" id="errEditNama">Nama wajib diisi</span>
-            </div>
-            <div class="field-group">
-                <label class="field-label">Harga per Kg (Rp)</label>
-                <input id="editHarga" type="number" class="field-ul" placeholder="Harga per kg" min="0">
-                <span class="field-err" id="errEditHarga">Harga wajib diisi</span>
-            </div>
-        </div>
-        <div class="modal-form-actions">
-            <button class="btn-batal-modal" onclick="closeModal('modalEdit')">BATAL</button>
-            <button class="btn-simpan-modal" id="btnEditSimpan" onclick="simpanEdit()">SIMPAN PERUBAHAN</button>
-        </div>
-    </div>
-</div>
-
-<!-- ── Modal Hapus ── -->
+<!-- Modal Hapus -->
 <div class="modal-overlay" id="modalHapus">
     <div class="modal-box" style="max-width:400px;">
         <div class="confirm-icon"><i class="bi bi-trash3-fill"></i></div>
@@ -249,127 +191,98 @@ $show_to     = min($start + $per_page, $total);
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-const SB_URL = '<?=$supabaseUrl?>';
-const SB_KEY = '<?=$supabaseKey?>';
+const SB_URL  = '<?=$supabaseUrl?>';
+const SB_KEY  = '<?=$supabaseKey?>';
+const canEdit = <?=$canEdit?'true':'false'?>;
 
-/* ── Search ── */
-document.getElementById('searchInput').addEventListener('input', function(){
-    const q = this.value.toLowerCase();
-    document.querySelectorAll('#tableBody tr').forEach(r => {
-        r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
-    });
-    rebuildNo();
+// Semua data untuk live search
+const allSampahData = <?= json_encode(array_map(function($s) {
+    return [
+        'id'      => $s['id_jenis'] ?? '',
+        'nama'    => $s['nama_sampah'] ?? '-',
+        'harga'   => (float)($s['harga_per_kg'] ?? 0),
+        'tanggal' => !empty($s['created_at']) ? date('d M Y', strtotime($s['created_at'])) : '-',
+    ];
+}, $sampahList)) ?>;
+
+function escHtml(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtRp(n){ return 'Rp ' + Number(n).toLocaleString('id-ID'); }
+
+function renderTable(data) {
+    const tbody = document.getElementById('tableBody');
+    if (!data.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4" style="color:#6B8A7E;">
+            <i class="bi bi-trash" style="font-size:32px;display:block;margin-bottom:8px;"></i>
+            Tidak ada data ditemukan</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = data.map((s, i) => `
+        <tr>
+            <td>${i + 1}</td>
+            <td>${escHtml(s.nama)}</td>
+            <td class="harga-val">${fmtRp(s.harga)}</td>
+            <td style="font-size:12px;color:#6B8A7E;">${escHtml(s.tanggal)}</td>
+            <td>
+                <div class="aksi-wrap">
+                    <button class="btn-aksi btn-lihat" onclick="window.location.href='sampah_lihat.php?id=${escHtml(s.id)}'">
+                        <i class="bi bi-file-earmark-text"></i> Lihat
+                    </button>
+                    ${canEdit ? `
+                    <button class="btn-aksi btn-edit" onclick="window.location.href='sampah_edit.php?id=${escHtml(s.id)}'">
+                        <i class="bi bi-pencil-square"></i> Edit
+                    </button>
+                    <button class="btn-aksi btn-hapus" onclick="hapusSampah('${escHtml(s.id)}','${s.nama.replace(/'/g,"\\'")}')">
+                        <i class="bi bi-trash3"></i> Hapus
+                    </button>` : ''}
+                </div>
+            </td>
+        </tr>`).join('');
+}
+
+/* ── Search live ── */
+let searchTimeout = null;
+document.getElementById('searchInput').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const q = this.value.trim().toLowerCase();
+    searchTimeout = setTimeout(() => {
+        if (!q) { renderTable(allSampahData); return; }
+        const filtered = allSampahData.filter(s =>
+            s.nama.toLowerCase().includes(q) ||
+            s.tanggal.toLowerCase().includes(q)
+        );
+        renderTable(filtered);
+    }, 200);
 });
 
 /* ── Filter ── */
 function toggleFilter(){ document.getElementById('filterBox').classList.toggle('show'); }
 function applyFilter(){
-    const sort  = document.getElementById('sortOrder').value;
-    const tbody = document.querySelector('#tableBody');
-    let rows    = Array.from(tbody.querySelectorAll('tr'));
-    rows.sort((a,b) => {
-        if(sort==='nama_asc')   return a.dataset.nama.localeCompare(b.dataset.nama);
-        if(sort==='nama_desc')  return b.dataset.nama.localeCompare(a.dataset.nama);
-        if(sort==='harga_desc') return parseFloat(b.dataset.harga)-parseFloat(a.dataset.harga);
-        if(sort==='harga_asc')  return parseFloat(a.dataset.harga)-parseFloat(b.dataset.harga);
+    const sort = document.getElementById('sortOrder').value;
+    const q    = document.getElementById('searchInput').value.trim().toLowerCase();
+    let data   = q ? allSampahData.filter(s => s.nama.toLowerCase().includes(q) || s.tanggal.toLowerCase().includes(q))
+                   : [...allSampahData];
+    data.sort((a,b) => {
+        if(sort==='nama_asc')   return a.nama.localeCompare(b.nama);
+        if(sort==='nama_desc')  return b.nama.localeCompare(a.nama);
+        if(sort==='harga_desc') return b.harga - a.harga;
+        if(sort==='harga_asc')  return a.harga - b.harga;
         return 0;
     });
-    rows.forEach(r => tbody.appendChild(r));
-    rebuildNo();
+    renderTable(data);
     document.getElementById('filterBox').classList.remove('show');
 }
 function resetFilter(){ document.getElementById('sortOrder').value='nama_asc'; applyFilter(); }
-function rebuildNo(){ let no=1; document.querySelectorAll('#tableBody tr').forEach(r=>{ if(r.style.display!=='none'&&r.children[0]) r.children[0].textContent=no++; }); }
 
 /* ── Modal helpers ── */
 function openModal(id){ document.getElementById(id).classList.add('show'); }
 function closeModal(id){ document.getElementById(id).classList.remove('show'); }
-document.querySelectorAll('.modal-form-overlay,.modal-overlay').forEach(m => {
+document.querySelectorAll('.modal-overlay').forEach(m => {
     m.addEventListener('click', e => { if(e.target===m) m.classList.remove('show'); });
 });
-
-/* ── Tambah ── */
-function openTambah(){
-    document.getElementById('tambahNama').value = '';
-    document.getElementById('tambahHarga').value = '';
-    document.getElementById('errTambahNama').style.display = 'none';
-    document.getElementById('errTambahHarga').style.display = 'none';
-    openModal('modalTambah');
-}
-async function simpanTambah(){
-    const nama  = document.getElementById('tambahNama').value.trim();
-    const harga = document.getElementById('tambahHarga').value;
-    let ok = true;
-    document.getElementById('errTambahNama').style.display  = nama  ? 'none' : 'block'; if(!nama)  ok=false;
-    document.getElementById('errTambahHarga').style.display = harga ? 'none' : 'block'; if(!harga) ok=false;
-    if(!ok) return;
-
-    const btn = document.getElementById('btnTambahSimpan');
-    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>';
-
-    const res = await fetch(SB_URL+'/rest/v1/jenis_sampah', {
-        method: 'POST',
-        headers: {
-            'apikey': SB_KEY, 'Authorization': 'Bearer '+SB_KEY,
-            'Content-Type': 'application/json', 'Prefer': 'return=representation'
-        },
-        body: JSON.stringify({ nama_sampah: nama, harga_per_kg: parseFloat(harga) })
-    });
-
-    if(res.ok){
-        showToast('Jenis sampah berhasil ditambahkan!', 'success');
-        closeModal('modalTambah');
-        setTimeout(() => location.reload(), 800);
-    } else {
-        const err = await res.json().catch(()=>({}));
-        showToast(err.message || 'Gagal menambahkan.', 'error');
-        btn.disabled = false; btn.innerHTML = 'SIMPAN';
-    }
-}
-
-/* ── Edit ── */
-function openEdit(id, nama, harga){
-    document.getElementById('editId').value    = id;
-    document.getElementById('editNama').value  = nama;
-    document.getElementById('editHarga').value = harga;
-    document.getElementById('errEditNama').style.display  = 'none';
-    document.getElementById('errEditHarga').style.display = 'none';
-    openModal('modalEdit');
-}
-async function simpanEdit(){
-    const id    = document.getElementById('editId').value;
-    const nama  = document.getElementById('editNama').value.trim();
-    const harga = document.getElementById('editHarga').value;
-    let ok = true;
-    document.getElementById('errEditNama').style.display  = nama  ? 'none' : 'block'; if(!nama)  ok=false;
-    document.getElementById('errEditHarga').style.display = harga ? 'none' : 'block'; if(!harga) ok=false;
-    if(!ok) return;
-
-    const btn = document.getElementById('btnEditSimpan');
-    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...';
-
-    const res = await fetch(SB_URL+'/rest/v1/jenis_sampah?id_jenis=eq.'+id, {
-        method: 'PATCH',
-        headers: {
-            'apikey': SB_KEY, 'Authorization': 'Bearer '+SB_KEY,
-            'Content-Type': 'application/json', 'Prefer': 'return=representation'
-        },
-        body: JSON.stringify({ nama_sampah: nama, harga_per_kg: parseFloat(harga) })
-    });
-
-    if(res.ok){
-        showToast('Data berhasil diperbarui!', 'success');
-        closeModal('modalEdit');
-        setTimeout(() => location.reload(), 800);
-    } else {
-        const err = await res.json().catch(()=>({}));
-        showToast(err.message || 'Gagal memperbarui.', 'error');
-        btn.disabled = false; btn.innerHTML = 'SIMPAN PERUBAHAN';
-    }
-}
 
 /* ── Hapus ── */
 let deletingId = null;

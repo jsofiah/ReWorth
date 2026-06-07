@@ -74,6 +74,7 @@ class _HomePageState extends State<HomePage> {
     await _fetchUser();
     await _fetchRecentEvents();
     await _fetchTopProducts();
+    await _loadUnreadNotificationCount();
   }
 
   Future<void> _loadUnreadNotificationCount() async {

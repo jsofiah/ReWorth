@@ -34,151 +34,7 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style/root.css">
-    <style>
-        /* ── card ── */
-        .form-wrap { display: flex; justify-content: center; padding: 0 40px 40px; }
-        .form-card {
-        background: #fff;
-        border-radius: 24px;
-        padding: 32px;
-        box-shadow: 0 4px 20px rgba(0,0,0,.06);
-        position: relative;
-        margin-top: -72px;
-        z-index: 10;
-        width: 100%;
-        max-width: 860px;
-    }
-
-    .card-header-orange {
-        background: #ED985A;
-        border-radius: 18px;
-        padding: 18px 24px;
-        margin-bottom: 28px;
-        text-align: center;
-    }
-
-    .card-header-orange h2 {
-        margin: 0;
-        color: #fff;
-        font-size: 28px;
-        font-weight: 700;
-    }
-
-        /* ── fields ── */
-        .fields-wrap { padding: 0 40px; }
-        .field-group { margin-bottom: 28px; }
-        .field-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-            color: #2C3E2F;
-            letter-spacing: .5px;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
-        .field-underline {
-            width: 100%;
-            border: none;
-            border-bottom: 1.5px solid #D6DEDA;
-            background: transparent;
-            padding: 6px 2px 12px;
-            font-size: 14px;
-            font-family: inherit;
-            color: #555;
-            outline: none;
-            transition: border-color .2s;
-            appearance: none;
-            -webkit-appearance: none;
-        }
-        .field-underline:focus { border-bottom-color: var(--green); }
-        .field-underline::placeholder { color: #B0BFB8; }
-        .field-underline[readonly] { color: #9AA7A2; cursor: default; }
-
-        /* wrapper untuk select + ikon panah */
-        .select-wrap {
-            position: relative;
-        }
-        .select-wrap::after {
-            content: '';
-            position: absolute;
-            right: 4px;
-            top: 50%;
-            transform: translateY(-70%);
-            width: 0; height: 0;
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-top: 6px solid #9AA7A2;
-            pointer-events: none;
-        }
-        .select-wrap select.field-underline { cursor: pointer; padding-right: 20px; }
-
-        /* error hint */
-        .field-err {
-            display: none;
-            font-size: 12px;
-            color: #D95D39;
-            margin-top: 5px;
-            font-weight: 500;
-        }
-
-        /* saldo badge */
-        .saldo-badge {
-            display: none;
-            margin-top: 6px;
-            font-size: 12px;
-            color: var(--green);
-            font-weight: 600;
-        }
-
-        /* warning saldo kurang */
-        .warn-saldo {
-            display: none;
-            font-size: 12px;
-            color: #D95D39;
-            margin-top: 5px;
-            font-weight: 500;
-        }
-
-        /* ── actions ── */
-        .form-actions {
-        display:flex;
-        justify-content:center;
-        gap:14px;
-        margin-top:28px;
-        padding-top:24px;
-        border-top:1.5px solid #E2EDE8;
-    }
-        .btn-batal {
-            padding: 12px 36px;
-            border-radius: 12px;
-            border: 1.5px solid #D2E0D8;
-            background: #fff;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: .6px;
-            color: #6B8A7E;
-            cursor: pointer;
-            font-family: inherit;
-            transition: .2s;
-        }
-        .btn-batal:hover { border-color: var(--green); color: var(--green); }
-        .btn-simpan {
-            padding: 12px 44px;
-            border-radius: 12px;
-            border: none;
-            background: var(--green);
-            color: #fff;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: .6px;
-            cursor: pointer;
-            font-family: inherit;
-            box-shadow: 0 4px 14px rgba(0,145,110,.3);
-            transition: .2s;
-        }
-        .btn-simpan:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,145,110,.4); }
-        .btn-simpan:disabled { opacity: .6; pointer-events: none; }
-    </style>
+    <link rel="stylesheet" href="style/form.css">
 </head>
 <body>
 
@@ -192,6 +48,7 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
         <div class="nav-item"><a href="transaksi_setor_sampah.php"  class="nav-link-custom"><i class="bi bi-recycle"></i><span>Transaksi Setor Sampah</span></a></div>
         <div class="nav-item"><a href="penarikan_saldo.php"         class="nav-link-custom active"><i class="bi bi-wallet2"></i><span>Penarikan Saldo</span></a></div>
         <div class="nav-item"><a href="event_lingkungan.php"        class="nav-link-custom"><i class="bi bi-calendar-event-fill"></i><span>Event Lingkungan</span></a></div>
+        <div class="nav-item"><a href="jadwal_ambil_sampah.php"     class="nav-link-custom"><i class="bi bi-calendar2-week-fill"></i><span>Jadwal Ambil Sampah</span></a></div>
         <div class="nav-item"><a href="laporan_keuangan.php"        class="nav-link-custom"><i class="bi bi-bar-chart-line-fill"></i><span>Laporan dan Keuangan</span></a></div>
         <div class="nav-item"><a href="data_nasabah.php"            class="nav-link-custom"><i class="bi bi-people-fill"></i><span>Data Nasabah</span></a></div>
         <div class="nav-item"><a href="data_sampah.php"             class="nav-link-custom"><i class="bi bi-trash-fill"></i><span>Data Sampah</span></a></div>
@@ -227,9 +84,9 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
 
     <!-- FORM -->
     <div class="form-wrap">
-        <div class="form-card">
+        <div class="form-card form-card-padded">
 
-            <div class="card-header-orange">
+            <div class="card-header-orange card-header-rounded">
                 <h2>Tambah Penarikan</h2>
             </div>
 

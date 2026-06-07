@@ -32,151 +32,7 @@ $jenisList  = sbGet($supabaseUrl,$supabaseKey,"/rest/v1/jenis_sampah?select=id_j
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style/root.css">
     <link rel="stylesheet" href="style/form.css">
-    <style>
-        /* ── underline fields ── */
-        .field-underline {
-            width:100%; border:none; border-bottom:2px solid #D6DEDA;
-            background:transparent; padding:6px 0 10px;
-            font-size:14px; font-family:inherit; color:#333;
-            outline:none; transition:.2s; appearance:none;
-        }
-        .field-underline:focus { border-bottom-color:var(--green); }
-        .field-underline option { color:#333; }
-
-        /* ── jadwal select ── */
-        .jadwal-select {
-            width:100%; padding:11px 40px 11px 14px;
-            border:1.5px solid #E2E8F0; border-radius:12px;
-            font-size:14px; font-family:inherit; color:#333;
-            background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236B8A7E' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 14px center;
-            appearance:none; outline:none; transition:.2s; cursor:pointer;
-        }
-        .jadwal-select:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(0,145,110,.1); }
-
-        /* ── section label ── */
-        .section-label {
-            font-size:13px; font-weight:700; color:#2C3E2F;
-            letter-spacing:.5px; text-transform:uppercase;
-            margin-bottom:14px; display:flex; align-items:center;
-            justify-content:space-between;
-        }
-        .total-label { font-size:15px; font-weight:700; color:#333; }
-        .total-label span { color:var(--green); }
-
-        /* ── detail table ── */
-        .detail-wrap {
-            border:1.5px solid #D8EDE6; border-radius:14px;
-            overflow:hidden; margin-bottom:8px;
-        }
-        .detail-head {
-            display:grid; grid-template-columns:1fr 130px 150px 150px 44px;
-            background:var(--btn-lihat); padding:12px 14px; gap:10px;
-        }
-        .detail-head span {
-            font-size:12px; font-weight:700; color:#fff;
-            text-align:center; letter-spacing:.3px;
-        }
-        .detail-head span:first-child { text-align:left; }
-        .detail-body { background:#fff; }
-        .detail-row {
-            display:grid; grid-template-columns:1fr 130px 150px 150px 44px;
-            align-items:center; gap:10px;
-            padding:10px 14px; border-bottom:1px solid #EEF5F1;
-        }
-        .detail-row:last-child { border-bottom:none; }
-
-        /* ── cell inputs ── */
-        .cell-input {
-            width:100%; padding:8px 10px; border:1.5px solid #E2EDE8;
-            border-radius:10px; font-size:13px; font-family:inherit;
-            color:#333; outline:none; transition:.2s; text-align:center;
-            background:#FAFCFB;
-        }
-        .cell-input:focus { border-color:var(--green); background:#fff; }
-        .cell-input[readonly] {
-            background:#F0F8F5; color:var(--green); font-weight:600; cursor:default;
-        }
-        .cell-select {
-            width:100%; padding:8px 32px 8px 10px;
-            border:1.5px solid #E2EDE8; border-radius:10px;
-            font-size:13px; font-family:inherit; color:#333;
-            background:#FAFCFB url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%236B8A7E' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 10px center;
-            appearance:none; outline:none; transition:.2s; cursor:pointer;
-        }
-        .cell-select:focus { border-color:var(--green); background:#fff; }
-
-        /* ── btn hapus row ── */
-        .btn-row-del {
-            width:34px; height:34px; border-radius:8px;
-            border:1.5px solid #fcc; background:#fff7f7;
-            color:#D95D39; font-size:15px;
-            display:flex; align-items:center; justify-content:center;
-            cursor:pointer; transition:.2s; flex-shrink:0;
-        }
-        .btn-row-del:hover { background:#D95D39; color:#fff; border-color:#D95D39; }
-
-        /* ── btn tambah item ── */
-        .btn-add-row {
-            display:inline-flex; align-items:center; gap:6px;
-            padding:8px 18px; border-radius:10px;
-            border:1.5px dashed #B2D4C8; background:#F7FAF8;
-            color:#6B8A7E; font-size:13px; font-weight:600;
-            cursor:pointer; transition:.2s; font-family:inherit;
-            margin:10px 14px;
-        }
-        .btn-add-row:hover { border-color:var(--green); color:var(--green); background:#EDF7F3; }
-
-        /* ── form actions ── */
-        .form-actions {
-            display:flex; justify-content:center; gap:14px;
-            margin-top:28px; padding-top:24px;
-            border-top:1.5px solid #E2EDE8;
-        }
-        .btn-batal {
-            padding:11px 32px; border-radius:12px;
-            border:1.5px solid #D8E6DE; background:#fff;
-            font-size:13px; font-weight:700; cursor:pointer;
-            font-family:inherit; color:#6B8A7E; letter-spacing:.5px;
-            transition:.2s;
-        }
-        .btn-batal:hover { border-color:var(--green); color:var(--green); }
-        .btn-simpan {
-            padding:11px 40px; border-radius:12px;
-            border:none; background:var(--green);
-            color:#fff; font-size:13px; font-weight:700;
-            cursor:pointer; font-family:inherit; letter-spacing:.5px;
-            box-shadow:0 4px 14px rgba(0,145,110,.3);
-            transition:.2s;
-        }
-        .btn-simpan:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,145,110,.4); }
-        .btn-simpan:disabled { opacity:.6; pointer-events:none; }
-
-        /* ── 2-col form ── */
-        .row-2cols { display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-bottom:22px; }
-        @media(max-width:640px){ .row-2cols{ grid-template-columns:1fr; }
-            .detail-head,.detail-row{ grid-template-columns:1fr 90px 110px 110px 40px; }
-        }
-
-        /* ── form container centered ── */
-        .form-wrap {
-            display:flex; justify-content:center;
-            padding:0 40px 40px;
-        }
-        .form-section-inner {
-            background:#fff; border-radius:24px; padding:32px;
-            box-shadow:0 4px 20px rgba(0,0,0,0.06);
-            position:relative; margin-top:-72px; z-index:10;
-            width:100%; max-width:860px;
-        }
-        .inside-header {
-            background:#ED985A; border-radius:18px;
-            padding:18px 24px; margin-bottom:24px; text-align:center;
-        }
-        .inside-header h2 {
-            margin:0; color:#fff; font-size:28px; font-weight:700;
-        }
-    </style>
-</head>
+    </head>
 <body>
 
 <!-- SIDEBAR -->
@@ -206,6 +62,12 @@ $jenisList  = sbGet($supabaseUrl,$supabaseKey,"/rest/v1/jenis_sampah?select=id_j
         <div class="nav-item">
             <a href="event_lingkungan.php" class="nav-link-custom">
                 <i class="bi bi-calendar-event-fill"></i><span>Event Lingkungan</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            <a href="jadwal_ambil_sampah.php" class="nav-link-custom">
+                <i class="bi bi-calendar2-week-fill"></i>                    <span>Jadwal Ambil Sampah</span>
             </a>
         </div>
 

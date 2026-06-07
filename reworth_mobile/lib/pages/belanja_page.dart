@@ -66,7 +66,8 @@ class _BelanjaPageState extends State<BelanjaPage> {
 
   Future<void> _loadProduk() async {
     try {
-      // Query produk beserta penjual (hanya penjual dengan status 'aktif') dan foto pertama dari tabel foto_produk
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      
       final response = await supabase.from('produk').select('''
         nama_produk,
         harga,
@@ -74,9 +75,14 @@ class _BelanjaPageState extends State<BelanjaPage> {
         id_produk,
 
         penjual (
+          id_penjual,
           nama_penjual,
           foto_profil,
-          status
+          langganan (
+            status,
+            tanggal_mulai,
+            tanggal_selesai
+          )
         ),
 
         foto_produk (
@@ -93,10 +99,24 @@ class _BelanjaPageState extends State<BelanjaPage> {
       for (final item in response) {
         final penjualData = item['penjual'] as Map<String, dynamic>?;
         
-        // Skip produk jika penjual tidak ada atau statusnya bukan 'aktif'
-        final penjualStatus = penjualData?['status'] as String? ?? '';
-        if (penjualStatus.toLowerCase() != 'aktif') {
-          continue; // Skip produk ini
+        if (penjualData == null) continue;
+        
+        final langgananList = penjualData['langganan'] as List? ?? [];
+        
+        bool hasActiveSubscription = false;
+        
+        for (final langganan in langgananList) {
+          final status = (langganan['status'] as String? ?? '').toLowerCase();
+          final tanggalSelesai = langganan['tanggal_selesai'] as String? ?? '';
+          
+          if (status == 'aktif' && tanggalSelesai >= today) {
+            hasActiveSubscription = true;
+            break;
+          }
+        }
+        
+        if (!hasActiveSubscription) {
+          continue;
         }
 
         final namaProduk = item['nama_produk'] as String? ?? '';
@@ -106,9 +126,8 @@ class _BelanjaPageState extends State<BelanjaPage> {
             ? (fotoList.first['path_foto'] as String? ?? '')
             : '';
 
-        final String namaPenjual = penjualData?['nama_penjual'] as String? ?? '';
-
-        final String fotoPenjual = penjualData?['foto_profil'] as String? ?? '';
+        final String namaPenjual = penjualData['nama_penjual'] as String? ?? '';
+        final String fotoPenjual = penjualData['foto_profil'] as String? ?? '';
             
         final pesananList = item['pesanan'] as List? ?? [];
         final jumlahTerjual = pesananList.where((p) {
@@ -766,5 +785,11 @@ String _rupiah(int angka) {
     buf.write(s.substring(i, i + 3));
   }
   return buf.toString();
+  }
+}
+
+extension on String {
+  bool operator >=(String other) {
+    return this.compareTo(other) >= 0;
   }
 }

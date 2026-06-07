@@ -121,6 +121,7 @@ class _RewardPageState extends State<RewardPage> {
         _poinDitukar = ditukar;
         _rewards = rewardData
             .map((e) => RewardModel.fromMap(e as Map<String, dynamic>))
+            .where((reward) => reward.stok > 0) // Optional: filter here as well
             .toList();
         _isLoading = false;
       });
@@ -133,6 +134,8 @@ class _RewardPageState extends State<RewardPage> {
   }
 
   List<RewardModel> get _filteredRewards {
+    final availableRewards = _rewards.where((r) => r.stok > 0).toList();
+
     if (_filter == 'Pulsa') return _rewards.where((r) => r.isPulsa).toList();
     if (_filter == 'Token') return _rewards.where((r) => r.isToken).toList();
     return _rewards;

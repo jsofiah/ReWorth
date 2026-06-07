@@ -126,13 +126,13 @@
                             $emailPenjual = $l['penjual']['email'] ?? '';
                         }
                         
-                        $status = $l['status'] ?? 'menunggu';
+                        $status = $l['status'] ?? 'menunggu_verifikasi';
                         $statusBadge = '';
                         if ($status == 'aktif') {
                             $statusBadge = '<span class="status-badge status-selesai">Aktif</span>';
                         } elseif ($status == 'expired') {
                             $statusBadge = '<span class="status-badge status-akan_datang">Expired</span>';
-                        } elseif ($status == 'menunggu') {
+                        } elseif ($status == 'menunggu_verifikasi') {
                             $statusBadge = '<span class="status-badge status-berlangsung">Menunggu Verifikasi</span>';
                         } else {
                             $statusBadge = '<span class="status-badge status-berlangsung">' . htmlspecialchars($status) . '</span>';

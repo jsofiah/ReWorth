@@ -7,7 +7,7 @@ import '../utils/app_image_helper.dart';
 import 'package:flutter/services.dart';
 
 enum AktivitasType { laporan, setor, pesanan, tukarPoin, event, reward }
-enum AktivitasStatus { diproses, selesai, menunggu, berhasil, dikirim }
+enum AktivitasStatus { diproses, selesai, menunggu, berhasil, dikirim, ditolak}
 RealtimeChannel? _channel;
 
 class AktivitasItem {
@@ -19,6 +19,7 @@ class AktivitasItem {
   final String? kodeVoucher;
   final String? namaReward;
   final String? idReferensi;
+  final String? alasanTolak;
 
   const AktivitasItem({
     required this.type,
@@ -29,6 +30,7 @@ class AktivitasItem {
     this.kodeVoucher,
     this.namaReward,
     this.idReferensi,
+    this.alasanTolak,
   });
 }
 
@@ -138,6 +140,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
         String buktiFoto = '';
         String? kodeVoucher;
         String? namaReward;
+        String? alasanTolak;
 
         if (item['jenis_aktivitas'] == 'lapor_sampah') {
           try {
@@ -152,6 +155,33 @@ class _AktivitasPageState extends State<AktivitasPage> {
               buktiFoto = AppImageHelper.fotoPenanganan(laporan['bukti_penanganan']);
             }
           } catch (e) { debugPrint('ERROR FOTO: $e'); }
+        }
+
+        if (item['jenis_aktivitas'] == 'pesanan') {
+          try {
+            final pesanan = await Supabase.instance.client
+                .from('pesanan')
+                .select('id_pesanan, bukti_pembayaran, status, alasan_penolakan')
+                .eq('id_pesanan', item['id_referensi'])
+                .maybeSingle();
+
+            debugPrint('PESANAN => $pesanan');
+
+            if (pesanan != null) {
+              alasanTolak = pesanan['alasan_penolakan'];
+
+              debugPrint('ALASAN => $alasanTolak');
+
+              if (pesanan['bukti_pembayaran'] != null &&
+                  pesanan['bukti_pembayaran'].toString().isNotEmpty) {
+                buktiFoto = AppImageHelper.fotoBuktiPembayaran(
+                  pesanan['bukti_pembayaran'],
+                );
+              }
+            }
+          } catch (e) {
+            debugPrint('ERROR FOTO PESANAN: $e');
+          }
         }
         
         // PERBAIKAN: Ambil kode voucher untuk tukar poin
@@ -185,14 +215,15 @@ class _AktivitasPageState extends State<AktivitasPage> {
 
         grouped.putIfAbsent(groupLabel, () => []);
         grouped[groupLabel]!.add(AktivitasItem(
-          type:        _parseType(item['jenis_aktivitas']),
-          title:       item['judul']    ?? '-',
+          type: _parseType(item['jenis_aktivitas']),
+          title: item['judul'] ?? '-',
           description: item['deskripsi'] ?? '-',
-          status:      _parseStatus(item['status']),
+          status: _parseStatus(item['status']),
           buktiFotoUrl: buktiFoto,
           kodeVoucher: kodeVoucher,
           namaReward: namaReward,
           idReferensi: item['id_referensi'],
+          alasanTolak: alasanTolak,
         ));
       }
 
@@ -281,6 +312,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
       case 'selesai':  return AktivitasStatus.selesai;
       case 'menunggu': return AktivitasStatus.menunggu;
       case 'dikirim':  return AktivitasStatus.dikirim;
+      case 'ditolak':  return AktivitasStatus.ditolak;
       default:         return AktivitasStatus.berhasil;
     }
   }
@@ -326,6 +358,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
       case AktivitasStatus.menunggu: return (bg: const Color(0xFFF2DEB3), text: const Color(0xFFA8760B), label: 'Menunggu');
       case AktivitasStatus.dikirim:  return (bg: const Color(0xFFFFE0B3), text: const Color(0xFFD2691E), label: 'Dikirim');
       case AktivitasStatus.berhasil: return (bg: const Color(0x99B3E5B3), text: const Color(0xFF008000), label: 'Berhasil');
+      case AktivitasStatus.ditolak:  return (bg: const Color(0xFFF2DEB3), text: const Color.fromARGB(255, 168, 11, 11), label: 'Ditolak');
     }
   }
 
@@ -834,6 +867,52 @@ class _AktivitasPageState extends State<AktivitasPage> {
                           const SizedBox(height: 12),
                           Text(item.description, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary, height: 1.55)),
                           
+                          if (item.status == AktivitasStatus.ditolak &&
+                            item.alasanTolak != null &&
+                            item.alasanTolak!.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.red.shade300,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Colors.red.shade700,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Alasan Penolakan',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.red.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  item.alasanTolak!,
+                                  style: TextStyle(
+                                    color: Colors.red.shade900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
                           // Kode voucher untuk tukar poin
                           if (isTukarPoin && item.kodeVoucher != null && item.kodeVoucher!.isNotEmpty) ...[
                             const SizedBox(height: 20),
@@ -942,7 +1021,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
                                 final pesananStatus = snapshot.data;
                                 
                                 // Tampilkan tombol Selesai jika status 'dikirim' atau 'diproses'
-                                if (pesananStatus == 'dikirim' || pesananStatus == 'diproses') {
+                                if (pesananStatus == 'dikirim') {
                                   return Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [

@@ -200,6 +200,49 @@
             $logHttpCode = curl_getinfo($logCh, CURLINFO_HTTP_CODE);
             $logError = curl_error($logCh);
             curl_close($logCh);
+
+            $pengumumanData = [
+                'judul' => 'Event Baru: ' . $nama_event,
+                'deskripsi' => 'Yuk daftar dan ikuti event "' . $nama_event . '"! Jangan sampai ketinggalan, segera daftarkan diri Anda.',
+                'created_at' => date('c')
+            ];
+
+            $pengumumanCh = curl_init($supabaseUrl . "/rest/v1/pengumuman");
+            curl_setopt($pengumumanCh, CURLOPT_CUSTOMREQUEST, "POST");
+            curl_setopt($pengumumanCh, CURLOPT_POSTFIELDS, json_encode($pengumumanData));
+            curl_setopt($pengumumanCh, CURLOPT_HTTPHEADER, [
+                "apikey: $supabaseKey",
+                "Authorization: Bearer $supabaseKey",
+                "Content-Type: application/json",
+                "Prefer: return=minimal"
+            ]);
+            curl_setopt($pengumumanCh, CURLOPT_RETURNTRANSFER, true);
+            $pengumumanResponse = curl_exec($pengumumanCh);
+            $pengumumanHttpCode = curl_getinfo($pengumumanCh, CURLINFO_HTTP_CODE);
+            $pengumumanError = curl_error($pengumumanCh);
+            curl_close($pengumumanCh);
+
+            $fcmPayload = [
+                'topic' => 'all_users',
+                'title' => 'Event Baru: ' . $nama_event,
+                'body'  => 'Yuk daftar dan ikuti event "' . $nama_event . '"! Jangan sampai ketinggalan!'
+            ];
+
+            $chFcm = curl_init();
+            curl_setopt($chFcm, CURLOPT_URL, "https://rxzrbyqqhkxemdjbcntc.supabase.co/functions/v1/send-user-notification");
+            curl_setopt($chFcm, CURLOPT_POST, true);
+            curl_setopt($chFcm, CURLOPT_POSTFIELDS, json_encode($fcmPayload));
+            curl_setopt($chFcm, CURLOPT_HTTPHEADER, [
+                "Authorization: Bearer $supabaseKey",
+                "apikey: $supabaseKey",
+                "Content-Type: application/json"
+            ]);
+            curl_setopt($chFcm, CURLOPT_RETURNTRANSFER, true);
+            $fcmResponse = curl_exec($chFcm);
+            $fcmHttpCode = curl_getinfo($chFcm, CURLINFO_HTTP_CODE);
+            $fcmError = curl_error($chFcm);
+            curl_close($chFcm);
+
             echo json_encode([
                 'success' => true,
                 'message' => 'Event berhasil ditambahkan',
@@ -207,7 +250,10 @@
                     'event_id' => $newEventId,
                     'log_response' => $logResponse,
                     'log_http_code' => $logHttpCode,
-                    'log_error' => $logError
+                    'log_error' => $logError,
+                    'pengumuman_response' => $pengumumanResponse,
+                    'pengumuman_http_code' => $pengumumanHttpCode,
+                    'pengumuman_error' => $pengumumanError
                 ]
             ]);
             exit;
@@ -264,6 +310,12 @@
                 <a href="event_lingkungan.php" class="nav-link-custom active">
                     <i class="bi bi-calendar-event-fill"></i>
                     <span>Event Lingkungan</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="jadwal_ambil_sampah.php" class="nav-link-custom">
+                    <i class="bi bi-calendar2-week-fill"></i>
+                    <span>Jadwal Ambil Sampah</span>
                 </a>
             </div>
             <div class="nav-item">

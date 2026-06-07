@@ -96,176 +96,12 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style/root.css">
+    <link rel="stylesheet" href="style/form.css">
 
     <!-- Flatpickr -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
-    <style>
-        /* ── action bar ── */
-        .laporan-bar {
-            background: #fff;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0,145,110,.12);
-            padding: 16px 24px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-        .date-range-wrap {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex: 1;
-            min-width: 240px;
-        }
-        .date-range-wrap > i {
-            font-size: 22px;
-            color: var(--green);
-            flex-shrink: 0;
-        }
-        #dateRangePicker {
-            border: none !important;
-            outline: none !important;
-            font-family: 'Poppins', sans-serif;
-            font-size: 15px;
-            font-weight: 600;
-            color: #1A2E24;
-            background: transparent;
-            cursor: pointer;
-            width: 100%;
-            caret-color: transparent;
-        }
-        #dateRangePicker::placeholder { color: #9AA7A2; }
-
-        .btn-generate {
-            padding: 10px 28px;
-            border: 2px solid var(--green);
-            border-radius: 12px;
-            background: transparent;
-            color: var(--green);
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            font-family: inherit;
-            white-space: nowrap;
-            transition: .2s;
-        }
-        .btn-generate:hover { background: var(--green); color: #fff; }
-
-        .btn-export {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 10px 22px;
-            border: none;
-            border-radius: 12px;
-            background: var(--btn-tambah);
-            color: #1A2E24;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            font-family: inherit;
-            white-space: nowrap;
-            box-shadow: 0 4px 14px rgba(255,207,0,.35);
-            transition: .2s;
-        }
-        .btn-export:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(255,207,0,.45); }
-
-        /* ── stats grid ── */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-        @media(max-width:768px){ .stats-grid { grid-template-columns: 1fr 1fr; } }
-        @media(max-width:480px){ .stats-grid { grid-template-columns: 1fr; } }
-
-        .stat-card {
-            background: #fff;
-            border-radius: 16px;
-            border: 1.5px solid var(--border);
-            padding: 22px 24px;
-        }
-        .stat-label {
-            font-size: 11px;
-            font-weight: 700;
-            color: #6B8A7E;
-            letter-spacing: .6px;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-        .stat-value {
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--text-main);
-            line-height: 1.1;
-        }
-        .stat-value.green { color: var(--green); }
-
-        /* ── charts ── */
-        .charts-grid {
-            display: grid;
-            grid-template-columns: 1fr 1.4fr;
-            gap: 16px;
-        }
-        @media(max-width:768px){ .charts-grid { grid-template-columns: 1fr; } }
-
-        .chart-card {
-            background: #fff;
-            border-radius: 16px;
-            border: 1.5px solid var(--border);
-            padding: 24px;
-        }
-        .chart-title {
-            font-size: 18px;
-            font-weight: 800;
-            color: var(--text-main);
-            margin-bottom: 20px;
-            line-height: 1.3;
-        }
-
-        /* jenis sampah */
-        .jenis-item { margin-bottom: 14px; }
-        .jenis-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
-        .jenis-name { font-weight: 500; color: var(--text-main); }
-        .jenis-pct  { font-weight: 700; color: #6B8A7E; }
-        .jenis-track { height: 8px; background: #EEF5F1; border-radius: 99px; overflow: hidden; }
-        .jenis-fill  { height: 100%; border-radius: 99px; }
-        .c0 { background: var(--green); }
-        .c1 { background: #FFB347; }
-        .c2 { background: #4EAC91; }
-        .c3 { background: #9AA7A2; }
-
-        /* poin */
-        .poin-section { margin-top: 20px; padding-top: 16px; border-top: 1.5px solid var(--border); }
-        .poin-title   { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
-        .poin-row     { display: flex; align-items: center; gap: 10px; font-size: 13px; }
-        .poin-dot     { width: 10px; height: 10px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
-        .poin-val     { color: var(--green); font-weight: 700; }
-
-        /* link ke PDF — info bar kecil di bawah action bar */
-        .pdf-hint {
-            background: #F0F8F5;
-            border: 1.5px solid #C8E6DC;
-            border-radius: 12px;
-            padding: 10px 18px;
-            font-size: 12px;
-            color: #2F5D50;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 0;
-        }
-        .pdf-hint a {
-            color: var(--green);
-            font-weight: 700;
-            text-decoration: none;
-        }
-        .pdf-hint a:hover { text-decoration: underline; }
-    </style>
-</head>
+    </head>
 <body>
 
 <!-- SIDEBAR -->
@@ -276,6 +112,7 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
         <div class="nav-item"><a href="transaksi_setor_sampah.php" class="nav-link-custom"><i class="bi bi-recycle"></i><span>Transaksi Setor Sampah</span></a></div>
         <div class="nav-item"><a href="penarikan_saldo.php" class="nav-link-custom"><i class="bi bi-wallet2"></i><span>Penarikan Saldo</span></a></div>
         <div class="nav-item"><a href="event_lingkungan.php" class="nav-link-custom"><i class="bi bi-calendar-event-fill"></i><span>Event Lingkungan</span></a></div>
+        <div class="nav-item"><a href="jadwal_ambil_sampah.php" class="nav-link-custom"><i class="bi bi-calendar2-week-fill"></i><span>Jadwal Ambil Sampah</span></a></div>
         <div class="nav-item"><a href="laporan_keuangan.php" class="nav-link-custom active"><i class="bi bi-bar-chart-line-fill"></i><span>Laporan dan Keuangan</span></a></div>
         <div class="nav-item"><a href="data_nasabah.php" class="nav-link-custom"><i class="bi bi-people-fill"></i><span>Data Nasabah</span></a></div>
         <div class="nav-item"><a href="data_sampah.php" class="nav-link-custom"><i class="bi bi-trash-fill"></i><span>Data Sampah</span></a></div>
@@ -415,13 +252,13 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
                 <?php endif; ?>
 
                 <div class="poin-section">
-                    <div class="poin-title">Poin ditukar (Tukar Point)</div>
-                    <div class="poin-row">
-                        <div class="poin-dot"></div>
-                        <span>Total poin ditukar</span>
-                        <span class="poin-val"><?= number_format($totalPoin, 0, ',', '.') ?> poin</span>
-                    </div>
-                </div>
+            <div class="poin-title">Total Nilai Setor Sampah</div>
+            <div class="poin-row">
+                <div class="poin-dot"></div>
+                <span>Akumulasi nilai setor</span>
+                <span class="poin-val"><?= fmtRp($totalNilaiSetor) ?></span>
+            </div>
+        </div>
             </div>
 
         </div><!-- /charts-grid -->

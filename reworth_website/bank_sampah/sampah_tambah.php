@@ -18,33 +18,7 @@ function getSupabaseImageUrl($p){return empty($p)?null:"https://rxzrbyqqhkxemdjb
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style/root.css">
-<style>
-.form-wrap{display:flex;justify-content:center;padding:0 40px 40px;}
-.form-card{background:#fff;border-radius:24px;padding:0 0 36px;box-shadow:0 4px 24px rgba(0,0,0,.07);position:relative;margin-top:-60px;z-index:10;width:100%;max-width:900px;overflow:hidden;}
-.card-header-orange{background:#ED985A;padding:22px 40px;text-align:center;margin-bottom:32px;}
-.card-header-orange h2{margin:0;color:#fff;font-size:28px;font-weight:700;}
-.fields-wrap{padding:0 40px;}
-.field-label{display:block;font-size:12px;font-weight:700;color:#2C3E2F;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;}
-.field-ul{width:100%;border:none;border-bottom:1.5px solid #D6DEDA;background:transparent;padding:4px 2px 10px;font-size:14px;font-family:inherit;color:#555;outline:none;transition:.2s;appearance:none;}
-.field-ul:focus{border-bottom-color:var(--green);}
-.field-ul::placeholder{color:#B0BFB8;}
-.field-err{display:none;font-size:11px;color:#D95D39;margin-top:3px;font-weight:500;}
-.row-2{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-bottom:24px;}
-.row-1{margin-bottom:24px;}
-.form-actions{display:flex;justify-content:center;gap:14px;padding:24px 40px 0;border-top:1.5px solid #E8F0EC;margin-top:8px;}
-.btn-batal{padding:12px 36px;border-radius:12px;border:1.5px solid #D2E0D8;background:#fff;font-size:13px;font-weight:700;letter-spacing:.6px;color:#6B8A7E;cursor:pointer;font-family:inherit;transition:.2s;}
-.btn-batal:hover{border-color:var(--green);color:var(--green);}
-.btn-simpan{padding:12px 32px;border-radius:12px;border:none;background:var(--green);color:#fff;font-size:13px;font-weight:700;letter-spacing:.5px;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(0,145,110,.3);transition:.2s;}
-.btn-simpan:disabled{opacity:.6;pointer-events:none;}
-
-/* Hint box */
-.hint-box{background:#EEF5F1;border-radius:14px;padding:16px 20px;margin-bottom:24px;display:flex;gap:12px;align-items:flex-start;}
-.hint-box i{color:var(--green);font-size:18px;margin-top:2px;flex-shrink:0;}
-.hint-box p{margin:0;font-size:13px;color:#3A5245;line-height:1.6;}
-
-/* Preview harga */
-.harga-preview{font-size:13px;color:var(--green);font-weight:700;margin-top:6px;min-height:18px;}
-</style>
+    <link rel="stylesheet" href="style/form.css">
 </head><body>
 <aside class="sidebar">
     <div class="sidebar-logo">
@@ -55,6 +29,7 @@ function getSupabaseImageUrl($p){return empty($p)?null:"https://rxzrbyqqhkxemdjb
         <div class="nav-item"><a href="transaksi_setor_sampah.php" class="nav-link-custom"><i class="bi bi-recycle"></i><span>Transaksi Setor Sampah</span></a></div>
         <div class="nav-item"><a href="penarikan_saldo.php" class="nav-link-custom"><i class="bi bi-wallet2"></i><span>Penarikan Saldo</span></a></div>
         <div class="nav-item"><a href="event_lingkungan.php" class="nav-link-custom"><i class="bi bi-calendar-event-fill"></i><span>Event Lingkungan</span></a></div>
+         <div class="nav-item"><a href="jadwal_ambil_sampah.php"class="nav-link-custom"><i class="bi bi-calendar2-week-fill"></i><span>Jadwal Ambil Sampah</span></a></div>
         <div class="nav-item"><a href="laporan_keuangan.php" class="nav-link-custom"><i class="bi bi-bar-chart-line-fill"></i><span>Laporan dan Keuangan</span></a></div>
         <div class="nav-item"><a href="data_nasabah.php" class="nav-link-custom"><i class="bi bi-people-fill"></i><span>Data Nasabah</span></a></div>
         <div class="nav-item"><a href="data_sampah.php" class="nav-link-custom active"><i class="bi bi-trash-fill"></i><span>Data Sampah</span></a></div>
@@ -85,9 +60,9 @@ function getSupabaseImageUrl($p){return empty($p)?null:"https://rxzrbyqqhkxemdjb
     </div>
 
     <div class="form-wrap">
-        <div class="form-card">
-            <div class="card-header-orange"><h2>Tambah Jenis Sampah</h2></div>
-            <div class="fields-wrap">
+        <div class="form-card form-card-padded">
+            <div class="card-header-orange card-header-rounded"><h2>Tambah Jenis Sampah</h2></div>
+            <div class="fields-wrap" style="padding:0;">
 
                 <div class="hint-box">
                     <i class="bi bi-info-circle-fill"></i>
@@ -165,6 +140,11 @@ async function simpanData(){
     });
 
     if(res.ok){
+        const inserted = await res.json();
+        const NEW_ID = inserted[0]?.id_jenis || null;
+        const ADMIN_ID = "<?= $_SESSION['id_admin'] ?? '' ?>";
+        if (ADMIN_ID) fetch(SB_URL + '/rest/v1/log_admin', { method: 'POST', headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ id_admin: ADMIN_ID, aktivitas: "Menambahkan jenis sampah baru", tabel_terkait: 'jenis_sampah', id_data: NEW_ID, created_at: new Date().toISOString().split('.')[0] + 'Z' }) });
+    
         showToast('Jenis sampah berhasil ditambahkan!', 'success');
         setTimeout(() => window.location.href = 'data_sampah.php', 900);
     } else {
