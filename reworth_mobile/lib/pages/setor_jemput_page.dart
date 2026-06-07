@@ -28,7 +28,6 @@ class _JemputPageState extends State<JemputPage> {
   
   List<Map<String, dynamic>> _validSampah = [];
   double _totalBerat = 0;
-  int _totalPoin = 0;
   double _totalHarga = 0;
   int _currentStep = 1;
   
@@ -43,11 +42,13 @@ class _JemputPageState extends State<JemputPage> {
   bool _isLoading = true;
   bool _isSubmitting = false;
 
-  // Warna khusus Figma
+  
   final Color _darkGreen = AppColors.secondary;
   final Color _lightGreenBg = const Color(0xFFF8FBF4);
   final Color _borderGreen = const Color(0xFFD8E8C0);
   final Color _greyAddress = AppColors.textSecondary;
+
+  int get _totalPoin => 10; 
 
   @override
   void initState() {
@@ -59,7 +60,6 @@ class _JemputPageState extends State<JemputPage> {
     try {
       _validSampah = widget.sampahList ?? [];
       _totalBerat = widget.totalBerat ?? 0;
-      _totalPoin = widget.totalPoin ?? 0;
       _totalHarga = widget.totalHarga ?? 0;
       
       final user = AuthService.getCurrentUser();
@@ -98,7 +98,7 @@ class _JemputPageState extends State<JemputPage> {
           .lt('tanggal', endDate)
           .order('tanggal', ascending: true);
       
-      // Kelompokkan berdasarkan tanggal
+      
       final Map<String, List<Map<String, dynamic>>> grouped = {};
       for (var jadwal in data) {
         final tanggal = jadwal['tanggal'];
@@ -113,7 +113,7 @@ class _JemputPageState extends State<JemputPage> {
         });
       }
       
-      // Buat list semua tanggal di bulan ini
+      
       _jadwalList = [];
       final lastDay = DateTime(year, month + 1, 0);
       
@@ -122,7 +122,7 @@ class _JemputPageState extends State<JemputPage> {
         final hari = _getHariFromDate(tanggalStr);
         var jamList = grouped[tanggalStr] ?? [];
         
-        // Jika tidak ada jadwal di database, buat jadwal default
+        
         if (jamList.isEmpty) {
           jamList = [
             {
@@ -159,7 +159,7 @@ class _JemputPageState extends State<JemputPage> {
         });
       }
       
-      // Pilih tanggal pertama yang tersedia
+      
       _selectFirstAvailableDate();
       
     } catch (e) {
@@ -214,7 +214,7 @@ class _JemputPageState extends State<JemputPage> {
 
   void _nextStep() {
     if (_currentStep == 1) {
-      // Validasi sebelum pindah ke konfirmasi
+      
       if (_selectedJadwal == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pilih tanggal dan jam penjemputan terlebih dahulu')),
@@ -227,10 +227,10 @@ class _JemputPageState extends State<JemputPage> {
 
   void _prevStep() {
     if (_currentStep == 1) {
-      // Di halaman Jemput (step 1) -> kembali ke SetorPage
+      
       Navigator.pop(context);
     } else if (_currentStep == 2) {
-      // Di halaman Konfirmasi (step 2) -> kembali ke step 1 (Jemput)
+      
       setState(() => _currentStep = 1);
     }
   }
@@ -243,9 +243,28 @@ class _JemputPageState extends State<JemputPage> {
       return;
     }
     
-    // Validasi kuota
-    final kuota = _selectedJadwal!['kuota'] as int;
-    if (kuota <= 0) {
+    final String jadwalId = _selectedJadwal!['id_jadwal'].toString();
+    
+    // CEK KUOTA: Hitung jumlah transaksi aktif untuk jadwal ini
+    final transaksiAktif = await _supabase
+        .from('setor_sampah')
+        .select('id_setor')
+        .eq('id_jadwal', jadwalId)
+        .inFilter('status', ['menunggu', 'diproses']);
+    
+    final int transaksiTerpakai = transaksiAktif.length;
+    
+    // Ambil kuota maksimal dari jadwal
+    final jadwalData = await _supabase
+        .from('jadwal_ambil')
+        .select('kuota')
+        .eq('id_jadwal', jadwalId)
+        .single();
+    
+    final int kuotaMaksimal = (jadwalData['kuota'] as int?) ?? 0;
+    final int sisaKuota = kuotaMaksimal - transaksiTerpakai;
+    
+    if (sisaKuota <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Maaf, kuota untuk jam ini sudah penuh. Silahkan pilih jam lain.'),
@@ -254,8 +273,8 @@ class _JemputPageState extends State<JemputPage> {
       );
       return;
     }
-
-    // Dialog konfirmasi sebelum submit
+    
+    // Dialog konfirmasi dengan info sisa kuota
     final shouldSubmit = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -271,68 +290,32 @@ class _JemputPageState extends State<JemputPage> {
               decoration: BoxDecoration(
                 color: const Color(0xFFF5F9EE),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: _borderGreen),
+                border: Border.all(color: const Color(0xFFD8E8C0)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.calendar_today, size: 16, color: AppColors.secondary),
-                      const SizedBox(width: 8),
-                      Text('$_selectedHari, $_selectedTanggal'),
-                    ],
-                  ),
+                  Row(children: [const Icon(Icons.calendar_today, size: 16, color: AppColors.secondary), const SizedBox(width: 8), Text('$_selectedHari, $_selectedTanggal')]),
                   const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(Icons.access_time, size: 16, color: AppColors.secondary),
-                      const SizedBox(width: 8),
-                      Text('$_selectedWaktuMulai - $_selectedWaktuSelesai WIB'),
-                    ],
-                  ),
+                  Row(children: [const Icon(Icons.access_time, size: 16, color: AppColors.secondary), const SizedBox(width: 8), Text('$_selectedWaktuMulai - $_selectedWaktuSelesai WIB')]),
                   const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, size: 16, color: AppColors.secondary),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(_alamat, maxLines: 2)),
-                    ],
-                  ),
+                  Row(children: [const Icon(Icons.location_on, size: 16, color: AppColors.secondary), const SizedBox(width: 8), Expanded(child: Text(_alamat, maxLines: 2))]),
                   const Divider(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Total Harga:'),
-                      Text('Rp${_formatRupiah(_totalHarga)}', 
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary)),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Poin yang didapat:'),
-                      Text('+$_totalPoin poin', 
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary)),
-                    ],
-                  ),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Total Harga:'), Text('Rp${_formatRupiah(_totalHarga)}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary))]),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Poin yang didapat:'), Text('+$_totalPoin poin', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary))]),
+                  const Divider(),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    const Text('Sisa Kuota:', style: TextStyle(fontSize: 12)),
+                    Text('$sisaKuota dari $kuotaMaksimal', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.secondary)),
+                  ]),
                 ],
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal', style: TextStyle(color: Colors.red)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.secondary,
-            ),
-            child: const Text('Ya, Konfirmasi'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal', style: TextStyle(color: Colors.red))),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary), child: const Text('Ya, Konfirmasi', style: TextStyle(color: Colors.white))),
         ],
       ),
     ) ?? false;
@@ -344,49 +327,98 @@ class _JemputPageState extends State<JemputPage> {
       final user = AuthService.getCurrentUser();
       if (user == null) throw Exception('User tidak login');
       
-      String jadwalId = _selectedJadwal!['id_jadwal'];
+      String finalJadwalId = _selectedJadwal!['id_jadwal'].toString();
       
-      // Jika menggunakan jadwal default (id_jadwal diawali 'default_')
-      if (jadwalId.toString().startsWith('default_')) {
-        // Cek apakah jadwal sudah ada di database
+      // Jika menggunakan jadwal default
+      if (finalJadwalId.toString().startsWith('default_')) {
         final existingJadwal = await _supabase
             .from('jadwal_ambil')
-            .select('id_jadwal')
+            .select('id_jadwal, kuota')
             .eq('tanggal', _selectedTanggal)
             .eq('waktu_mulai', _selectedJadwal!['waktu_mulai'])
             .maybeSingle();
         
         if (existingJadwal != null) {
-          jadwalId = existingJadwal['id_jadwal'];
+          finalJadwalId = existingJadwal['id_jadwal'];
         } else {
-          // Buat jadwal baru di database
           final newJadwal = await _supabase.from('jadwal_ambil').insert({
             'tanggal': _selectedTanggal,
             'waktu_mulai': _selectedJadwal!['waktu_mulai'],
             'waktu_selesai': _selectedJadwal!['waktu_selesai'],
-            'kuota': _selectedJadwal!['kuota'],
+            'kuota': 10,
             'created_at': DateTime.now().toIso8601String(),
           }).select().single();
-          jadwalId = newJadwal['id_jadwal'];
+          finalJadwalId = newJadwal['id_jadwal'];
         }
       }
       
-      await _supabase.from('penjemputan').insert({
+      // CEK KUOTA SEKALI LAGI (race condition prevention)
+      final checkTransaksi = await _supabase
+          .from('setor_sampah')
+          .select('id_setor')
+          .eq('id_jadwal', finalJadwalId)
+          .inFilter('status', ['menunggu', 'diproses']);
+      
+      final checkJadwal = await _supabase
+          .from('jadwal_ambil')
+          .select('kuota')
+          .eq('id_jadwal', finalJadwalId)
+          .single();
+      
+      final currentKuota = (checkJadwal['kuota'] as int?) ?? 0;
+      final currentTerpakai = checkTransaksi.length;
+      
+      if (currentKuota - currentTerpakai <= 0) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Maaf, kuota untuk jam ini sudah penuh. Silahkan pilih jam lain.'), backgroundColor: Colors.orange),
+          );
+        }
+        return;
+      }
+      
+      // Insert ke setor_sampah
+      final result = await _supabase.from('setor_sampah').insert({
         'id_pengguna': user.id,
-        'id_jadwal': jadwalId,
         'alamat': _alamat,
-        'total_berat': _totalBerat,
-        'total_poin': _totalPoin,
-        'total_harga': _totalHarga,
+        'id_jadwal': finalJadwalId,
+        'total_uang': _totalHarga,
         'status': 'menunggu',
+        'created_at': DateTime.now().toIso8601String(),
+      }).select().single();
+      
+      final idSetor = result['id_setor'];
+      
+      // Insert detail_setor
+      for (var s in _validSampah) {
+        final harga = (s['harga_per_kg'] ?? 0).toDouble();
+        await _supabase.from('detail_setor').insert({
+          'id_setor': idSetor,
+          'id_jenis': s['id_jenis'],
+          'berat': s['berat'],
+          'harga_per_kg': harga,
+          'subtotal': harga * (s['berat'] as double),
+        });
+      }
+      
+      // Insert riwayat_aktivitas
+      await _supabase.from('riwayat_aktivitas').insert({
+        'id_pengguna': user.id,
+        'jenis_aktivitas': 'setor_sampah',
+        'id_referensi': idSetor,
+        'judul': 'Setor Sampah',
+        'deskripsi': 'Anda melakukan setor sampah dengan total ${_totalBerat.toStringAsFixed(2)} kg. Menunggu verifikasi admin.',
+        'status': 'menunggu',
+        'perubahan_poin': 0,
+        'perubahan_saldo': 0,
         'created_at': DateTime.now().toIso8601String(),
       });
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Penjemputan berhasil dijadwalkan!'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('Setor sampah berhasil! Menunggu verifikasi admin.'), backgroundColor: Colors.green),
         );
-        Navigator.pop(context);
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
       if (mounted) {
@@ -623,7 +655,6 @@ class _JemputPageState extends State<JemputPage> {
                 final item = _jadwalList[index];
                 final isSelected = _selectedTanggal == item['tanggal_display'];
                 
-                // Semua hari berwarna hijau
                 Color bgColor;
                 if (isSelected) {
                   bgColor = _darkGreen;
@@ -653,7 +684,6 @@ class _JemputPageState extends State<JemputPage> {
                       
                       final jamList = item['jam_list'] as List;
                       if (jamList.isNotEmpty) {
-                        // Pilih jam pertama yang tersedia
                         for (var jam in jamList) {
                           if ((jam['kuota'] as int) > 0) {
                             _selectedJadwal = jam;
