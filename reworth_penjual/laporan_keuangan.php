@@ -10,6 +10,13 @@ if (!isset($_SESSION['id_penjual'])) {
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 
+require_once 'subscription_check.php';
+
+$subscription = requirePremium($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
+
+$isPremium = $subscription['is_premium'];
+$remainingDays = getRemainingDays($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
+
 $userId = $_SESSION['id_penjual'] ?? '';
 $userName = $_SESSION['nama_penjual'] ?? 'User';
 $userEmail = $_SESSION['email'] ?? '';
@@ -35,17 +42,14 @@ function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
     return ['response' => $response, 'httpCode' => $httpCode];
 }
 
-// ========== FILTER TANGGAL ==========
+// Ambil parameter filter
 $dateFrom = $_GET['date_from'] ?? date('Y-m-01');
 $dateTo = $_GET['date_to'] ?? date('Y-m-d');
-
-$fromTs = $dateFrom . 'T00:00:00';
-$toTs = $dateTo . 'T23:59:59';
 
 $labelFrom = date('d M Y', strtotime($dateFrom));
 $labelTo = date('d M Y', strtotime($dateTo));
 
-// ========== AMBIL DATA PRODUK PENJUAL ==========
+// Ambil semua produk penjual
 $getProduk = curlRequest(
     $supabaseUrl . "/rest/v1/produk?id_penjual=eq.$userId",
     'GET',
@@ -55,7 +59,7 @@ $getProduk = curlRequest(
 $produkList = json_decode($getProduk['response'], true) ?? [];
 $totalProduk = count($produkList);
 
-// ========== AMBIL PESANAN (PENDAPATAN) ==========
+// Ambil SEMUA pesanan (termasuk yang belum selesai) untuk filter
 $getPesanan = curlRequest(
     $supabaseUrl . "/rest/v1/pesanan?select=*,produk(*)&order=created_at.desc",
     'GET',
@@ -64,23 +68,27 @@ $getPesanan = curlRequest(
 );
 $semuaPesanan = json_decode($getPesanan['response'], true) ?? [];
 
-// Filter pesanan milik penjual ini & sesuai tanggal
+// Filter pesanan berdasarkan produk penjual dan tanggal
 $pesananList = [];
 foreach ($semuaPesanan as $p) {
+    // Cek apakah produk milik penjual ini
     if ($p['produk'] && $p['produk']['id_penjual'] == $userId) {
-        $tgl = substr($p['created_at'], 0, 10);
-        if ($tgl >= $dateFrom && $tgl <= $dateTo) {
-            if ($p['status'] == 'dikirim' || $p['status'] == 'selesai') {
-                $pesananList[] = $p;
-            }
+        // Filter berdasarkan tanggal (gunakan created_at atau tanggal_selesai)
+        $tglPesanan = substr($p['created_at'], 0, 10);
+        if ($tglPesanan >= $dateFrom && $tglPesanan <= $dateTo) {
+            $pesananList[] = $p;
         }
     }
 }
 
-$totalPendapatan = array_sum(array_column($pesananList, 'total_bayar'));
+// Hitung total pendapatan dari SEMUA pesanan (termasuk yang belum selesai)
+$totalPendapatan = 0;
+foreach ($pesananList as $p) {
+    $totalPendapatan += $p['total_bayar'];
+}
 $totalTransaksi = count($pesananList);
 
-// ========== AMBIL KOMISI ==========
+// Ambil komisi penjual
 $getKomisi = curlRequest(
     $supabaseUrl . "/rest/v1/komisi?id_penjual=eq.$userId&order=created_at.desc",
     'GET',
@@ -89,21 +97,20 @@ $getKomisi = curlRequest(
 );
 $komisiList = json_decode($getKomisi['response'], true) ?? [];
 
-// Filter komisi sesuai tanggal
+// Filter komisi berdasarkan tanggal
 $komisiPeriode = [];
 $totalKomisi = 0;
 foreach ($komisiList as $k) {
-    $tgl = substr($k['created_at'], 0, 10);
-    if ($tgl >= $dateFrom && $tgl <= $dateTo) {
+    $tglKomisi = substr($k['created_at'], 0, 10);
+    if ($tglKomisi >= $dateFrom && $tglKomisi <= $dateTo) {
         $komisiPeriode[] = $k;
         $totalKomisi += $k['total_komisi'];
     }
 }
 
-// Total bersih = pendapatan - komisi
 $totalBersih = $totalPendapatan - $totalKomisi;
 
-// ========== GRAFIK PENDAPATAN PER BULAN ==========
+// Hitung pendapatan per bulan (untuk grafik)
 $monthlyIncome = array_fill(1, 12, 0);
 foreach ($pesananList as $p) {
     $m = (int)date('n', strtotime($p['created_at']));
@@ -115,18 +122,17 @@ $monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AGU', 'SEP', 'O
 $trendLabels = [];
 $trendValues = [];
 for ($m = 1; $m <= $curMonth; $m++) {
-    $trendLabels[] = $monthNames[$m - 1];
+    $trendLabels[] = $monthNames[$m-1];
     $trendValues[] = $monthlyIncome[$m];
 }
 
-// ========== FUNGSI FORMAT ==========
-function fmtRp($n) { 
-    return 'Rp ' . number_format((float)$n, 0, ',', '.'); 
-}
+function fmtRp($n) { return 'Rp ' . number_format((float)$n, 0, ',', '.'); }
+function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
 
-function fmtNum($n) { 
-    return number_format((int)$n, 0, ',', '.'); 
-}
+// Debug: log jumlah data
+error_log("Total Pesanan: " . count($pesananList));
+error_log("Total Pendapatan: " . $totalPendapatan);
+error_log("Date Range: $dateFrom - $dateTo");
 ?>
 
 <!DOCTYPE html>
@@ -148,9 +154,10 @@ function fmtNum($n) {
             <div class="nav-item"><a href="produk.php" class="nav-link-custom"><i class="bi bi-box-seam-fill"></i><span>Manajemen Produk</span></a></div>
             <div class="nav-item"><a href="pesanan.php" class="nav-link-custom"><i class="bi bi-bag-check-fill"></i><span>Manajemen Pesanan</span></a></div>
             <div class="nav-item"><a href="langganan.php" class="nav-link-custom"><i class="bi bi-stars"></i><span>Langganan</span></a></div>
+            <div class="nav-item"><a href="pembayaran_komisi.php" class="nav-link-custom"><i class="bi bi-cash-coin"></i><span>Pembayaran Komisi</span></a></div>
             <div class="nav-item"><a href="laporan_keuangan.php" class="nav-link-custom active"><i class="bi bi-bar-chart-line-fill"></i><span>Laporan dan Keuangan</span></a></div>
             <div class="nav-item"><a href="pengaturan_toko.php" class="nav-link-custom"><i class="bi bi-shop-window"></i><span>Pengaturan Toko</span></a></div>
-            <!-- <div class="nav-item"><a href="pengaturan_premium.php" class="nav-link-custom"><i class="bi bi-gem"></i><span>Pengaturan Premium</span></a></div> -->
+            <div class="nav-item"><a href="pengaturan_premium.php" class="nav-link-custom"><i class="bi bi-gem"></i><span>Pengaturan Premium</span></a></div>
         </nav>
         <div class="sidebar-logout"><a class="logout-btn" href="logout.php"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></div>
     </aside>
@@ -176,28 +183,30 @@ function fmtNum($n) {
         </div>
 
         <div class="action-bar-wrap">
-            <div class="action-bar">
-                <form method="GET" class="d-flex gap-3 flex-wrap align-items-center w-100">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-calendar3 text-success"></i>
-                        <input type="date" name="date_from" class="form-control w-auto" value="<?= htmlspecialchars($dateFrom) ?>">
-                        <span>–</span>
-                        <input type="date" name="date_to" class="form-control w-auto" value="<?= htmlspecialchars($dateTo) ?>">
-                    </div>
-                    <button type="submit" class="btn btn-success btn-sm">Filter</button>
-                    <a href="laporan_keuangan_export.php?date_from=<?= urlencode($dateFrom) ?>&date_to=<?= urlencode($dateTo) ?>" class="btn btn-warning btn-sm" target="_blank">
-                        <i class="bi bi-file-earmark-pdf"></i> Export PDF
-                    </a>
-                </form>
-            </div>
+            <form method="GET" action="" class="laporan-bar" id="filterForm" style="background:#fff; border-radius:20px; padding:16px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="bi bi-calendar3" style="font-size:22px; color:var(--green);"></i>
+                    <input type="date" name="date_from" value="<?= htmlspecialchars($dateFrom) ?>" style="padding:8px 12px; border:1px solid #E5E7EB; border-radius:8px; font-family:'Poppins',sans-serif;">
+                    <span>–</span>
+                    <input type="date" name="date_to" value="<?= htmlspecialchars($dateTo) ?>" style="padding:8px 12px; border:1px solid #E5E7EB; border-radius:8px; font-family:'Poppins',sans-serif;">
+                </div>
+                <button type="submit" class="btn-generate" style="padding:10px 28px; border:2px solid var(--green); border-radius:12px; background:transparent; color:var(--green); font-weight:700; cursor:pointer; transition:all 0.3s;">
+                    <i class="bi bi-funnel"></i> Filter
+                </button>
+                <button type="button" class="btn-export" onclick="window.open('laporan_keuangan_export.php?date_from=<?= urlencode($dateFrom) ?>&date_to=<?= urlencode($dateTo) ?>', '_blank')" style="display:flex; align-items:center; gap:8px; padding:10px 22px; border:none; border-radius:12px; background:#FFCF00; color:#1A2E24; font-weight:700; cursor:pointer; transition:all 0.3s;">
+                    <i class="bi bi-file-earmark-pdf" style="font-size:18px;"></i> Export PDF
+                </button>
+            </form>
         </div>
 
         <div class="content-area">
+            <!-- Info periode -->
             <div class="alert alert-info mb-4">
                 <i class="bi bi-info-circle"></i>
                 Menampilkan data periode <strong><?= $labelFrom ?> – <?= $labelTo ?></strong>
             </div>
 
+            <!-- Statistik -->
             <div class="row mb-4">
                 <div class="col-md-3 mb-3">
                     <div class="card-custom p-3">
@@ -235,6 +244,7 @@ function fmtNum($n) {
                 </div>
             </div>
 
+            <!-- Grafik Pendapatan -->
             <div class="card-custom mb-4">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-3"><i class="bi bi-graph-up"></i> Grafik Pendapatan per Bulan</h5>
@@ -242,6 +252,7 @@ function fmtNum($n) {
                 </div>
             </div>
 
+            <!-- Tabel Riwayat Transaksi -->
             <div class="card-custom">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-3"><i class="bi bi-clock-history"></i> Riwayat Transaksi</h5>
@@ -253,27 +264,50 @@ function fmtNum($n) {
                                     <th>Produk</th>
                                     <th>Total Bayar</th>
                                     <th>Komisi (5%)</th>
-                                    <th>Tanggal</th>
+                                    <th>Tanggal Transaksi</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (empty($pesananList)): ?>
                                     <tr>
-                                        <td colspan="6" class="text-center">Belum ada transaksi</td>
+                                        <td colspan="6" class="text-center py-4">
+                                            <i class="bi bi-inbox fs-1 text-muted"></i>
+                                            <p class="mt-2 mb-0">Belum ada transaksi pada periode ini</p>
+                                        </td>
                                     </tr>
                                 <?php else: ?>
                                     <?php $no = 1; foreach ($pesananList as $p): 
                                         $komisiItem = $p['total_bayar'] * 0.05;
+                                        $statusBadge = '';
+                                        switch($p['status']) {
+                                            case 'selesai': 
+                                                $statusBadge = '<span class="status-badge status-selesai">Selesai</span>'; 
+                                                break;
+                                            case 'dikirim': 
+                                                $statusBadge = '<span class="status-badge status-dikirim">Dikirim</span>'; 
+                                                break;
+                                            case 'diproses': 
+                                                $statusBadge = '<span class="status-badge status-berlangsung">Diproses</span>'; 
+                                                break;
+                                            case 'menunggu': 
+                                                $statusBadge = '<span class="status-badge status-menunggu">Menunggu Konfirmasi</span>'; 
+                                                break;
+                                            case 'ditolak': 
+                                                $statusBadge = '<span class="status-badge status-ditolak">Ditolak</span>'; 
+                                                break;
+                                            default: 
+                                                $statusBadge = '<span class="status-badge status-akan_datang">' . ucfirst($p['status']) . '</span>';
+                                        }
                                     ?>
-                                        <tr>
-                                            <td><?= $no++ ?></td>
-                                            <td><?= htmlspecialchars($p['produk']['nama_produk'] ?? '-') ?></td>
-                                            <td>Rp <?= number_format($p['total_bayar'], 0, ',', '.') ?></td>
-                                            <td>Rp <?= number_format($komisiItem, 0, ',', '.') ?></td>
-                                            <td><?= date('d M Y H:i', strtotime($p['created_at'])) ?></td>
-                                            <td><span class="badge bg-success">Selesai</span></td>
-                                        </tr>
+                                    <tr>
+                                        <td><?= $no++ ?></td>
+                                        <td><?= htmlspecialchars($p['produk']['nama_produk'] ?? '-') ?></td>
+                                        <td>Rp <?= number_format($p['total_bayar'], 0, ',', '.') ?></td>
+                                        <td>Rp <?= number_format($komisiItem, 0, ',', '.') ?></td>
+                                        <td><?= date('d M Y H:i', strtotime($p['created_at'])) ?></td>
+                                        <td><?= $statusBadge ?></td>
+                                    </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </tbody>
@@ -304,19 +338,10 @@ function fmtNum($n) {
                 maintainAspectRatio: true,
                 plugins: {
                     legend: { position: 'top' },
-                    tooltip: { 
-                        callbacks: { 
-                            label: (c) => 'Rp ' + c.parsed.y.toLocaleString('id-ID') 
-                        } 
-                    }
+                    tooltip: { callbacks: { label: (c) => 'Rp ' + c.parsed.y.toLocaleString('id-ID') } }
                 },
                 scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        ticks: { 
-                            callback: (v) => 'Rp ' + v.toLocaleString('id-ID') 
-                        } 
-                    }
+                    y: { beginAtZero: true, ticks: { callback: (v) => 'Rp ' + v.toLocaleString('id-ID') } }
                 }
             }
         });

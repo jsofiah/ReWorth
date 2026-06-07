@@ -10,11 +10,17 @@ if (!isset($_SESSION['id_penjual'])) {
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 
+require_once 'subscription_check.php';
+
+$subscription = requirePremium($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
+
+$isPremium = $subscription['is_premium'];
+$remainingDays = getRemainingDays($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
+
 $userId = $_SESSION['id_penjual'] ?? '';
 $userName = $_SESSION['nama_penjual'] ?? 'User';
 $userEmail = $_SESSION['email'] ?? '';
 
-// Filter tanggal
 $dateFrom = $_GET['date_from'] ?? date('Y-m-01');
 $dateTo = $_GET['date_to'] ?? date('Y-m-d');
 
@@ -31,16 +37,20 @@ function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
     }
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     return json_decode($response, true) ?? [];
 }
 
-function fmtRp($n) { return 'Rp ' . number_format((float)$n, 0, ',', '.'); }
-function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
+function fmtRp($n) { 
+    return 'Rp ' . number_format((float)$n, 0, ',', '.'); 
+}
 
-// ========== AMBIL DATA ==========
+function fmtNum($n) { 
+    return number_format((int)$n, 0, ',', '.'); 
+}
 
-// Produk
+// Ambil data produk
 $produkList = curlRequest(
     $supabaseUrl . "/rest/v1/produk?id_penjual=eq.$userId",
     'GET',
@@ -49,15 +59,14 @@ $produkList = curlRequest(
 );
 $totalProduk = count($produkList);
 
-// Pesanan selesai
+// Ambil data pesanan (SEMUA STATUS untuk laporan lengkap)
 $pesananList = curlRequest(
-    $supabaseUrl . "/rest/v1/pesanan?select=*,produk(*)&status=eq.selesai",
+    $supabaseUrl . "/rest/v1/pesanan?select=*,produk(*)&order=created_at.desc",
     'GET',
     null,
     ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
 );
 
-// Filter pesanan milik penjual & sesuai tanggal
 $filteredPesanan = [];
 $totalPendapatan = 0;
 foreach ($pesananList as $p) {
@@ -71,24 +80,26 @@ foreach ($pesananList as $p) {
 }
 $totalTransaksi = count($filteredPesanan);
 
-// Komisi
+// Ambil data komisi
 $komisiList = curlRequest(
-    $supabaseUrl . "/rest/v1/komisi?id_penjual=eq.$userId",
+    $supabaseUrl . "/rest/v1/komisi?id_penjual=eq.$userId&order=created_at.desc",
     'GET',
     null,
     ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
 );
 $totalKomisi = 0;
+$komisiPeriode = [];
 foreach ($komisiList as $k) {
     $tgl = substr($k['created_at'], 0, 10);
     if ($tgl >= $dateFrom && $tgl <= $dateTo) {
+        $komisiPeriode[] = $k;
         $totalKomisi += $k['total_komisi'];
     }
 }
 
 $totalBersih = $totalPendapatan - $totalKomisi;
 
-// Pendapatan per jenis produk
+// Hitung produk terlaris
 $produkPendapatan = [];
 foreach ($filteredPesanan as $p) {
     $nama = $p['produk']['nama_produk'] ?? 'Unknown';
@@ -223,7 +234,7 @@ arsort($produkPendapatan);
     <tr class="indent"><td class="label">Nama Penjual</td><td class="value"><?= htmlspecialchars($userName) ?></td></tr>
     <tr class="indent"><td class="label">Email</td><td class="value"><?= htmlspecialchars($userEmail) ?></td></tr>
     <tr class="indent"><td class="label">Total Produk</td><td class="value"><?= fmtNum($totalProduk) ?> produk</td></tr>
-    <tr class="indent"><td class="label">Total Transaksi Selesai</td><td class="value"><?= fmtNum($totalTransaksi) ?> transaksi</td></tr>
+    <tr class="indent"><td class="label">Total Transaksi</td><td class="value"><?= fmtNum($totalTransaksi) ?> transaksi</td></tr>
 </table>
 <div class="divider-thin"></div>
 
@@ -239,7 +250,7 @@ arsort($produkPendapatan);
 </table>
 
 <!-- C. DETAIL PESANAN -->
-<div class="section-title avoid-break">C. DETAIL PESANAN SELESAI</div>
+<div class="section-title avoid-break">C. DETAIL PESANAN</div>
 <table class="data-table">
     <thead>
         <tr>
@@ -249,6 +260,7 @@ arsort($produkPendapatan);
             <th>Komisi (5%)</th>
             <th>Diterima</th>
             <th>Tanggal</th>
+            <th>Status</th>
         </tr>
     </thead>
     <tbody>
@@ -256,20 +268,26 @@ arsort($produkPendapatan);
         $grandTotal = 0;
         $grandKomisi = 0;
         $grandDiterima = 0;
-        foreach ($filteredPesanan as $idx => $p):
+        $no = 1;
+        foreach ($filteredPesanan as $p):
             $komisiItem = $p['total_bayar'] * 0.05;
             $diterima = $p['total_bayar'] - $komisiItem;
             $grandTotal += $p['total_bayar'];
             $grandKomisi += $komisiItem;
             $grandDiterima += $diterima;
+            
+            // Status badge text
+            $statusText = ucfirst($p['status'] ?? 'Unknown');
+            if ($statusText == 'Menunggu') $statusText = 'Menunggu Konfirmasi';
     ?>
         <tr>
-            <td class="center"><?= $idx+1 ?></td>
+            <td class="center"><?= $no++ ?></td>
             <td><?= htmlspecialchars($p['produk']['nama_produk'] ?? '-') ?></td>
             <td class="right"><?= fmtRp($p['total_bayar']) ?></td>
             <td class="right"><?= fmtRp($komisiItem) ?></td>
             <td class="right"><?= fmtRp($diterima) ?></td>
             <td class="center"><?= date('d/m/Y', strtotime($p['created_at'])) ?></td>
+            <td class="center"><?= $statusText ?></td>
         </tr>
     <?php endforeach; ?>
         <tr class="total-row">
@@ -277,10 +295,10 @@ arsort($produkPendapatan);
             <td class="right"><?= fmtRp($grandTotal) ?></td>
             <td class="right"><?= fmtRp($grandKomisi) ?></td>
             <td class="right"><?= fmtRp($grandDiterima) ?></td>
-            <td></td>
+            <td colspan="2"></td>
         </tr>
     <?php else: ?>
-        <tr class="empty-row"><td colspan="6">Tidak ada transaksi pada periode ini.</td></tr>
+        <tr class="empty-row"><td colspan="7">Tidak ada transaksi pada periode ini.</td></tr>
     <?php endif; ?>
     </tbody>
 </table>
@@ -341,10 +359,5 @@ arsort($produkPendapatan);
     </div>
 </div>
 
-<script>
-    window.onload = function() {
-        // Tidak auto print, biar user klik tombol sendiri
-    };
-</script>
 </body>
 </html>

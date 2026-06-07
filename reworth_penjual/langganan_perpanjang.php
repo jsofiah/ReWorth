@@ -1,132 +1,173 @@
 <?php
-session_start();
-date_default_timezone_set('Asia/Jakarta');
+    session_start();
+    date_default_timezone_set('Asia/Jakarta');
 
-if (!isset($_SESSION['id_penjual'])) {
-    header("Location: login.php");
-    exit;
-}
-
-$supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
-$supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
-
-$userId = $_SESSION['id_penjual'] ?? '';
-$userName = $_SESSION['nama_penjual'] ?? 'User';
-$userEmail = $_SESSION['email'] ?? '';
-$userFoto = $_SESSION['foto_profil'] ?? '';
-
-function getSupabaseImageUrl($path) {
-    if (empty($path)) return null;
-    return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
-}
-
-function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-    if ($data) {
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    if (!isset($_SESSION['id_penjual'])) {
+        header("Location: login.php");
+        exit;
     }
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    return ['response' => $response, 'httpCode' => $httpCode];
-}
 
-// Ambil data penjual
-$getPenjual = curlRequest(
-    $supabaseUrl . "/rest/v1/penjual?id_penjual=eq.$userId",
-    'GET',
-    null,
-    ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
-);
-$penjualData = json_decode($getPenjual['response'], true);
-$penjual = (is_array($penjualData) && isset($penjualData[0])) ? $penjualData[0] : [];
+    $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
+    $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 
-// Ambil langganan aktif saat ini
-$getLangganan = curlRequest(
-    $supabaseUrl . "/rest/v1/langganan?id_penjual=eq.$userId&order=created_at.desc",
-    'GET',
-    null,
-    ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
-);
-$allData = json_decode($getLangganan['response'], true);
-$allLangganan = is_array($allData) ? $allData : [];
+    require_once 'subscription_check.php';
 
-$langgananAktif = null;
-$today = date('Y-m-d');
-$isExpired = true;
-$tanggalMulai = '';
-$tanggalSelesai = '';
+    $subscription = getSubscriptionStatus($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
+    $isPremium = $subscription['is_premium'];
+    $isExpired = $subscription['is_expired'];
+    $remainingDays = getRemainingDays($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
 
-foreach ($allLangganan as $l) {
-    if ($l['status'] === 'aktif') {
-        $tanggalMulai = $l['tanggal_mulai'];
-        $tanggalSelesai = $l['tanggal_selesai'];
-        if ($tanggalSelesai >= $today) {
-            $langgananAktif = $l;
-            $isExpired = false;
+
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        if (!$isExpired && $subscription['current_subscription']) {
+            $newStartDate = date('Y-m-d', strtotime($subscription['current_subscription']['tanggal_selesai'] . ' +1 day'));
+        } else {
+            $newStartDate = date('Y-m-d');
         }
-        break;
+        $newEndDate = date('Y-m-d', strtotime($newStartDate . ' +3 months'));
     }
-}
 
-$HARGA = 70000;
-$message = '';
-$messageType = '';
+    $userId = $_SESSION['id_penjual'] ?? '';
+    $userName = $_SESSION['nama_penjual'] ?? 'User';
+    $userEmail = $_SESSION['email'] ?? '';
+    $userFoto = $_SESSION['foto_profil'] ?? '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!isset($_FILES['bukti_pembayaran']) || $_FILES['bukti_pembayaran']['error'] !== 0) {
-        $message = "Harap upload bukti pembayaran!";
-        $messageType = "error";
+    $getKomisiPending = curlRequest(
+    $supabaseUrl . "/rest/v1/komisi?id_penjual=eq.$userId&status_pembayaran=eq.pending",
+        'GET',
+        null,
+        ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
+    );
+    $komisiPending = json_decode($getKomisiPending['response'], true);
+    $hasPendingCommission = !empty($komisiPending);
+
+    // Jika ada komisi pending, redirect ke halaman komisi
+    if ($hasPendingCommission && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+        $_SESSION['subscription_error'] = "Terdapat komisi yang belum dibayar. Silakan bayar komisi terlebih dahulu sebelum memperpanjang langganan.";
+        header("Location: pembayaran_komisi.php");
+        exit;
+    }
+
+    function getSupabaseImageUrl($path) {
+        if (empty($path)) return null;
+        return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
+    }
+
+    function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+        if ($data) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        }
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return ['response' => $response, 'httpCode' => $httpCode];
+    }
+
+    $getPenjual = curlRequest(
+        $supabaseUrl . "/rest/v1/penjual?id_penjual=eq.$userId",
+        'GET',
+        null,
+        ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
+    );
+    $penjualData = json_decode($getPenjual['response'], true);
+    $penjual = (is_array($penjualData) && isset($penjualData[0])) ? $penjualData[0] : [];
+
+
+    $getLangganan = curlRequest(
+        $supabaseUrl . "/rest/v1/langganan?id_penjual=eq.$userId&order=created_at.desc",
+        'GET',
+        null,
+        ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
+    );
+    $allData = json_decode($getLangganan['response'], true);
+    $allLangganan = is_array($allData) ? $allData : [];
+
+    $langgananAktif = null;
+    $today = date('Y-m-d');
+    $isExpired = true;
+    $currentStartDate = '';
+    $currentEndDate = '';
+
+    foreach ($allLangganan as $l) {
+        if ($l['status'] === 'aktif') {
+            $currentStartDate = $l['tanggal_mulai'];
+            $currentEndDate = $l['tanggal_selesai'];
+
+            if ($l['tanggal_selesai'] >= $today) {
+                $langgananAktif = $l;
+                $isExpired = false;
+            }
+            break;
+        }
+    }
+
+    if (!$isExpired && $langgananAktif && $langgananAktif['tanggal_selesai'] >= $today) {
+        $newStartDate = date('Y-m-d', strtotime($langgananAktif['tanggal_selesai'] . ' +1 day'));
     } else {
-        $file = $_FILES['bukti_pembayaran'];
-        $fileName = 'langganan/' . time() . '_' . $userId . '_' . preg_replace('/[^A-Za-z0-9.\-_]/', '', $file['name']);
-        $fileData = file_get_contents($file['tmp_name']);
-        
-        $uploadResult = curlRequest(
-            $supabaseUrl . "/storage/v1/object/media/" . $fileName,
-            'POST',
-            $fileData,
-            ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey", "Content-Type: application/octet-stream"]
-        );
-        
-        if ($uploadResult['httpCode'] == 200 || $uploadResult['httpCode'] == 201) {
-            $tanggalMulaiBaru = date('Y-m-d');
-            $tanggalSelesaiBaru = date('Y-m-d', strtotime("+3 months"));
+        $newStartDate = $today;
+    }
+
+
+    $newEndDate = date('Y-m-d', strtotime($newStartDate . ' +3 months'));
+
+    $HARGA = 70000;
+    $message = '';
+    $messageType = '';
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!isset($_FILES['bukti_pembayaran']) || $_FILES['bukti_pembayaran']['error'] !== 0) {
+            $message = "Harap upload bukti pembayaran!";
+            $messageType = "error";
+        } else {
+            $file = $_FILES['bukti_pembayaran'];
+            $fileName = 'langganan/' . time() . '_' . $userId . '_' . preg_replace('/[^A-Za-z0-9.\-_]/', '', $file['name']);
+            $fileData = file_get_contents($file['tmp_name']);
             
-            $dataLangganan = [
-                'id_penjual' => $userId,
-                'tanggal_mulai' => $tanggalMulaiBaru,
-                'tanggal_selesai' => $tanggalSelesaiBaru,
-                'status' => 'menunggu_verifikasi',
-                'jumlah_bayar' => $HARGA,
-                'bukti_pembayaran' => $fileName
-            ];
-            
-            $insertResult = curlRequest(
-                $supabaseUrl . "/rest/v1/langganan",
+            $uploadResult = curlRequest(
+                $supabaseUrl . "/storage/v1/object/media/" . $fileName,
                 'POST',
-                json_encode($dataLangganan),
-                ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey", "Content-Type: application/json", "Prefer: return=minimal"]
+                $fileData,
+                ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey", "Content-Type: application/octet-stream"]
             );
             
-            if ($insertResult['httpCode'] == 201 || $insertResult['httpCode'] == 200) {
-                $message = "Pengajuan perpanjangan berhasil! Menunggu verifikasi admin.";
-                $messageType = "success";
-                echo "<script>setTimeout(function(){ window.location.href = 'langganan.php'; }, 2000);</script>";
+            if ($uploadResult['httpCode'] == 200 || $uploadResult['httpCode'] == 201) {
+
+                $dataLangganan = [
+                    'id_penjual' => $userId,
+                    'tanggal_mulai' => $newStartDate,
+                    'tanggal_selesai' => $newEndDate,
+                    'status' => 'menunggu_verifikasi',
+                    'jumlah_bayar' => $HARGA,
+                    'bukti_pembayaran' => $fileName,
+                    'created_at' => date('Y-m-d H:i:s')
+                ];
+                
+                $insertResult = curlRequest(
+                    $supabaseUrl . "/rest/v1/langganan",
+                    'POST',
+                    json_encode($dataLangganan),
+                    ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey", "Content-Type: application/json", "Prefer: return=minimal"]
+                );
+                
+                if ($insertResult['httpCode'] == 201 || $insertResult['httpCode'] == 200) {
+                    $message = "Pengajuan perpanjangan berhasil! Menunggu verifikasi admin.";
+                    $messageType = "success";
+                    echo "<script>setTimeout(function(){ window.location.href = 'langganan.php'; }, 2000);</script>";
+                } else {
+                    $message = "Gagal menyimpan data langganan!";
+                    $messageType = "error";
+                }
             } else {
-                $message = "Gagal menyimpan data langganan!";
+                $message = "Gagal upload bukti pembayaran!";
                 $messageType = "error";
             }
-        } else {
-            $message = "Gagal upload bukti pembayaran!";
-            $messageType = "error";
         }
     }
-}
 ?>
 
 <!DOCTYPE html>
@@ -140,6 +181,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style/form.css">
+    <style>
+        .info-tanggal-baru {
+            background: #E8F5E9;
+            border-left: 4px solid #4CAF50;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+        .info-tanggal-baru p {
+            margin: 0;
+            font-size: 14px;
+        }
+        .info-tanggal-baru strong {
+            color: #2E7D32;
+        }
+    </style>
 </head>
 <body>
     <aside class="sidebar">
@@ -149,6 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="nav-item"><a href="produk.php" class="nav-link-custom"><i class="bi bi-box-seam-fill"></i><span>Manajemen Produk</span></a></div>
             <div class="nav-item"><a href="pesanan.php" class="nav-link-custom"><i class="bi bi-bag-check-fill"></i><span>Manajemen Pesanan</span></a></div>
             <div class="nav-item"><a href="langganan.php" class="nav-link-custom active"><i class="bi bi-stars"></i><span>Langganan</span></a></div>
+            <div class="nav-item"><a href="pembayaran_komisi.php" class="nav-link-custom"><i class="bi bi-cash-coin"></i><span>Pembayaran Komisi</span></a></div>
             <div class="nav-item"><a href="laporan_keuangan.php" class="nav-link-custom"><i class="bi bi-bar-chart-line-fill"></i><span>Laporan dan Keuangan</span></a></div>
             <div class="nav-item"><a href="pengaturan_toko.php" class="nav-link-custom"><i class="bi bi-shop-window"></i><span>Pengaturan Toko</span></a></div>
             <div class="nav-item"><a href="pengaturan_premium.php" class="nav-link-custom"><i class="bi bi-gem"></i><span>Pengaturan Premium</span></a></div>
@@ -159,7 +217,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="main-wrap">
         <div class="topbar">
             <div class="topbar-inner">
-                <h1 class="topbar-title">Langganan</h1>
+                <h1 class="topbar-title">Perpanjang Langganan</h1>
                 <div class="topbar-user">
                     <div class="topbar-user-info">
                         <div class="topbar-user-name"><?= htmlspecialchars($userName) ?></div>
@@ -190,18 +248,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
 
                             <div class="field-group">
-                                <label class="field-label">Tanggal Mulai</label>
-                                <input type="text" class="field-input" value="<?= !$isExpired ? date('d F Y', strtotime($tanggalMulai)) : '-' ?>" readonly disabled>
+                                <label class="field-label">Tanggal Mulai Saat Ini</label>
+                                <input type="text" class="field-input" value="<?= $currentStartDate ? date('d F Y', strtotime($currentStartDate)) : '-' ?>" readonly disabled>
                             </div>
 
                             <div class="field-group">
-                                <label class="field-label">Tanggal Selesai</label>
-                                <input type="text" class="field-input" value="<?= !$isExpired ? date('d F Y', strtotime($tanggalSelesai)) : '-' ?>" readonly disabled>
+                                <label class="field-label">Tanggal Selesai Saat Ini</label>
+                                <input type="text" class="field-input" value="<?= $currentEndDate ? date('d F Y', strtotime($currentEndDate)) : '-' ?>" readonly disabled>
                             </div>
 
                             <div class="field-group">
-                                <label class="field-label">Status</label>
+                                <label class="field-label">Status Saat Ini</label>
                                 <input type="text" class="field-input" value="<?= $isExpired ? 'Kadaluarsa' : 'Aktif' ?>" readonly disabled>
+                            </div>
+
+                            <!-- Informasi Tanggal Baru yang Akan Didapat -->
+                            <div class="info-tanggal-baru">
+                                <p><i class="bi bi-calendar-check"></i> <strong>Setelah perpanjangan:</strong></p>
+                                <p><i class="bi bi-calendar"></i> Tanggal Mulai Baru: <strong><?= date('d F Y', strtotime($newStartDate)) ?></strong></p>
+                                <p><i class="bi bi-calendar"></i> Tanggal Selesai Baru: <strong><?= date('d F Y', strtotime($newEndDate)) ?></strong> (3 bulan)</p>
+                                <p class="text-muted mt-2 small">
+                                    <i class="bi bi-info-circle"></i> 
+                                    <?php if (!$isExpired && $langgananAktif): ?>
+                                        Perpanjangan akan dimulai setelah masa aktif saat ini berakhir.
+                                    <?php else: ?>
+                                        Perpanjangan akan dimulai dari hari ini.
+                                    <?php endif; ?>
+                                </p>
                             </div>
 
                             <!-- Kolom Kanan: QR Code & Upload Bukti -->
@@ -224,6 +297,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="image-preview" id="imagePreview"></div>
                                 </div>
                             </div>
+
+                            <!-- Pesan error/success -->
+                            <?php if ($message): ?>
+                            <div class="alert alert-<?= $messageType === 'success' ? 'success' : 'danger' ?> mt-3">
+                                <?= htmlspecialchars($message) ?>
+                            </div>
+                            <?php endif; ?>
 
                             <!-- Tombol Batal dan Kirim -->
                             <div class="form-actions" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E2EDE8;">
@@ -266,18 +346,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // Validasi dan loading state on submit
+
         document.getElementById('formPerpanjang')?.addEventListener('submit', function(e) {
             const fileInput = document.getElementById('bukti_pembayaran');
             
-            // Cek apakah file sudah dipilih
+
             if (!fileInput.files || fileInput.files.length === 0) {
                 e.preventDefault();
                 showToast('Harap upload bukti pembayaran terlebih dahulu!', 'error');
                 return false;
             }
             
-            // Loading state
+
             const btn = document.getElementById('btnKirim');
             if (btn) {
                 btn.disabled = true;
@@ -294,5 +374,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             setTimeout(() => div.remove(), 3500);
         }
     </script>
+    <style>
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .btn-spinner {
+            display: inline-block;
+        }
+    </style>
 </body>
 </html>

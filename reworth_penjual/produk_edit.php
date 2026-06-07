@@ -5,9 +5,16 @@
         header("Location: login.php");
         exit;
     }
-
+    
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
+    
+    require_once 'subscription_check.php';
+
+    $subscription = requirePremium($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
+
+    $isPremium = $subscription['is_premium'];
+    $remainingDays = getRemainingDays($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
 
     $userName  = $_SESSION['nama_penjual'] ?? 'User';
     $userEmail = $_SESSION['email'] ?? 'user@example.com';
@@ -60,7 +67,7 @@
         ];
     }
 
-    //hapus foto
+
     if (
         $_SERVER['REQUEST_METHOD'] === 'POST' &&
         isset($_POST['hapus_foto'])
@@ -96,7 +103,7 @@
             exit;
         }
 
-        // HAPUS STORAGE
+
         if (!empty($foto['path_foto'])) {
             $deleteStorageUrl =
                 $supabaseUrl .
@@ -114,7 +121,7 @@
             );
         }
 
-        // HAPUS DATABASE
+
         $deleteDbUrl =
             $supabaseUrl .
             "/rest/v1/foto_produk?id_foto=eq." .
@@ -152,7 +159,7 @@
         exit;
     }
 
-    //update produk
+
     if (
         $_SERVER['REQUEST_METHOD'] === 'POST' &&
         !isset($_POST['hapus_foto'])
@@ -186,7 +193,7 @@
             exit;
         }
 
-        // UPDATE PRODUK
+
         $updateData = [
             'nama_produk' => $nama_produk,
             'deskripsi_produk' => $deskripsi_produk,
@@ -224,7 +231,7 @@
             exit;
         }
 
-        // TAMBAH FOTO BARU TANPA HAPUS FOTO LAMA
+
         if (
             isset($_FILES['foto_produk']) &&
             !empty($_FILES['foto_produk']['name'][0])
@@ -350,7 +357,7 @@
     }
 
     
-    //ambil data produk
+
     $produkUrl =
         $supabaseUrl .
         "/rest/v1/produk?id_produk=eq." .
@@ -380,7 +387,7 @@
         exit;
     }
 
-    //ambil foto produk
+
 
     $fotoUrl =
         $supabaseUrl .
@@ -444,6 +451,12 @@
                 <a href="langganan.php" class="nav-link-custom">
                     <i class="bi bi-stars"></i>
                     <span>Langganan</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="pembayaran_komisi.php" class="nav-link-custom">
+                    <i class="bi bi-cash-coin"></i>
+                    <span>Pembayaran Komisi</span>
                 </a>
             </div>
             <div class="nav-item">

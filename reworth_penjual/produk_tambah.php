@@ -8,6 +8,13 @@
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
+    
+    require_once 'subscription_check.php';
+
+    $subscription = requirePremium($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
+
+    $isPremium = $subscription['is_premium'];
+    $remainingDays = getRemainingDays($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
 
     $userName  = $_SESSION['nama_penjual'] ?? 'User';
     $userEmail = $_SESSION['email'] ?? 'user@example.com';
@@ -223,6 +230,12 @@
                     </a>
                 </div>
                 <div class="nav-item">
+                    <a href="pembayaran_komisi.php" class="nav-link-custom">
+                        <i class="bi bi-cash-coin"></i>
+                        <span>Pembayaran Komisi</span>
+                    </a>
+                </div>
+                <div class="nav-item">
                     <a href="laporan_keuangan.php" class="nav-link-custom">
                         <i class="bi bi-bar-chart-line-fill"></i>
                         <span>Laporan dan Keuangan</span>
@@ -398,7 +411,7 @@
                 const newFiles =
                     Array.from(input.files);
 
-                // tambah file baru ke array lama
+
                 selectedFiles = [
                     ...selectedFiles,
                     ...newFiles
@@ -406,7 +419,7 @@
 
                 renderPreview();
 
-                // reset input supaya bisa pilih file yg sama lagi
+
                 input.value = '';
             }
 
@@ -487,7 +500,7 @@
                     document.getElementById('harga').value
                 );
 
-                // append semua file yg udh dipilih
+
                 selectedFiles.forEach(file => {
 
                     formData.append(

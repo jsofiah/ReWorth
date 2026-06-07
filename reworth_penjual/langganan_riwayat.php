@@ -1,145 +1,145 @@
 <?php
-session_start();
+    session_start();
 
-if (!isset($_SESSION['id_penjual'])) {
-    header("Location: login.php");
-    exit;
-}
-
-$supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
-$supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
-
-$userId = $_SESSION['id_penjual'] ?? '';
-$userName = $_SESSION['nama_penjual'] ?? 'User';
-$userEmail = $_SESSION['email'] ?? '';
-$userFoto = $_SESSION['foto_profil'] ?? '';
-
-function getSupabaseImageUrl($path) {
-    if (empty($path)) return null;
-    return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
-}
-
-function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-    if ($data) {
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    if (!isset($_SESSION['id_penjual'])) {
+        header("Location: login.php");
+        exit;
     }
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    return ['response' => $response, 'httpCode' => $httpCode];
-}
 
-// Hapus data
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_id'])) {
-    header('Content-Type: application/json');
-    $hapusId = $_POST['hapus_id'];
-    
-    $getFoto = curlRequest(
-        $supabaseUrl . "/rest/v1/langganan?id_langganan=eq.$hapusId&select=bukti_pembayaran",
+    $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
+    $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
+
+    require_once 'subscription_check.php';
+
+    $subscription = getSubscriptionStatus($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
+    $isPremium = $subscription['is_premium'];
+
+    $userId = $_SESSION['id_penjual'] ?? '';
+    $userName = $_SESSION['nama_penjual'] ?? 'User';
+    $userEmail = $_SESSION['email'] ?? '';
+    $userFoto = $_SESSION['foto_profil'] ?? '';
+
+    function getSupabaseImageUrl($path) {
+        if (empty($path)) return null;
+        return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
+    }
+
+    function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+        if ($data) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        }
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return ['response' => $response, 'httpCode' => $httpCode];
+    }
+
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_id'])) {
+        header('Content-Type: application/json');
+        $hapusId = $_POST['hapus_id'];
+        
+        $getFoto = curlRequest(
+            $supabaseUrl . "/rest/v1/langganan?id_langganan=eq.$hapusId&select=bukti_pembayaran",
+            'GET',
+            null,
+            ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
+        );
+        $fotoData = json_decode($getFoto['response'], true);
+        
+        if (!empty($fotoData) && !empty($fotoData[0]['bukti_pembayaran'])) {
+            $pathFoto = $fotoData[0]['bukti_pembayaran'];
+            curlRequest(
+                $supabaseUrl . "/storage/v1/object/media/" . $pathFoto,
+                'DELETE',
+                null,
+                ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
+            );
+        }
+        
+        $delete = curlRequest(
+            $supabaseUrl . "/rest/v1/langganan?id_langganan=eq.$hapusId",
+            'DELETE',
+            null,
+            ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey", "Prefer: return=minimal"]
+        );
+        
+        if ($delete['httpCode'] == 200 || $delete['httpCode'] == 204) {
+            echo json_encode(['success' => true, 'message' => 'Data berhasil dihapus']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Gagal menghapus data']);
+        }
+        exit;
+    }
+
+    $getRiwayat = curlRequest(
+        $supabaseUrl . "/rest/v1/langganan?id_penjual=eq.$userId&order=created_at.desc",
         'GET',
         null,
         ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
     );
-    $fotoData = json_decode($getFoto['response'], true);
-    
-    if (!empty($fotoData) && !empty($fotoData[0]['bukti_pembayaran'])) {
-        $pathFoto = $fotoData[0]['bukti_pembayaran'];
-        curlRequest(
-            $supabaseUrl . "/storage/v1/object/media/" . $pathFoto,
-            'DELETE',
-            null,
-            ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
-        );
+
+    $riwayatList = json_decode($getRiwayat['response'], true) ?? [];
+
+    $search = $_GET['search'] ?? '';
+    if (!empty($search)) {
+        $riwayatList = array_filter($riwayatList, function($r) use ($search) {
+            return stripos(date('d M Y', strtotime($r['tanggal_mulai'])), $search) !== false ||
+                stripos(date('d M Y', strtotime($r['tanggal_selesai'])), $search) !== false ||
+                stripos(number_format($r['jumlah_bayar'], 0, ',', '.'), $search) !== false ||
+                stripos($r['status'], $search) !== false;
+        });
     }
-    
-    $delete = curlRequest(
-        $supabaseUrl . "/rest/v1/langganan?id_langganan=eq.$hapusId",
-        'DELETE',
-        null,
-        ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey", "Prefer: return=minimal"]
-    );
-    
-    if ($delete['httpCode'] == 200 || $delete['httpCode'] == 204) {
-        echo json_encode(['success' => true, 'message' => 'Data berhasil dihapus']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Gagal menghapus data']);
+
+    $filterStatus = $_GET['filter'] ?? 'semua';
+    if ($filterStatus !== 'semua') {
+        $riwayatList = array_filter($riwayatList, function($r) use ($filterStatus) {
+            if ($filterStatus == 'aktif') {
+
+                return $r['status'] == 'aktif' && $r['tanggal_selesai'] >= date('Y-m-d');
+            } elseif ($filterStatus == 'kadaluarsa') {
+
+                return $r['status'] == 'aktif' && $r['tanggal_selesai'] < date('Y-m-d');
+            } else {
+                return $r['status'] === $filterStatus;
+            }
+        });
     }
-    exit;
-}
 
-// Ambil semua riwayat langganan
-$getRiwayat = curlRequest(
-    $supabaseUrl . "/rest/v1/langganan?id_penjual=eq.$userId&order=created_at.desc",
-    'GET',
-    null,
-    ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
-);
+    $per_page = 10;
+    $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $total_data = count($riwayatList);
+    $total_pages = ceil($total_data / $per_page);
+    $start = ($current_page - 1) * $per_page;
+    $current_data = array_slice($riwayatList, $start, $per_page);
+    $showing_from = $total_data > 0 ? $start + 1 : 0;
+    $showing_to = min($start + $per_page, $total_data);
 
-$riwayatList = json_decode($getRiwayat['response'], true) ?? [];
-
-// Search
-$search = $_GET['search'] ?? '';
-if (!empty($search)) {
-    $riwayatList = array_filter($riwayatList, function($r) use ($search) {
-        return stripos(date('d M Y', strtotime($r['tanggal_mulai'])), $search) !== false ||
-               stripos(date('d M Y', strtotime($r['tanggal_selesai'])), $search) !== false ||
-               stripos(number_format($r['jumlah_bayar'], 0, ',', '.'), $search) !== false ||
-               stripos($r['status'], $search) !== false;
-    });
-}
-
-// Filter status
-$filterStatus = $_GET['filter'] ?? 'semua';
-if ($filterStatus !== 'semua') {
-    $riwayatList = array_filter($riwayatList, function($r) use ($filterStatus) {
-        if ($filterStatus == 'aktif') {
-            // Aktif dan belum kadaluarsa
-            return $r['status'] == 'aktif' && $r['tanggal_selesai'] >= date('Y-m-d');
-        } elseif ($filterStatus == 'kadaluarsa') {
-            // Status aktif tapi sudah lewat tanggal
-            return $r['status'] == 'aktif' && $r['tanggal_selesai'] < date('Y-m-d');
+    function getStatusInfo($r) {
+        if ($r['status'] == 'aktif') {
+            if ($r['tanggal_selesai'] < date('Y-m-d')) {
+                return ['class' => 'bg-secondary', 'text' => 'Kadaluarsa'];
+            } else {
+                return ['class' => 'bg-success', 'text' => 'Aktif'];
+            }
+        } elseif ($r['status'] == 'menunggu_verifikasi') {
+            return ['class' => 'bg-warning text-dark', 'text' => 'Menunggu Verifikasi'];
         } else {
-            return $r['status'] === $filterStatus;
+            return ['class' => 'bg-secondary', 'text' => ucfirst($r['status'])];
         }
-    });
-}
-
-// Pagination
-$per_page = 10;
-$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$total_data = count($riwayatList);
-$total_pages = ceil($total_data / $per_page);
-$start = ($current_page - 1) * $per_page;
-$current_data = array_slice($riwayatList, $start, $per_page);
-$showing_from = $total_data > 0 ? $start + 1 : 0;
-$showing_to = min($start + $per_page, $total_data);
-
-function getStatusInfo($r) {
-    if ($r['status'] == 'aktif') {
-        if ($r['tanggal_selesai'] < date('Y-m-d')) {
-            return ['class' => 'bg-secondary', 'text' => 'Kadaluarsa'];
-        } else {
-            return ['class' => 'bg-success', 'text' => 'Aktif'];
-        }
-    } elseif ($r['status'] == 'menunggu_verifikasi') {
-        return ['class' => 'bg-warning text-dark', 'text' => 'Menunggu Verifikasi'];
-    } else {
-        return ['class' => 'bg-secondary', 'text' => ucfirst($r['status'])];
     }
-}
 
-// Mapping status untuk tampilan filter
-$statusLabel = [
-    'semua' => 'Semua Status',
-    'aktif' => 'Aktif',
-    'menunggu_verifikasi' => 'Menunggu Verifikasi',
-    'kadaluarsa' => 'Kadaluarsa'
-];
+    $statusLabel = [
+        'semua' => 'Semua Status',
+        'aktif' => 'Aktif',
+        'menunggu_verifikasi' => 'Menunggu Verifikasi',
+        'kadaluarsa' => 'Kadaluarsa'
+    ];
 ?>
 
 <!DOCTYPE html>
@@ -161,6 +161,7 @@ $statusLabel = [
             <div class="nav-item"><a href="produk.php" class="nav-link-custom"><i class="bi bi-box-seam-fill"></i><span>Manajemen Produk</span></a></div>
             <div class="nav-item"><a href="pesanan.php" class="nav-link-custom"><i class="bi bi-bag-check-fill"></i><span>Manajemen Pesanan</span></a></div>
             <div class="nav-item"><a href="langganan.php" class="nav-link-custom active"><i class="bi bi-stars"></i><span>Langganan</span></a></div>
+            <div class="nav-item"><a href="pembayaran_komisi.php" class="nav-link-custom"><i class="bi bi-cash-coin"></i><span>Pembayaran Komisi</span></a></div>
             <div class="nav-item"><a href="laporan_keuangan.php" class="nav-link-custom"><i class="bi bi-bar-chart-line-fill"></i><span>Laporan dan Keuangan</span></a></div>
             <div class="nav-item"><a href="pengaturan_toko.php" class="nav-link-custom"><i class="bi bi-shop-window"></i><span>Pengaturan Toko</span></a></div>
             <div class="nav-item"><a href="pengaturan_premium.php" class="nav-link-custom"><i class="bi bi-gem"></i><span>Pengaturan Premium</span></a></div>
@@ -305,7 +306,7 @@ $statusLabel = [
     <script>
         let hapusId = null;
 
-        // Search + Filter
+
         document.getElementById('searchInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 window.location.href = '?search=' + encodeURIComponent(this.value) + '&filter=<?= $filterStatus ?>';

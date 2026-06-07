@@ -1,152 +1,156 @@
 <?php
-session_start();
+    session_start();
 
-if (!isset($_SESSION['id_penjual'])) {
-    header("Location: login.php");
-    exit;
-}
-
-$supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
-$supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
-
-$userId = $_SESSION['id_penjual'] ?? '';
-
-function getSupabaseImageUrl($path) {
-    if (empty($path)) {
-        return null;
+    if (!isset($_SESSION['id_penjual'])) {
+        header("Location: login.php");
+        exit;
     }
-    return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
-}
 
-// Ambil data penjual
-$url = $supabaseUrl . "/rest/v1/penjual?id_penjual=eq.$userId&select=*";
-$headers = [
-    "apikey: $supabaseKey",
-    "Authorization: Bearer $supabaseKey",
-    "Content-Type: application/json"
-];
+    $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
+    $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 
-$ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, $url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-$response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
+    require_once 'subscription_check.php';
 
-$dataPenjual = [];
-if ($httpCode === 200) {
-    $result = json_decode($response, true);
-    $dataPenjual = $result[0] ?? [];
-}
+    $subscription = requirePremium($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
 
-// Update profil
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    header('Content-Type: application/json');
+    $isPremium = $subscription['is_premium'];
+    $remainingDays = getRemainingDays($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
 
-    $nama_penjual   = $_POST['nama_penjual'] ?? '';
-    $email          = $_POST['email'] ?? '';
-    $rating         = $_POST['rating'] ?? 0;
-    $nama_bank      = $_POST['nama_bank'] ?? '';
-    $akun_rekening  = $_POST['akun_rekening'] ?? '';
-    $alamat_penjual = $_POST['alamat_penjual'] ?? '';
-    $password       = !empty($_POST['password']) ? md5($_POST['password']) : '';
-    $latitude       = $_POST['latitude'] ?? null;
-    $longitude      = $_POST['longitude'] ?? null;
+    $userId = $_SESSION['id_penjual'] ?? '';
 
-    $fotoPath = $dataPenjual['foto_profil'] ?? '';
-
-    // Upload foto baru
-    if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] === 0) {
-        $fileTmp  = $_FILES['foto_profil']['tmp_name'];
-        $fileName = time() . '_' . basename($_FILES['foto_profil']['name']);
-        $storagePath = "penjual/" . $fileName;
-        $uploadUrl = $supabaseUrl . "/storage/v1/object/media/" . $storagePath;
-        $fileData = file_get_contents($fileTmp);
-
-        $uploadHeaders = [
-            "apikey: $supabaseKey",
-            "Authorization: Bearer $supabaseKey",
-            "Content-Type: application/octet-stream"
-        ];
-
-        $uploadCh = curl_init();
-        curl_setopt($uploadCh, CURLOPT_URL, $uploadUrl);
-        curl_setopt($uploadCh, CURLOPT_POST, true);
-        curl_setopt($uploadCh, CURLOPT_POSTFIELDS, $fileData);
-        curl_setopt($uploadCh, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($uploadCh, CURLOPT_HTTPHEADER, $uploadHeaders);
-        curl_exec($uploadCh);
-        $uploadCode = curl_getinfo($uploadCh, CURLINFO_HTTP_CODE);
-        curl_close($uploadCh);
-
-        if ($uploadCode === 200 || $uploadCode === 201) {
-            // Hapus foto lama
-            if (!empty($fotoPath)) {
-                $deleteOldUrl = $supabaseUrl . "/storage/v1/object/media/" . $fotoPath;
-                $deleteOldCh = curl_init();
-                curl_setopt($deleteOldCh, CURLOPT_URL, $deleteOldUrl);
-                curl_setopt($deleteOldCh, CURLOPT_CUSTOMREQUEST, "DELETE");
-                curl_setopt($deleteOldCh, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($deleteOldCh, CURLOPT_HTTPHEADER, [
-                    "apikey: $supabaseKey",
-                    "Authorization: Bearer $supabaseKey"
-                ]);
-                curl_exec($deleteOldCh);
-                curl_close($deleteOldCh);
-            }
-            $fotoPath = $storagePath;
+    function getSupabaseImageUrl($path) {
+        if (empty($path)) {
+            return null;
         }
+        return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
     }
 
-    // Update database
-    $updateData = [
-        "nama_penjual"   => $nama_penjual,
-        "email"          => $email,
-        "rating"         => $rating,
-        "nama_bank"      => $nama_bank,
-        "akun_rekening"  => $akun_rekening,
-        "alamat_penjual" => $alamat_penjual,
-        "latitude"       => $latitude,
-        "longitude"      => $longitude,
-        "foto_profil"    => $fotoPath
-    ];
-
-    if (!empty($password)) {
-        $updateData['password'] = $password;
-    }
-
-    $updateUrl = $supabaseUrl . "/rest/v1/penjual?id_penjual=eq.$userId";
-    $updateCh = curl_init();
-    curl_setopt($updateCh, CURLOPT_URL, $updateUrl);
-    curl_setopt($updateCh, CURLOPT_CUSTOMREQUEST, "PATCH");
-    curl_setopt($updateCh, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($updateCh, CURLOPT_POSTFIELDS, json_encode($updateData));
-    curl_setopt($updateCh, CURLOPT_HTTPHEADER, [
+    $url = $supabaseUrl . "/rest/v1/penjual?id_penjual=eq.$userId&select=*";
+    $headers = [
         "apikey: $supabaseKey",
         "Authorization: Bearer $supabaseKey",
-        "Content-Type: application/json",
-        "Prefer: return=minimal"
-    ]);
-    curl_exec($updateCh);
-    $updateCode = curl_getinfo($updateCh, CURLINFO_HTTP_CODE);
-    curl_close($updateCh);
+        "Content-Type: application/json"
+    ];
 
-    if ($updateCode === 204) {
-        $_SESSION['nama_penjual'] = $nama_penjual;
-        $_SESSION['email'] = $email;
-        $_SESSION['foto_profil'] = $fotoPath;
-        echo json_encode(["success" => true, "message" => "Profil berhasil diperbarui"]);
-    } else {
-        echo json_encode(["success" => false, "message" => "Gagal memperbarui profil"]);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    $dataPenjual = [];
+    if ($httpCode === 200) {
+        $result = json_decode($response, true);
+        $dataPenjual = $result[0] ?? [];
     }
-    exit;
-}
 
-$userName  = $dataPenjual['nama_penjual'] ?? '';
-$userEmail = $dataPenjual['email'] ?? '';
-$userRating = $dataPenjual['rating'] ?? 0;
-$userFoto  = $dataPenjual['foto_profil'] ?? '';
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        header('Content-Type: application/json');
+
+        $nama_penjual   = $_POST['nama_penjual'] ?? '';
+        $email          = $_POST['email'] ?? '';
+        $rating         = $_POST['rating'] ?? 0;
+        $nama_bank      = $_POST['nama_bank'] ?? '';
+        $akun_rekening  = $_POST['akun_rekening'] ?? '';
+        $alamat_penjual = $_POST['alamat_penjual'] ?? '';
+        $password       = !empty($_POST['password']) ? md5($_POST['password']) : '';
+        $latitude       = $_POST['latitude'] ?? null;
+        $longitude      = $_POST['longitude'] ?? null;
+
+        $fotoPath = $dataPenjual['foto_profil'] ?? '';
+
+
+        if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] === 0) {
+            $fileTmp  = $_FILES['foto_profil']['tmp_name'];
+            $fileName = time() . '_' . basename($_FILES['foto_profil']['name']);
+            $storagePath = "penjual/" . $fileName;
+            $uploadUrl = $supabaseUrl . "/storage/v1/object/media/" . $storagePath;
+            $fileData = file_get_contents($fileTmp);
+
+            $uploadHeaders = [
+                "apikey: $supabaseKey",
+                "Authorization: Bearer $supabaseKey",
+                "Content-Type: application/octet-stream"
+            ];
+
+            $uploadCh = curl_init();
+            curl_setopt($uploadCh, CURLOPT_URL, $uploadUrl);
+            curl_setopt($uploadCh, CURLOPT_POST, true);
+            curl_setopt($uploadCh, CURLOPT_POSTFIELDS, $fileData);
+            curl_setopt($uploadCh, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($uploadCh, CURLOPT_HTTPHEADER, $uploadHeaders);
+            curl_exec($uploadCh);
+            $uploadCode = curl_getinfo($uploadCh, CURLINFO_HTTP_CODE);
+            curl_close($uploadCh);
+
+            if ($uploadCode === 200 || $uploadCode === 201) {
+
+                if (!empty($fotoPath)) {
+                    $deleteOldUrl = $supabaseUrl . "/storage/v1/object/media/" . $fotoPath;
+                    $deleteOldCh = curl_init();
+                    curl_setopt($deleteOldCh, CURLOPT_URL, $deleteOldUrl);
+                    curl_setopt($deleteOldCh, CURLOPT_CUSTOMREQUEST, "DELETE");
+                    curl_setopt($deleteOldCh, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($deleteOldCh, CURLOPT_HTTPHEADER, [
+                        "apikey: $supabaseKey",
+                        "Authorization: Bearer $supabaseKey"
+                    ]);
+                    curl_exec($deleteOldCh);
+                    curl_close($deleteOldCh);
+                }
+                $fotoPath = $storagePath;
+            }
+        }
+
+        $updateData = [
+            "nama_penjual"   => $nama_penjual,
+            "email"          => $email,
+            "rating"         => $rating,
+            "nama_bank"      => $nama_bank,
+            "akun_rekening"  => $akun_rekening,
+            "alamat_penjual" => $alamat_penjual,
+            "latitude"       => $latitude,
+            "longitude"      => $longitude,
+            "foto_profil"    => $fotoPath
+        ];
+
+        if (!empty($password)) {
+            $updateData['password'] = $password;
+        }
+
+        $updateUrl = $supabaseUrl . "/rest/v1/penjual?id_penjual=eq.$userId";
+        $updateCh = curl_init();
+        curl_setopt($updateCh, CURLOPT_URL, $updateUrl);
+        curl_setopt($updateCh, CURLOPT_CUSTOMREQUEST, "PATCH");
+        curl_setopt($updateCh, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($updateCh, CURLOPT_POSTFIELDS, json_encode($updateData));
+        curl_setopt($updateCh, CURLOPT_HTTPHEADER, [
+            "apikey: $supabaseKey",
+            "Authorization: Bearer $supabaseKey",
+            "Content-Type: application/json",
+            "Prefer: return=minimal"
+        ]);
+        curl_exec($updateCh);
+        $updateCode = curl_getinfo($updateCh, CURLINFO_HTTP_CODE);
+        curl_close($updateCh);
+
+        if ($updateCode === 204) {
+            $_SESSION['nama_penjual'] = $nama_penjual;
+            $_SESSION['email'] = $email;
+            $_SESSION['foto_profil'] = $fotoPath;
+            echo json_encode(["success" => true, "message" => "Profil berhasil diperbarui"]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Gagal memperbarui profil"]);
+        }
+        exit;
+    }
+
+    $userName  = $dataPenjual['nama_penjual'] ?? '';
+    $userEmail = $dataPenjual['email'] ?? '';
+    $userRating = $dataPenjual['rating'] ?? 0;
+    $userFoto  = $dataPenjual['foto_profil'] ?? '';
 ?>
 
 <!DOCTYPE html>
@@ -192,6 +196,12 @@ $userFoto  = $dataPenjual['foto_profil'] ?? '';
                 </a>
             </div>
             <div class="nav-item">
+                <a href="pembayaran_komisi.php" class="nav-link-custom">
+                    <i class="bi bi-cash-coin"></i>
+                    <span>Pembayaran Komisi</span>
+                </a>
+            </div>
+            <div class="nav-item">
                 <a href="laporan_keuangan.php" class="nav-link-custom">
                     <i class="bi bi-bar-chart-line-fill"></i>
                     <span>Laporan dan Keuangan</span>
@@ -203,12 +213,12 @@ $userFoto  = $dataPenjual['foto_profil'] ?? '';
                     <span>Pengaturan Toko</span>
                 </a>
             </div>
-            <!-- <div class="nav-item">
+            <div class="nav-item">
                 <a href="pengaturan_premium.php" class="nav-link-custom">
                     <i class="bi bi-gem"></i>
                     <span>Pengaturan Premium</span>
                 </a>
-            </div> -->
+            </div>
         </nav>
 
         <div class="sidebar-logout">

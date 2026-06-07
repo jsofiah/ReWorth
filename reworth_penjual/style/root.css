@@ -1267,3 +1267,131 @@ tbody td {
         height: 32px;
     }
 }
+
+.status-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    min-width: 140px;
+}
+.status-pending {
+    background: #FFF3CD;
+    color: #856404;
+    border: 1px solid #FFEEBA;
+}
+.status-dibayar {
+    background: #D1ECF1;
+    color: #0C5460;
+    border: 1px solid #BEE5EB;
+}
+.status-selesai {
+    background: #D4EDDA;
+    color: #155724;
+    border: 1px solid #C3E6CB;
+}
+.total-pending-card {
+    background: linear-gradient(135deg, #00A86B 0%, #008F5C 100%);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    color: white;
+}
+.total-pending-card h3 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+}
+.btn-aksi {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-aksi:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+}
+.btn-bayar {
+    background: #00A86B;
+    color: white;
+}
+.modal-container {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 20px 35px rgba(0,0,0,0.2);
+    z-index: 1100;
+    width: 90%;
+    max-width: 450px;
+}
+.modal-container .modal-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+.modal-container .form-group {
+    margin-bottom: 16px;
+}
+.modal-container .form-label {
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: block;
+}
+.modal-container .form-control-custom {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 14px;
+}
+.modal-container .modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+.modal-container .btn-cancel {
+    padding: 8px 20px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.modal-container .btn-save {
+    padding: 8px 20px;
+    background: #00A86B;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.image-preview {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.preview-item {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+.preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}

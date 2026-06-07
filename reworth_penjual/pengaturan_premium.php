@@ -1,98 +1,101 @@
 <?php
-session_start();
+    session_start();
 
-if (!isset($_SESSION['id_penjual'])) {
-    header("Location: login.php");
-    exit;
-}
-
-$supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
-$supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
-
-$userId = $_SESSION['id_penjual'] ?? '';
-$userName = $_SESSION['nama_penjual'] ?? 'User';
-$userEmail = $_SESSION['email'] ?? '';
-$userFoto = $_SESSION['foto_profil'] ?? '';
-
-// Ambil toast dari session
-$toastMessage = $_SESSION['toast_message'] ?? '';
-$toastType = $_SESSION['toast_type'] ?? '';
-unset($_SESSION['toast_message']);
-unset($_SESSION['toast_type']);
-
-// Ambil nilai notifikasi dari session
-$notifikasiHari = $_SESSION['notifikasi_hari'] ?? '';
-
-function getSupabaseImageUrl($path) {
-    if (empty($path)) return null;
-    return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
-}
-
-function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-    if ($data) {
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-    }
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    return ['response' => $response, 'httpCode' => $httpCode];
-}
-
-// Ambil data langganan aktif
-$getLangganan = curlRequest(
-    $supabaseUrl . "/rest/v1/langganan?id_penjual=eq.$userId&order=created_at.desc",
-    'GET',
-    null,
-    ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
-);
-
-$langgananList = json_decode($getLangganan['response'], true) ?? [];
-
-// Cek langganan aktif
-$langgananAktif = null;
-$isPremium = false;
-$tanggalMulai = '';
-$tanggalSelesai = '';
-$hariTersisa = 0;
-
-$today = date('Y-m-d');
-foreach ($langgananList as $l) {
-    if ($l['status'] === 'aktif' && $l['tanggal_selesai'] >= $today) {
-        $isPremium = true;
-        $langgananAktif = $l;
-        $tanggalMulai = $l['tanggal_mulai'];
-        $tanggalSelesai = $l['tanggal_selesai'];
-        $sekarang = new DateTime();
-        $tSelesai = new DateTime($tanggalSelesai);
-        $hariTersisa = $sekarang->diff($tSelesai)->days;
-        break;
-    }
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['simpan_pengaturan'])) {
-        $notifikasiHari = $_POST['notifikasi_hari'] ?? '';
-        
-        if (empty($notifikasiHari)) {
-            $_SESSION['toast_message'] = "Silakan pilih notifikasi pengingat terlebih dahulu!";
-            $_SESSION['toast_type'] = "error";
-        } else {
-            $notifikasiHari = (int)$notifikasiHari;
-            $_SESSION['notifikasi_hari'] = $notifikasiHari;
-            
-            $_SESSION['toast_message'] = "Pengaturan berhasil disimpan!";
-            $_SESSION['toast_type'] = "success";
-        }
-        
-        header("Location: pengaturan_premium.php");
+    if (!isset($_SESSION['id_penjual'])) {
+        header("Location: login.php");
         exit;
     }
-}
+
+    $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
+    $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
+
+    require_once 'subscription_check.php';
+
+    $subscription = requirePremium($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
+
+    $isPremium = $subscription['is_premium'];
+    $remainingDays = getRemainingDays($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
+
+    $userId = $_SESSION['id_penjual'] ?? '';
+    $userName = $_SESSION['nama_penjual'] ?? 'User';
+    $userEmail = $_SESSION['email'] ?? '';
+    $userFoto = $_SESSION['foto_profil'] ?? '';
+
+    $toastMessage = $_SESSION['toast_message'] ?? '';
+    $toastType = $_SESSION['toast_type'] ?? '';
+    unset($_SESSION['toast_message']);
+    unset($_SESSION['toast_type']);
+
+    $notifikasiHari = $_SESSION['notifikasi_hari'] ?? '';
+
+    function getSupabaseImageUrl($path) {
+        if (empty($path)) return null;
+        return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
+    }
+
+    function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+        if ($data) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        }
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return ['response' => $response, 'httpCode' => $httpCode];
+    }
+
+    $getLangganan = curlRequest(
+        $supabaseUrl . "/rest/v1/langganan?id_penjual=eq.$userId&order=created_at.desc",
+        'GET',
+        null,
+        ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
+    );
+
+    $langgananList = json_decode($getLangganan['response'], true) ?? [];
+
+    $langgananAktif = null;
+    $isPremium = false;
+    $tanggalMulai = '';
+    $tanggalSelesai = '';
+    $hariTersisa = 0;
+
+    $today = date('Y-m-d');
+    foreach ($langgananList as $l) {
+        if ($l['status'] === 'aktif' && $l['tanggal_selesai'] >= $today) {
+            $isPremium = true;
+            $langgananAktif = $l;
+            $tanggalMulai = $l['tanggal_mulai'];
+            $tanggalSelesai = $l['tanggal_selesai'];
+            $sekarang = new DateTime();
+            $tSelesai = new DateTime($tanggalSelesai);
+            $hariTersisa = $sekarang->diff($tSelesai)->days;
+            break;
+        }
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (isset($_POST['simpan_pengaturan'])) {
+            $notifikasiHari = $_POST['notifikasi_hari'] ?? '';
+            
+            if (empty($notifikasiHari)) {
+                $_SESSION['toast_message'] = "Silakan pilih notifikasi pengingat terlebih dahulu!";
+                $_SESSION['toast_type'] = "error";
+            } else {
+                $notifikasiHari = (int)$notifikasiHari;
+                $_SESSION['notifikasi_hari'] = $notifikasiHari;
+                
+                $_SESSION['toast_message'] = "Pengaturan berhasil disimpan!";
+                $_SESSION['toast_type'] = "success";
+            }
+            
+            header("Location: pengaturan_premium.php");
+            exit;
+        }
+    }
 ?>
 
 <!DOCTYPE html>
@@ -115,6 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="nav-item"><a href="produk.php" class="nav-link-custom"><i class="bi bi-box-seam-fill"></i><span>Manajemen Produk</span></a></div>
             <div class="nav-item"><a href="pesanan.php" class="nav-link-custom"><i class="bi bi-bag-check-fill"></i><span>Manajemen Pesanan</span></a></div>
             <div class="nav-item"><a href="langganan.php" class="nav-link-custom"><i class="bi bi-stars"></i><span>Langganan</span></a></div>
+            <div class="nav-item"><a href="pembayaran_komisi.php" class="nav-link-custom"><i class="bi bi-cash-coin"></i><span>Pembayaran Komisi</span></a></div>
             <div class="nav-item"><a href="laporan_keuangan.php" class="nav-link-custom"><i class="bi bi-bar-chart-line-fill"></i><span>Laporan dan Keuangan</span></a></div>
             <div class="nav-item"><a href="pengaturan_toko.php" class="nav-link-custom"><i class="bi bi-shop-window"></i><span>Pengaturan Toko</span></a></div>
             <div class="nav-item"><a href="pengaturan_premium.php" class="nav-link-custom active"><i class="bi bi-gem"></i><span>Pengaturan Premium</span></a></div>

@@ -3,6 +3,16 @@
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 
+    require_once 'subscription_check.php';
+
+    if (!hasPremiumAccess($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey)) {
+        echo json_encode([
+            'success' => false, 
+            'message' => 'Langganan Anda telah berakhir. Silakan perpanjang untuk melanjutkan.'
+        ]);
+        exit;
+    }
+
     $id = $_POST['id'] ?? '';
     if (empty($id)) {
         echo json_encode([
@@ -18,7 +28,7 @@
         "Content-Type: application/json"
     ];
 
-    //ambil foto produk
+
     $getFotoUrl =
         $supabaseUrl .
         "/rest/v1/foto_produk?id_produk=eq." .
@@ -51,7 +61,7 @@
     $fotoProduk =
         json_decode($getResponse, true) ?? [];
 
-    //hapus file storage
+
     foreach ($fotoProduk as $foto) {
 
         $fotoPath =
@@ -100,7 +110,7 @@
         curl_close($deleteStorageCh);
     }
 
-    //hapus data foto produk
+
 
     $deleteFotoUrl =
         $supabaseUrl .
@@ -147,7 +157,7 @@
 
     curl_close($deleteFotoCh);
 
-    //hapus data produk
+
 
     $deleteProdukUrl =
         $supabaseUrl .
@@ -198,7 +208,7 @@
 
     curl_close($deleteProdukCh);
 
-    //response
+
 
     if (
         $deleteProdukHttpCode == 200 ||

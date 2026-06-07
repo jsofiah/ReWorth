@@ -10,6 +10,13 @@ if (!isset($_SESSION['id_penjual'])) {
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 
+require_once 'subscription_check.php';
+
+$subscription = requirePremium($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
+
+$isPremium = $subscription['is_premium'];
+$remainingDays = getRemainingDays($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
+
 $userId = $_SESSION['id_penjual'] ?? '';
 $userName = $_SESSION['nama_penjual'] ?? 'User';
 $userEmail = $_SESSION['email'] ?? '';
@@ -35,9 +42,9 @@ function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
     return ['response' => $response, 'httpCode' => $httpCode];
 }
 
-// Ambil daftar pesanan
+// Ambil semua pesanan untuk filter client-side
 $getPesanan = curlRequest(
-    $supabaseUrl . "/rest/v1/pesanan?select=*,produk(*)&order=created_at.desc",
+    $supabaseUrl . "/rest/v1/pesanan?select=*,produk(*),pengguna(*)&order=created_at.desc",
     'GET',
     null,
     ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
@@ -53,46 +60,32 @@ foreach ($semuaPesanan as $p) {
     }
 }
 
-// Filter status
+// Ambil nilai filter dari GET
 $filterStatus = $_GET['status'] ?? 'semua';
-if ($filterStatus !== 'semua') {
-    $pesananList = array_filter($pesananList, function($p) use ($filterStatus) {
-        // Untuk status menunggu_konfirmasi, filter sesuai database
-        if ($filterStatus == 'menunggu_konfirmasi') {
-            return $p['status'] === 'menunggu_konfirmasi';
-        }
-        return $p['status'] === $filterStatus;
-    });
-}
-
-// Search
 $search = $_GET['search'] ?? '';
-if (!empty($search)) {
-    $pesananList = array_filter($pesananList, function($p) use ($search) {
-        return stripos($p['produk']['nama_produk'] ?? '', $search) !== false ||
-               stripos($p['alamat_pengiriman'] ?? '', $search) !== false;
-    });
+
+// Fungsi untuk mendapatkan status badge
+function getStatusBadge($status) {
+    $status = strtolower($status);
+    
+    if ($status == 'selesai') {
+        return '<span class="status-badge status-selesai">Selesai</span>';
+    } elseif ($status == 'diproses') {
+        return '<span class="status-badge status-berlangsung">Diproses</span>';
+    } elseif ($status == 'dikirim') {
+        return '<span class="status-badge status-dikirim">Dikirim</span>';
+    } elseif ($status == 'menunggu') {
+        return '<span class="status-badge status-akan_datang">Menunggu Konfirmasi</span>';
+    } elseif ($status == 'ditolak') {
+        return '<span class="status-badge status-akan_datang">Ditolak</span>';
+    } else {
+        return '<span class="status-badge status-akan_datang">' . ucfirst($status) . '</span>';
+    }
 }
 
-// Pagination
-$per_page = 10;
-$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$total_data = count($pesananList);
-$total_pages = ceil($total_data / $per_page);
-$start = ($current_page - 1) * $per_page;
-$current_data = array_slice($pesananList, $start, $per_page);
-$showing_from = $total_data > 0 ? $start + 1 : 0;
-$showing_to = min($start + $per_page, $total_data);
-
-function getStatusBadge($status) {
-    switch($status) {
-        case 'menunggu_konfirmasi': return '<span class="badge bg-warning text-dark">Menunggu Konfirmasi</span>';
-        case 'diproses': return '<span class="badge bg-info text-dark">Diproses</span>';
-        case 'dikirim': return '<span class="badge bg-primary">Dikirim</span>';
-        case 'selesai': return '<span class="badge bg-success">Selesai</span>';
-        case 'ditolak': return '<span class="badge bg-danger">Ditolak</span>';
-        default: return '<span class="badge bg-secondary">'.$status.'</span>';
-    }
+// Helper untuk escape HTML
+function escapeHtml($str) {
+    return htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
 }
 ?>
 
@@ -115,9 +108,10 @@ function getStatusBadge($status) {
             <div class="nav-item"><a href="produk.php" class="nav-link-custom"><i class="bi bi-box-seam-fill"></i><span>Manajemen Produk</span></a></div>
             <div class="nav-item"><a href="pesanan.php" class="nav-link-custom active"><i class="bi bi-bag-check-fill"></i><span>Manajemen Pesanan</span></a></div>
             <div class="nav-item"><a href="langganan.php" class="nav-link-custom"><i class="bi bi-stars"></i><span>Langganan</span></a></div>
+            <div class="nav-item"><a href="pembayaran_komisi.php" class="nav-link-custom"><i class="bi bi-cash-coin"></i><span>Pembayaran Komisi</span></a></div>
             <div class="nav-item"><a href="laporan_keuangan.php" class="nav-link-custom"><i class="bi bi-bar-chart-line-fill"></i><span>Laporan dan Keuangan</span></a></div>
             <div class="nav-item"><a href="pengaturan_toko.php" class="nav-link-custom"><i class="bi bi-shop-window"></i><span>Pengaturan Toko</span></a></div>
-            <!-- <div class="nav-item"><a href="pengaturan_premium.php" class="nav-link-custom"><i class="bi bi-gem"></i><span>Pengaturan Premium</span></a></div> -->
+            <div class="nav-item"><a href="pengaturan_premium.php" class="nav-link-custom"><i class="bi bi-gem"></i><span>Pengaturan Premium</span></a></div>
         </nav>
         <div class="sidebar-logout"><a class="logout-btn" href="logout.php"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></div>
     </aside>
@@ -128,12 +122,12 @@ function getStatusBadge($status) {
                 <h1 class="topbar-title">Manajemen Pesanan</h1>
                 <div class="topbar-user">
                     <div class="topbar-user-info">
-                        <div class="topbar-user-name"><?= htmlspecialchars($userName) ?></div>
-                        <div class="topbar-user-email"><?= htmlspecialchars($userEmail) ?></div>
+                        <div class="topbar-user-name"><?= escapeHtml($userName) ?></div>
+                        <div class="topbar-user-email"><?= escapeHtml($userEmail) ?></div>
                     </div>
                     <div class="topbar-avatar">
                         <?php if (!empty($userFoto)): ?>
-                            <img src="<?= htmlspecialchars(getSupabaseImageUrl($userFoto)) ?>" class="w-100 h-100 rounded-circle" style="object-fit: cover;">
+                            <img src="<?= escapeHtml(getSupabaseImageUrl($userFoto)) ?>" class="w-100 h-100 rounded-circle" style="object-fit: cover;">
                         <?php else: ?>
                             <i class="bi bi-person-fill"></i>
                         <?php endif; ?>
@@ -146,69 +140,111 @@ function getStatusBadge($status) {
             <div class="action-bar">
                 <div class="search-wrap">
                     <i class="bi bi-search"></i>
-                    <input type="text" class="search-input" placeholder="Cari pesanan..." id="searchInput" value="<?= htmlspecialchars($search) ?>">
+                    <input type="text" class="search-input" placeholder="Cari pesanan (nama produk, pembeli, alamat)..." id="searchInput">
                 </div>
-<select id="statusFilter" class="form-select w-auto">
-    <option value="semua" <?= $filterStatus == 'semua' ? 'selected' : '' ?>>Semua Status</option>
-    <option value="menunggu_konfirmasi" <?= $filterStatus == 'menunggu_konfirmasi' ? 'selected' : '' ?>>Menunggu Konfirmasi</option>
-    <option value="diproses" <?= $filterStatus == 'diproses' ? 'selected' : '' ?>>Diproses</option>
-    <option value="dikirim" <?= $filterStatus == 'dikirim' ? 'selected' : '' ?>>Dikirim</option>
-    <option value="selesai" <?= $filterStatus == 'selesai' ? 'selected' : '' ?>>Selesai</option>
-    <option value="ditolak" <?= $filterStatus == 'ditolak' ? 'selected' : '' ?>>Ditolak</option>
-</select>
-
+                <div class="filter-dropdown">
+                    <button class="btn-filter" onclick="toggleFilter()">
+                        <i class="bi bi-sliders2"></i> Filter 
+                        <span id="filterBadge" class="filter-badge" style="display: none;"></span>
+                    </button>
+                    <div class="filter-box" id="filterBox">
+                        <div class="filter-group">
+                            <label>Status Pesanan</label>
+                            <select id="filterStatus">
+                                <option value="">Semua Status</option>
+                                <option value="menunggu">Menunggu Konfirmasi</option>
+                                <option value="diproses">Diproses</option>
+                                <option value="dikirim">Dikirim</option>
+                                <option value="selesai">Selesai</option>
+                                <option value="ditolak">Ditolak</option>
+                            </select>
+                        </div>
+                        <div class="filter-actions">
+                            <button type="button" onclick="resetFilters()">Reset</button>
+                            <button type="button" onclick="applyFilter()">Terapkan</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="content-area">
             <div class="card-custom">
                 <div class="table-scroll-wrapper">
-                    <table class="responsive-table">
+                    <table class="responsive-table" id="dynamicTable">
                         <thead>
                             <tr>
                                 <th class="text-center">No</th>
-                                <th>Nama Pesanan</th>
-                                <th>Alamat Pembeli</th>
+                                <th>Nama Pembeli</th>
+                                <th>Nama Produk</th>
+                                <th>Alamat Pengiriman</th>
                                 <th class="text-center">Total Bayar</th>
                                 <th class="text-center">Status</th>
                                 <th class="text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (empty($current_data)): ?>
-                                <tr><td colspan="6" class="text-center py-4">Belum ada pesanan</td></tr>
-                            <?php else: ?>
-                                <?php $no = $showing_from; foreach ($current_data as $p): ?>
-                                <tr>
-                                    <td class="text-center"><?= $no++ ?></td>
-                                    <td><?= htmlspecialchars($p['produk']['nama_produk'] ?? '-') ?></td>
-                                    <td><?= htmlspecialchars(substr($p['alamat_pengiriman'], 0, 50)) ?>...</td>
-                                    <td class="text-center">Rp <?= number_format($p['total_bayar'], 0, ',', '.') ?></td>
-                                    <td class="text-center"><?= getStatusBadge($p['status']) ?></td>
-                                    <td class="text-center">
-                                        <button class="btn-aksi btn-lihat" onclick="lihatDetail('<?= $p['id_pesanan'] ?>')">
-                                            <i class="bi bi-eye"></i> Lihat
-                                        </button>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
+                            <?php 
+                            $no = 1;
+                            foreach ($pesananList as $p):
+                                // Filter status
+                                if ($filterStatus !== 'semua' && !empty($filterStatus)) {
+                                    if ($p['status'] !== $filterStatus) continue;
+                                }
+                                // Filter search
+                                if (!empty($search)) {
+                                    $namaPembeli = strtolower($p['pengguna']['nama_lengkap'] ?? '');
+                                    $namaProduk = strtolower($p['produk']['nama_produk'] ?? '');
+                                    $alamat = strtolower($p['alamat_pengiriman'] ?? '');
+                                    $searchLower = strtolower($search);
+                                    if (strpos($namaProduk, $searchLower) === false && 
+                                        strpos($namaPembeli, $searchLower) === false && 
+                                        strpos($alamat, $searchLower) === false) {
+                                        continue;
+                                    }
+                                }
+                                
+                                $namaPembeli = $p['pengguna']['nama_lengkap'] ?? '-';
+                                $namaProduk = $p['produk']['nama_produk'] ?? '-';
+                                $alamat = $p['alamat_pengiriman'] ?? '-';
+                                $status = $p['status'];
+                                $id_pesanan = $p['id_pesanan'];
+                                $total_bayar = $p['total_bayar'] ?? 0;
+                            ?>
+                            <tr data-status="<?= escapeHtml($status) ?>" data-search="<?= escapeHtml(strtolower($namaPembeli . ' ' . $namaProduk . ' ' . $alamat)) ?>">
+                                <td class="text-center"><?= $no++ ?></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <?= escapeHtml($namaPembeli) ?>
+                                    </div>
+                                </td>
+                                <td><?= escapeHtml($namaProduk) ?></td>
+                                <td>
+                                    <div class="alamat-preview" title="<?= escapeHtml($alamat) ?>">
+                                        <?= escapeHtml(substr($alamat, 0, 50)) ?>...
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="fw-bold">Rp <?= number_format($total_bayar, 0, ',', '.') ?></span>
+                                </td>
+                                <td class="text-center"><?= getStatusBadge($status) ?></td>
+                                <td class="text-center">
+                                    <button class="btn-aksi btn-lihat" onclick="lihatDetail('<?= $p['id_pesanan'] ?>')">
+                                        <i class="bi bi-file-earmark-text"></i> Lihat
+                                    </button>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                            <?php if ($no == 1): ?>
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                                    <p class="mt-2 mb-0">Belum ada pesanan</p>
+                                </td>
+                            </tr>
                             <?php endif; ?>
                         </tbody>
                     </table>
-                </div>
-                <div class="table-footer">
-                    <div class="showing-text">Showing <b><?= $showing_from ?></b> to <b><?= $showing_to ?></b> of <b><?= $total_data ?></b> entries</div>
-                    <div class="pagination-custom">
-                        <?php if ($current_page > 1): ?>
-                            <a href="?page=<?= $current_page-1 ?>&status=<?= $filterStatus ?>&search=<?= urlencode($search) ?>" class="page-btn page-btn-text">Prev</a>
-                        <?php endif; ?>
-                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                            <a href="?page=<?= $i ?>&status=<?= $filterStatus ?>&search=<?= urlencode($search) ?>" class="page-btn <?= $i == $current_page ? 'active' : '' ?>"><?= $i ?></a>
-                        <?php endfor; ?>
-                        <?php if ($current_page < $total_pages): ?>
-                            <a href="?page=<?= $current_page+1 ?>&status=<?= $filterStatus ?>&search=<?= urlencode($search) ?>" class="page-btn page-btn-text">Next</a>
-                        <?php endif; ?>
-                    </div>
                 </div>
             </div>
         </div>
@@ -225,7 +261,8 @@ function getStatusBadge($status) {
         </div>
     </div>
 
-        <div id="modalKirimContainer" class="modal-container">
+    <!-- Modal Kirim -->
+    <div id="modalKirimContainer" class="modal-container">
         <div class="modal-title">Input Pengiriman</div>
         <div class="form-group">
             <label class="form-label">Jasa Kirim</label>
@@ -250,7 +287,7 @@ function getStatusBadge($status) {
         </div>
     </div>
 
-    <!-- Modal Tolak Container (hidden) -->
+    <!-- Modal Tolak -->
     <div id="modalTolakContainer" class="modal-container">
         <div class="modal-title">Tolak Pesanan</div>
         <div class="form-group">
@@ -262,23 +299,123 @@ function getStatusBadge($status) {
             <button class="btn-save" onclick="submitTolak()">Kirim</button>
         </div>
     </div>
-    <!-- ===== SAMPAI SINI ===== -->
 
     <div class="toast-container" id="toastContainer"></div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function openModal(id) { document.getElementById(id).classList.add('show'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        let currentPesananId = null;
+        let currentFilters = {
+            status: '<?= $filterStatus ?>',
+            search: '<?= $search ?>'
+        };
 
-        document.getElementById('statusFilter').addEventListener('change', function() {
-            window.location.href = '?status=' + this.value + '&search=' + encodeURIComponent(document.getElementById('searchInput').value);
-        });
-
-        document.getElementById('searchInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                window.location.href = '?status=<?= $filterStatus ?>&search=' + encodeURIComponent(this.value);
+        function updateFilterBadge() {
+            const badge = document.getElementById('filterBadge');
+            if (!badge) return;
+            
+            let activeCount = 0;
+            if (currentFilters.status && currentFilters.status !== 'semua') activeCount++;
+            
+            if (activeCount > 0) {
+                badge.textContent = activeCount;
+                badge.style.display = 'inline-flex';
+            } else {
+                badge.style.display = 'none';
             }
-        });
+        }
+
+        function toggleFilter() {
+            const filterBox = document.getElementById('filterBox');
+            if (filterBox) {
+                filterBox.classList.toggle('show');
+            }
+        }
+
+        function applyFilter() {
+            const status = document.getElementById('filterStatus')?.value || '';
+            const search = document.getElementById('searchInput')?.value || '';
+            
+            let queryParams = new URLSearchParams();
+            if (status && status !== '') queryParams.append('status', status);
+            if (search) queryParams.append('search', search);
+            
+            window.location.href = `pesanan.php?${queryParams.toString()}`;
+        }
+
+        function resetFilters() {
+            window.location.href = 'pesanan.php';
+        }
+
+        function initFilters() {
+            const filterStatus = document.getElementById('filterStatus');
+            if (filterStatus && currentFilters.status && currentFilters.status !== 'semua') {
+                filterStatus.value = currentFilters.status;
+            }
+            
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput && currentFilters.search) {
+                searchInput.value = currentFilters.search;
+            }
+        }
+
+        // Search realtime (client-side)
+        function attachSearchListener() {
+            const searchInput = document.getElementById('searchInput');
+            if (!searchInput) return;
+            
+            // Set initial value
+            if (currentFilters.search) {
+                searchInput.value = currentFilters.search;
+            }
+            
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const tbody = document.querySelector('#dynamicTable tbody');
+                if (!tbody) return;
+                
+                const rows = tbody.querySelectorAll('tr');
+                let visibleCount = 0;
+                let no = 1;
+                
+                rows.forEach(row => {
+                    // Skip empty state row
+                    if (row.cells.length === 1 && row.textContent.includes('Belum ada pesanan')) {
+                        return;
+                    }
+                    
+                    const searchText = row.getAttribute('data-search') || row.textContent.toLowerCase();
+                    const isVisible = searchTerm === '' || searchText.includes(searchTerm);
+                    
+                    row.style.display = isVisible ? '' : 'none';
+                    
+                    if (isVisible) {
+                        visibleCount++;
+                        if (row.cells[0]) {
+                            row.cells[0].textContent = no++;
+                        }
+                    }
+                });
+                
+                // Show empty message if no results
+                const emptyRow = tbody.querySelector('.empty-row');
+                if (visibleCount === 0 && !emptyRow) {
+                    const tr = document.createElement('tr');
+                    tr.className = 'empty-row';
+                    tr.innerHTML = '<td colspan="7" class="text-center py-4"><i class="bi bi-inbox fs-1 text-muted"></i><p class="mt-2 mb-0">Tidak ada pesanan yang ditemukan</p></td>';
+                    tbody.appendChild(tr);
+                } else if (visibleCount > 0 && emptyRow) {
+                    emptyRow.remove();
+                }
+            });
+        }
+
+        function openModal(id) { 
+            document.getElementById(id).classList.add('show'); 
+        }
+        
+        function closeModal(id) { 
+            document.getElementById(id).classList.remove('show'); 
+        }
 
         function lihatDetail(id) {
             fetch('pesanan_detail.php?id=' + id)
@@ -286,19 +423,26 @@ function getStatusBadge($status) {
                 .then(html => {
                     document.getElementById('detailContent').innerHTML = html;
                     openModal('modalDetail');
+                })
+                .catch(error => {
+                    showToast('Gagal memuat detail pesanan', 'error');
                 });
         }
 
-        function showToast(msg, type) {
-            const icons = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill' };
-            const div = document.createElement('div');
-            div.className = `toast-item ${type}`;
-            div.innerHTML = `<i class="bi ${icons[type]} toast-icon"></i><span>${msg}</span>`;
-            document.getElementById('toastContainer').appendChild(div);
-            setTimeout(() => div.remove(), 3500);
+        function konfirmasiPesanan(id) {
+            if (!confirm('Konfirmasi pembayaran pesanan ini?')) return;
+            
+            fetch('pesanan_status.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'id_pesanan=' + encodeURIComponent(id) + '&status=diproses'
+            })
+            .then(res => res.json())
+            .then(data => {
+                showToast(data.message, data.success ? 'success' : 'error');
+                if (data.success) setTimeout(() => location.reload(), 1000);
+            });
         }
-
-        let currentPesananId = null;
 
         function openKirimModal(id) {
             currentPesananId = id;
@@ -328,7 +472,9 @@ function getStatusBadge($status) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: 'id_pesanan=' + encodeURIComponent(currentPesananId) + '&status=dikirim&jasa_kirim=' + encodeURIComponent(jasaKirim) + '&nomor_resi=' + encodeURIComponent(nomorResi)
-            }).then(res => res.json()).then(data => {
+            })
+            .then(res => res.json())
+            .then(data => {
                 showToast(data.message, data.success ? 'success' : 'error');
                 closeKirimModal();
                 if (data.success) setTimeout(() => location.reload(), 1000);
@@ -351,28 +497,57 @@ function getStatusBadge($status) {
                 showToast('Masukkan alasan penolakan!', 'error');
                 return;
             }
+            
             fetch('pesanan_status.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: 'id_pesanan=' + encodeURIComponent(currentPesananId) + '&status=ditolak&alasan=' + encodeURIComponent(alasan)
-            }).then(res => res.json()).then(data => {
+            })
+            .then(res => res.json())
+            .then(data => {
                 showToast(data.message, data.success ? 'success' : 'error');
                 closeTolakModal();
                 if (data.success) setTimeout(() => location.reload(), 1000);
             });
         }
 
-        function konfirmasiPesanan(id) {
-            if (!confirm('Konfirmasi pembayaran pesanan ini?')) return;
-            fetch('pesanan_status.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'id_pesanan=' + encodeURIComponent(id) + '&status=diproses'
-            }).then(res => res.json()).then(data => {
-                showToast(data.message, data.success ? 'success' : 'error');
-                if (data.success) setTimeout(() => location.reload(), 1000);
-            });
+        function showToast(msg, type) {
+            const icons = { 
+                success: 'bi-check-circle-fill', 
+                error: 'bi-x-circle-fill',
+                info: 'bi-info-circle-fill'
+            };
+            const div = document.createElement('div');
+            div.className = `toast-item ${type}`;
+            div.innerHTML = `<i class="bi ${icons[type]} toast-icon"></i><span>${msg}</span>`;
+            document.getElementById('toastContainer').appendChild(div);
+            setTimeout(() => div.remove(), 3500);
         }
+
+        // Tutup modal jika klik overlay
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('show');
+                }
+            });
+        });
+
+        // Close filter when clicking outside
+        document.addEventListener('click', function(e) {
+            const filterBox = document.getElementById('filterBox');
+            const filterBtn = document.querySelector('.btn-filter');
+            if (filterBox && filterBtn && !filterBtn.contains(e.target) && !filterBox.contains(e.target)) {
+                filterBox.classList.remove('show');
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initFilters();
+            updateFilterBadge();
+            attachSearchListener();
+        });
     </script>
 </body>
 </html>

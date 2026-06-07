@@ -1,63 +1,77 @@
 <?php
-session_start();
+    session_start();
 
-if (!isset($_SESSION['id_penjual'])) {
-    exit;
-}
-
-$supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
-$supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
-
-$userId = $_SESSION['id_penjual'] ?? '';
-$pesananId = $_GET['id'] ?? '';
-
-function getSupabaseImageUrl($path) {
-    if (empty($path)) return null;
-    return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
-}
-
-function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-    if ($data) {
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    if (!isset($_SESSION['id_penjual'])) {
+        exit;
     }
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    $response = curl_exec($ch);
-    curl_close($ch);
-    return json_decode($response, true) ?? [];
-}
 
-// Ambil detail pesanan
-$getPesanan = curlRequest(
-    $supabaseUrl . "/rest/v1/pesanan?id_pesanan=eq.$pesananId&select=*,produk(*)",
-    'GET',
-    null,
-    ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
-);
+    $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
+    $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 
-$data = $getPesanan[0] ?? null;
+    require_once 'subscription_check.php';
 
-if (!$data) {
-    echo "<p class='text-muted'>Data tidak ditemukan</p>";
-    exit;
-}
+    $subscription = requirePremium($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
 
-$status = $data['status'];
-$jasaKirimList = ['JNE', 'SiCepat', 'J&T', 'Pos Indonesia', 'Ninja Express', 'Grab Express', 'GoSend'];
+    $isPremium = $subscription['is_premium'];
+    $remainingDays = getRemainingDays($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
 
-function getStatusBadge($status) {
-    switch($status) {
-        case 'menunggu_konfirmasi': return '<span class="badge bg-warning text-dark">Menunggu Konfirmasi</span>';
-        case 'diproses': return '<span class="badge bg-info text-dark">Diproses</span>';
-        case 'dikirim': return '<span class="badge bg-primary">Dikirim</span>';
-        case 'selesai': return '<span class="badge bg-success">Selesai</span>';
-        case 'ditolak': return '<span class="badge bg-danger">Ditolak</span>';
-        default: return '<span class="badge bg-secondary">'.$status.'</span>';
+    $userId = $_SESSION['id_penjual'] ?? '';
+    $pesananId = $_GET['id'] ?? '';
+
+    function getSupabaseImageUrl($path) {
+        if (empty($path)) return null;
+        return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
     }
-}
+
+    function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+        if ($data) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        }
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $response = curl_exec($ch);
+        curl_close($ch);
+        return json_decode($response, true) ?? [];
+    }
+
+
+    $getPesanan = curlRequest(
+        $supabaseUrl . "/rest/v1/pesanan?id_pesanan=eq.$pesananId&select=*,produk(*),pengguna(*)",
+        'GET',
+        null,
+        ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
+    );
+
+    $data = $getPesanan[0] ?? null;
+
+    if (!$data) {
+        echo "<p class='text-muted'>Data tidak ditemukan</p>";
+        exit;
+    }
+
+    $status = $data['status'];
+    $jasaKirimList = ['JNE', 'SiCepat', 'J&T', 'Pos Indonesia', 'Ninja Express', 'Grab Express', 'GoSend'];
+
+    function getStatusBadge($status) {
+        $status = strtolower($status);
+        
+        if ($status == 'selesai') {
+            return '<span class="status-badge status-selesai">Selesai</span>';
+        } elseif ($status == 'diproses') {
+            return '<span class="status-badge status-berlangsung">Diproses</span>';
+        } elseif ($status == 'dikirim') {
+            return '<span class="status-badge status-dikirim">Dikirim</span>';
+        } elseif ($status == 'menunggu') {
+            return '<span class="status-badge status-akan_datang">Menunggu Konfirmasi</span>';
+        } elseif ($status == 'ditolak') {
+            return '<span class="status-badge status-akan_datang">Ditolak</span>';
+        } else {
+            return '<span class="status-badge status-akan_datang">' . ucfirst($status) . '</span>';
+        }
+    }
 ?>
 
 <div class="table-responsive">
@@ -86,7 +100,7 @@ function getStatusBadge($status) {
 
 <!-- Tombol Aksi sesuai status -->
 <div class="d-flex gap-3 mt-4">
-    <?php if ($status == 'menunggu_konfirmasi'): ?>
+    <?php if ($status == 'menunggu'): ?>
         <button class="btn btn-success" onclick="konfirmasiPesanan('<?= $pesananId ?>')">
             <i class="bi bi-check-lg"></i> Konfirmasi
         </button>
@@ -97,6 +111,11 @@ function getStatusBadge($status) {
     <?php elseif ($status == 'diproses'): ?>
         <button class="btn btn-primary" onclick="openKirimModal('<?= $pesananId ?>')">
             <i class="bi bi-truck"></i> Kirim
+        </button>
+
+    <?php elseif ($status == 'dikirim'): ?>
+        <button class="btn btn-success" onclick="selesaikanPesanan('<?= $pesananId ?>')">
+            <i class="bi bi-check2-circle"></i> Selesai
         </button>
     <?php endif; ?>
 </div>
@@ -139,7 +158,7 @@ function getStatusBadge($status) {
 <script>
     function konfirmasiPesanan(id) {
         if (!confirm('Konfirmasi pembayaran pesanan ini?')) return;
-        fetch('pesanan_update_status.php', {
+        fetch('pesanan_status.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'id_pesanan=' + encodeURIComponent(id) + '&status=diproses'
@@ -165,7 +184,7 @@ function getStatusBadge($status) {
             showToast('Masukkan alasan penolakan!', 'error');
             return;
         }
-        fetch('pesanan_update_status.php', {
+        fetch('pesanan_status.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'id_pesanan=' + encodeURIComponent(window.currentPesananId) + '&status=ditolak&alasan=' + encodeURIComponent(alasan)
@@ -200,13 +219,26 @@ function getStatusBadge($status) {
             return;
         }
         
-        fetch('pesanan_update_status.php', {
+        fetch('pesanan_status.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'id_pesanan=' + encodeURIComponent(window.currentPesananId) + '&status=dikirim&jasa_kirim=' + encodeURIComponent(jasaKirim) + '&nomor_resi=' + encodeURIComponent(nomorResi)
         }).then(res => res.json()).then(data => {
             showToast(data.message, data.success ? 'success' : 'error');
             closeKirimModal();
+            if (data.success) setTimeout(() => location.reload(), 1000);
+        });
+    }
+
+    function selesaikanPesanan(id) {
+        if (!confirm('Apakah pesanan sudah diterima oleh pembeli? Tindakan ini tidak dapat dibatalkan.')) return;
+        
+        fetch('pesanan_status.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'id_pesanan=' + encodeURIComponent(id) + '&status=selesai'
+        }).then(res => res.json()).then(data => {
+            showToast(data.message, data.success ? 'success' : 'error');
             if (data.success) setTimeout(() => location.reload(), 1000);
         });
     }

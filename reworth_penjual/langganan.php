@@ -10,6 +10,14 @@ if (!isset($_SESSION['id_penjual'])) {
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 
+require_once 'subscription_check.php';
+
+$subscription = getSubscriptionStatus($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
+$isPremium = $subscription['is_premium'];
+$isExpired = $subscription['is_expired'];
+$remainingDays = getRemainingDays($_SESSION['id_penjual'], $supabaseUrl, $supabaseKey);
+$currentLangganan = $subscription['current_subscription'];
+
 $userId = $_SESSION['id_penjual'] ?? '';
 $userName = $_SESSION['nama_penjual'] ?? 'User';
 $userEmail = $_SESSION['email'] ?? '';
@@ -35,87 +43,51 @@ function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
     return ['response' => $response, 'httpCode' => $httpCode];
 }
 
-function formatTanggal($date) {
-    if (empty($date)) {
-        return '-';
-    }
-    return date('d F Y', strtotime($date));
+$subscriptionStatus = getSubscriptionStatus($userId, $supabaseUrl, $supabaseKey);
+$currentLangganan = $subscriptionStatus['current_subscription'];
+$isPremium = $subscriptionStatus['is_premium'];
+$isExpired = $subscriptionStatus['is_expired'];
+
+$tanggalMulai = $currentLangganan['tanggal_mulai'] ?? '';
+$tanggalSelesai = $currentLangganan['tanggal_selesai'] ?? '';
+$hariTersisa = getRemainingDays($userId, $supabaseUrl, $supabaseKey);
+
+// CEK KOMISI YANG BELUM DIBAYAR (PENDING)
+$getKomisiPending = curlRequest(
+    $supabaseUrl . "/rest/v1/komisi?id_penjual=eq.$userId&status_pembayaran=eq.pending",
+    'GET',
+    null,
+    ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
+);
+$komisiPending = json_decode($getKomisiPending['response'], true);
+$totalKomisiPending = 0;
+foreach ($komisiPending as $k) {
+    $totalKomisiPending += $k['total_komisi'];
+}
+$hasPendingCommission = !empty($komisiPending);
+
+$notifikasiHari = $_SESSION['notifikasi_hari'] ?? 7;
+$warningMessage = '';
+$warningType = '';
+
+if (!$subscriptionStatus['has_any_subscription']) {
+    $warningMessage = 'Anda belum memiliki langganan. Silakan melakukan pembayaran untuk mulai berlangganan.';
+    $warningType = 'info';
+} elseif ($isExpired) {
+    $warningMessage = "Langganan Anda telah berakhir! Segera lakukan perpanjangan agar layanan anda tidak terputus.";
+    $warningType = "danger";
+} elseif ($notifikasiHari !== null && $hariTersisa <= $notifikasiHari && $hariTersisa > 0) {
+    $warningMessage = "Masa aktif langganan anda akan berakhir dalam <strong>$hariTersisa hari</strong>, lakukan pembayaran perpanjangan agar layanan anda tidak terputus. Jika tidak, layanan langganan ini akan dinonaktifkan secara otomatis pada <strong>" . date('d F Y', strtotime($tanggalSelesai)) . "</strong>!";
+    $warningType = "warning";
 }
 
-// ========== FUNGSI CEK LANGGANAN ==========
-function cekStatusLangganan($supabaseUrl, $supabaseKey, $userId) {
-    $getLangganan = curlRequest(
-        $supabaseUrl . "/rest/v1/langganan?id_penjual=eq.$userId&order=created_at.desc",
-        'GET',
-        null,
-        ["apikey: $supabaseKey", "Authorization: Bearer $supabaseKey"]
-    );
-    
-    $allData = json_decode($getLangganan['response'], true);
-    $langgananList = is_array($allData) ? $allData : [];
-    
-    $result = [
-        'status' => 'tidak_ada',
-        'warning_message' => '',
-        'warning_type' => '',
-        'tanggal_mulai' => null,
-        'tanggal_selesai' => null,
-        'hari_tersisa' => 0
-    ];
-    
-    $today = date('Y-m-d');
-    
-    foreach ($langgananList as $l) {
-        if ($l['status'] === 'aktif') {
-            $tanggalSelesai = $l['tanggal_selesai'];
-            
-            if ($tanggalSelesai >= $today) {
-                $sekarang = new DateTime();
-                $tSelesai = new DateTime($tanggalSelesai);
-                $hariTersisa = $sekarang->diff($tSelesai)->days;
-                
-                $result['status'] = 'aktif';
-                $result['tanggal_mulai'] = $l['tanggal_mulai'];
-                $result['tanggal_selesai'] = $tanggalSelesai;
-                $result['hari_tersisa'] = $hariTersisa;
-                
-                if ($hariTersisa <= 7 && $hariTersisa > 3) {
-                    $result['warning_message'] = "⏰ Peringatan! Langganan Anda akan berakhir dalam <strong>$hariTersisa hari</strong> (tanggal " . date('d F Y', strtotime($tanggalSelesai)) . "). Segera perpanjang!";
-                    $result['warning_type'] = "warning";
-                } elseif ($hariTersisa <= 3 && $hariTersisa > 1) {
-                    $result['warning_message'] = "⚠️ Peringatan Keras! Langganan akan berakhir dalam <strong>$hariTersisa hari</strong>! Segera perpanjang sebelum layanan terputus.";
-                    $result['warning_type'] = "warning-orange";
-                } elseif ($hariTersisa == 1) {
-                    $result['warning_message'] = "🔥 PERINGATAN! Langganan Anda akan berakhir <strong>BESOK</strong>! Perpanjang sekarang juga!";
-                    $result['warning_type'] = "danger";
-                }
-                break;
-            } else {
-                $result['status'] = 'expired';
-                $result['warning_message'] = "❌ Langganan Anda telah berakhir! Segera lakukan perpanjangan agar layanan Anda tidak terputus.";
-                $result['warning_type'] = "danger";
-                break;
-            }
-        }
-    }
-    
-    if (empty($langgananList)) {
-        $result['status'] = 'tidak_ada';
-        $result['warning_message'] = "💡 Anda belum memiliki langganan. Segera berlangganan untuk menikmati fitur premium!";
-        $result['warning_type'] = "info";
-    }
-    
-    return $result;
+// Pesan komisi pending
+if ($hasPendingCommission) {
+    $komisiWarning = "Terdapat komisi yang belum dibayar sebesar <strong>" . number_format($totalKomisiPending, 0, ',', '.') . "</strong>. Silakan bayar komisi terlebih dahulu sebelum memperpanjang langganan.";
 }
 
-// ========== CEK STATUS LANGGANAN ==========
-$langgananStatus = cekStatusLangganan($supabaseUrl, $supabaseKey, $userId);
-$warningMessage = $langgananStatus['warning_message'];
-$warningType = $langgananStatus['warning_type'];
-$isExpired = ($langgananStatus['status'] == 'expired');
-$tanggalMulai = $langgananStatus['tanggal_mulai'];
-$tanggalSelesai = $langgananStatus['tanggal_selesai'];
-$hariTersisa = $langgananStatus['hari_tersisa'];
+$errorMessage = $_SESSION['subscription_error'] ?? '';
+unset($_SESSION['subscription_error']);
 ?>
 
 <!DOCTYPE html>
@@ -134,12 +106,17 @@ $hariTersisa = $langgananStatus['hari_tersisa'];
         <div class="sidebar-logo"><img src="img/logo.png" alt="Logo ReWorth"></div>
         <nav class="sidebar-nav">
             <div class="nav-item"><a href="dashboard.php" class="nav-link-custom"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a></div>
+            <?php if ($isPremium): ?>
             <div class="nav-item"><a href="produk.php" class="nav-link-custom"><i class="bi bi-box-seam-fill"></i><span>Manajemen Produk</span></a></div>
             <div class="nav-item"><a href="pesanan.php" class="nav-link-custom"><i class="bi bi-bag-check-fill"></i><span>Manajemen Pesanan</span></a></div>
+            <?php endif; ?>
             <div class="nav-item"><a href="langganan.php" class="nav-link-custom active"><i class="bi bi-stars"></i><span>Langganan</span></a></div>
+            <div class="nav-item"><a href="pembayaran_komisi.php" class="nav-link-custom"><i class="bi bi-cash-coin"></i><span>Pembayaran Komisi</span></a></div>
+            <?php if ($isPremium): ?>
             <div class="nav-item"><a href="laporan_keuangan.php" class="nav-link-custom"><i class="bi bi-bar-chart-line-fill"></i><span>Laporan dan Keuangan</span></a></div>
             <div class="nav-item"><a href="pengaturan_toko.php" class="nav-link-custom"><i class="bi bi-shop-window"></i><span>Pengaturan Toko</span></a></div>
-            <!-- <div class="nav-item"><a href="pengaturan_premium.php" class="nav-link-custom"><i class="bi bi-gem"></i><span>Pengaturan Premium</span></a></div> -->
+            <div class="nav-item"><a href="pengaturan_premium.php" class="nav-link-custom"><i class="bi bi-gem"></i><span>Pengaturan Premium</span></a></div>
+            <?php endif; ?>
         </nav>
         <div class="sidebar-logout"><a class="logout-btn" href="logout.php"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></div>
     </aside>
@@ -164,9 +141,16 @@ $hariTersisa = $langgananStatus['hari_tersisa'];
             </div>
         </div>
 
-        <div class="content-area">
+        <div class="action-bar-wrap">
+            <?php if ($errorMessage): ?>
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <?= htmlspecialchars($errorMessage) ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <?php endif; ?>
+
             <?php if ($warningMessage): ?>
-                <br>
             <div class="alert alert-<?= $warningType ?> mb-4">
                 <div class="d-flex gap-2">
                     <i class="bi bi-exclamation-triangle-fill fs-5"></i>
@@ -175,27 +159,36 @@ $hariTersisa = $langgananStatus['hari_tersisa'];
             </div>
             <?php endif; ?>
 
-            <!-- Status Langganan dengan layout baru -->
+            <?php if ($hasPendingCommission): ?>
+            <div class="alert alert-danger mb-4">
+                <div class="d-flex gap-2">
+                    <i class="bi bi-cash-stack fs-5"></i>
+                    <span><?= $komisiWarning ?> <a href="pembayaran_komisi.php" class="alert-link">Bayar komisi sekarang</a></span>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Status Langganan -->
             <div class="card-custom card-with-accent langganan-card">
-                <div class="card-accent"></div>
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-4">Status Langganan</h5>
                     
                     <div class="d-flex justify-content-between">
-                        <!-- Bagian Kiri: Tanggal dan Status (atas ke bawah) -->
                         <div class="flex-grow-1">
-<div class="mb-4">
-    <div class="text-muted small text-uppercase">TANGGAL MULAI</div>
-    <div class="fw-bold fs-5"><?= !$isExpired ? formatTanggal($tanggalMulai) : '-' ?></div>
-</div>
-<div class="mb-4">
-    <div class="text-muted small text-uppercase">TANGGAL SELESAI</div>
-    <div class="fw-bold fs-5"><?= !$isExpired ? formatTanggal($tanggalSelesai) : '-' ?></div>
-</div>
+                            <div class="mb-4">
+                                <div class="text-muted small text-uppercase">TANGGAL MULAI</div>
+                                <div class="fw-bold fs-5"><?= $tanggalMulai ? date('d F Y', strtotime($tanggalMulai)) : '-' ?></div>
+                            </div>
+                            <div class="mb-4">
+                                <div class="text-muted small text-uppercase">TANGGAL SELESAI</div>
+                                <div class="fw-bold fs-5"><?= $tanggalSelesai ? date('d F Y', strtotime($tanggalSelesai)) : '-' ?></div>
+                            </div>
                             <div>
                                 <div class="text-muted small text-uppercase">STATUS</div>
                                 <div>
-                                    <?php if ($isExpired): ?>
+                                    <?php if (!$subscriptionStatus['has_any_subscription']): ?>
+                                        <span class="badge bg-secondary">Belum Berlangganan</span>
+                                    <?php elseif ($isExpired): ?>
                                         <span class="badge bg-danger">Kadaluarsa</span>
                                     <?php else: ?>
                                         <span class="badge bg-success">Aktif</span>
@@ -204,14 +197,19 @@ $hariTersisa = $langgananStatus['hari_tersisa'];
                             </div>
                         </div>
 
-                        <!-- Bagian Kanan: Tombol (atas ke bawah) -->
                         <div class="d-flex flex-column gap-3" style="min-width: 200px;">
                             <a href="langganan_riwayat.php" class="btn btn-outline-secondary w-100">
                                 LIHAT RIWAYAT PEMBAYARAN
                             </a>
-                            <a href="langganan_perpanjang.php" class="btn btn-success w-100">
-                                PERPANJANG LANGGANAN
-                            </a>
+                            <?php if ($hasPendingCommission): ?>
+                                <a href="pembayaran_komisi.php" class="btn btn-secondary w-100" style="background:#6c757d; border-color:#6c757d;">
+                                    <i class="bi bi-cash-stack"></i> BAYAR KOMISI DULU
+                                </a>
+                            <?php else: ?>
+                                <a href="langganan_perpanjang.php" class="btn btn-success w-100">
+                                    <?= $subscriptionStatus['has_any_subscription'] ? 'PERPANJANG LANGGANAN' : 'LANGGANAN SEKARANG' ?>
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
