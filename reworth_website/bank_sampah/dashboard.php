@@ -78,7 +78,7 @@ $menunggu = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/setor_sampah?select=id_s
 $totalMenunggu = count($menunggu);
 
 // 5. Fetch 5 aktivitas terbaru (Transaksi Setor Sampah)
-$aktivitas = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/log_admin?select=*,admin(nama_admin)&order=created_at.desc&limit=5");
+$aktivitas = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/log_admin?select=*,admin(nama_admin)&id_admin=eq.$userId&order=created_at.desc&limit=5");
 
 
 function formatTanggalIndonesia($date) {

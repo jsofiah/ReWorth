@@ -77,7 +77,7 @@ class _SetorPageState extends State<SetorPage> {
 
   void _nextStep() {
     if (_currentStep == 0) {
-      // Filter data yang valid
+      
       final filtered = _sampahList.where((s) => 
         s['id_jenis'].toString().isNotEmpty && 
         s['berat'] > 0
@@ -90,7 +90,7 @@ class _SetorPageState extends State<SetorPage> {
         return;
       }
       
-      // Tambahkan field 'nama' ke setiap item
+      
       final valid = filtered.map((s) {
         final jenis = _jenisSampahList.firstWhere(
           (j) => j.idJenis == s['id_jenis'],
@@ -103,33 +103,57 @@ class _SetorPageState extends State<SetorPage> {
         };
       }).toList();
       
-      // Navigasi berdasarkan metode yang dipilih
+      
       if (_selectedMetode == 'Dijemput Petugas') {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => JemputPage(
-              sampahList: valid,
-              totalBerat: _totalBerat,
-              totalPoin: _totalPoin,
-              totalHarga: _totalHarga,
+              sampahList: valid.map((s) {
+              final jenis = _jenisSampahList.firstWhere(
+                (j) => j.idJenis == s['id_jenis'],
+                orElse: () => JenisSampahModel(idJenis: '', namaSampah: '', hargaPerKg: 0),
+              );
+              return {
+                'id_jenis': s['id_jenis'],
+                'berat': s['berat'],
+                'nama': s['nama'],
+                'harga_per_kg': jenis.hargaPerKg.toDouble(),  
+              };
+            }).toList(),
+            totalBerat: _totalBerat,
+            totalPoin: _totalPoin,
+            totalHarga: _totalHarga,
+
             ),
           ),
         );
       } else {
-        // Antar Sendiri - langsung ke AntarPage
+        
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => SetorAntarPage(
-              sampahList: valid,
-              jenisSampahList: _jenisSampahList
-                  .map<Map<String, dynamic>>((j) => {
-                        'id_jenis': j.idJenis,
-                        'harga_per_kg': j.hargaPerKg,
-                        'nama': j.namaSampah,
-                      })
-                  .toList(),
+              sampahList: valid.map((s) {
+              final jenis = _jenisSampahList.firstWhere(
+                (j) => j.idJenis == s['id_jenis'],
+                orElse: () => JenisSampahModel(idJenis: '', namaSampah: '', hargaPerKg: 0),
+              );
+              return {
+                'id_jenis': s['id_jenis'],
+                'berat': s['berat'],
+                'nama': s['nama'],
+                'harga_per_kg': jenis.hargaPerKg.toDouble(),  // ← TAMBAHKAN INI
+              };
+            }).toList(),
+            jenisSampahList: _jenisSampahList
+                .map<Map<String, dynamic>>((j) => {
+                      'id_jenis': j.idJenis,
+                      'harga_per_kg': j.hargaPerKg,
+                      'nama': j.namaSampah,
+                    })
+                .toList(),
+
             ),
           ),
         );
@@ -141,52 +165,6 @@ class _SetorPageState extends State<SetorPage> {
 
   void _prevStep() { 
     if (_currentStep > 0) setState(() => _currentStep--); 
-  }
-
-  Future<void> _submitSetor() async {
-    final valid = _sampahList.where((s) => s['nama'].toString().isNotEmpty && s['id_jenis'].toString().isNotEmpty && s['berat'] > 0).toList();
-    if (valid.isEmpty) return;
-    setState(() => _isLoading = true);
-    try {
-      final user = AuthService.getCurrentUser();
-      if (user == null) throw Exception('User tidak login');
-      await _supabase.from('setor').insert({
-        'id_setor': user.id, 
-        'id_pengguna': user.id, 
-        'metode_pengambilan': _selectedMetode, 
-        'status': 'pending', 
-        'created_at': DateTime.now().toIso8601String()
-      });
-      for (var s in valid) {
-        final harga = _getHargaPerKg(s['id_jenis']);
-        await _supabase.from('detail_setor').insert({
-          'id_setor': user.id, 
-          'id_jenis': s['id_jenis'], 
-          'berat': s['berat'], 
-          'harga_per_kg': harga, 
-          'subtotal': harga * s['berat']
-        });
-      }
-      await _supabase.from('riwayat_aktivitas').insert({
-        'id_pengguna': user.id, 
-        'jenis_aktivitas': 'setor_sampah', 
-        'id_referensi': user.id,
-        'judul': 'Setor Sampah', 
-        'deskripsi': 'Anda melakukan setor sampah dengan total ${_totalBerat.toStringAsFixed(2)} kg',
-        'status': 'diproses', 
-        'perubahan_poin': _totalPoin, 
-        'perubahan_saldo': _totalHarga,
-        'created_at': DateTime.now().toIso8601String(),
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Setor sampah berhasil!'), backgroundColor: Colors.green));
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal: $e'), backgroundColor: Colors.red));
-    } finally { 
-      if (mounted) setState(() => _isLoading = false); 
-    }
   }
 
   @override
@@ -269,7 +247,7 @@ class _SetorPageState extends State<SetorPage> {
       AppConstants.paddingL,
       AppConstants.paddingL,
       AppConstants.paddingL,
-      MediaQuery.of(context).padding.bottom + AppConstants.paddingL, // Tambahkan bottom safe area
+      MediaQuery.of(context).padding.bottom + AppConstants.paddingL,
     ),
     child: Row(children: [
       if (_currentStep > 0)
@@ -285,7 +263,7 @@ class _SetorPageState extends State<SetorPage> {
       if (_currentStep > 0) const SizedBox(width: AppConstants.paddingM),
       Expanded(
         child: ElevatedButton(
-          onPressed: _currentStep == 2 ? _submitSetor : _nextStep,
+          onPressed: _nextStep,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.secondary,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusXL)),
