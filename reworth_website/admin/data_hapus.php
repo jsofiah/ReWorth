@@ -1,13 +1,6 @@
 <?php
-    session_start();
+    require_once 'role_check.php';
 
-
-    error_log("Session role: " . ($_SESSION['role'] ?? 'not set'));
-
-    if (!isset($_SESSION['role'])) {
-        echo json_encode(['success' => false, 'message' => 'Unauthorized - Silakan login kembali']);
-        exit;
-    }
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";

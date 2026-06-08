@@ -1,9 +1,5 @@
 <?php
-    session_start();
-    if (!isset($_SESSION['role'])) {
-        header("Location: ../login.php");
-        exit;
-    }
+    require_once 'role_check.php';
 
     date_default_timezone_set('Asia/Jakarta');
 
