@@ -340,7 +340,7 @@
                                 <small class="text-muted" style="font-size: 11px;">Status penjual, jika Verified maka dapat mengakses semua fitur</small>
                             </div>
                             <div class="form-group">
-                                <!-- Kosong untuk menjaga layout -->
+                                
                             </div>
                         </div>
                         

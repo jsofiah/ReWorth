@@ -308,7 +308,7 @@
                             </div>
                         </div>
                         
-                        <!-- Dynamic Field for Barang -->
+                        
                         <div id="fieldBarang" class="dynamic-field <?= ($kontribusi['jenis_kontribusi'] == 'Barang') ? 'show' : '' ?>">
                             <div class="row-2cols">
                                 <div class="form-group">
@@ -322,7 +322,7 @@
                             </div>
                         </div>
                         
-                        <!-- Dynamic Field for Uang -->
+                        
                         <div id="fieldUang" class="dynamic-field <?= ($kontribusi['jenis_kontribusi'] == 'Uang') ? 'show' : '' ?>">
                             <div class="form-group">
                                 <label class="form-label">Nominal Uang <span class="text-danger">*</span></label>

@@ -332,7 +332,7 @@ s<?php
                         </div>
 
                         <div class="detail-photo-right">
-                            <!-- Bukti Pembayaran (Foto) -->
+                            
                             <div class="photo-container">
                                 <?php if ($fotoBuktiUrl): ?>
                                     <img src="<?= htmlspecialchars($fotoBuktiUrl) ?>" 

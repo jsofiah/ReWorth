@@ -100,9 +100,9 @@
         . "&tanggal=gte." . urlencode($dateFrom)
         . "&tanggal=lte." . urlencode($dateTo));
 
-    echo "<!-- DEBUG: Jumlah data sponsor: " . count($sponsorList) . " -->\n";
+    echo "\n";
     foreach($sponsorList as $idx => $s){
-        echo "<!-- DEBUG Data $idx: " . json_encode($s) . " -->\n";
+        echo "\n";
     }
 
     $uniqueSponsor = [];
@@ -143,7 +143,7 @@
         }
     }
 
-    echo "<!-- DEBUG SponsorGroup: " . json_encode($sponsorGroup) . " -->\n";
+    echo "\n";
 
     $pengeluaranList = sbGet($supabaseUrl, $supabaseKey, 
         "/rest/v1/pengeluaran?select=jumlah,keterangan,created_at"
