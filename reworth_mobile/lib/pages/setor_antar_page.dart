@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_text_styles.dart';
 import '../utils/app_constants.dart';
+import '../services/auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 class SetorAntarPage extends StatefulWidget {
   final List<Map<String, dynamic>> sampahList;
@@ -21,11 +24,13 @@ class _SetorAntarPageState extends State<SetorAntarPage> {
   int _currentStep = 1;
   String _selectedHari = '';
   String _selectedJam = '';
+  bool _isSubmitting = false;
+  final _supabase = Supabase.instance.client;
 
   static const _hariList = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
   static const _jamList = ['08:00 – 12:00', '13:00 – 16:00'];
 
-  // ── Helpers ──────────────────────────────────────────────
+  
   String _getJenisNama(String idJenis) {
     final jenis = widget.jenisSampahList.firstWhere(
       (j) => j['id_jenis'] == idJenis,
@@ -57,14 +62,14 @@ class _SetorAntarPageState extends State<SetorAntarPage> {
       (sum, s) =>
           sum + (_getHargaPerKg(s['id_jenis']) * (s['berat'] as double)));
 
-  int get _totalPoin => (_totalBerat * 10).toInt();
+  int get _totalPoin => 10;
 
   String _formatRupiah(double value) => value
       .toStringAsFixed(0)
       .replaceAllMapped(
           RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
 
-  // ── Navigation ───────────────────────────────────────────
+  
   void _nextStep() {
     if (_currentStep == 1) {
       if (_selectedHari.isEmpty || _selectedJam.isEmpty) {
@@ -85,11 +90,71 @@ class _SetorAntarPageState extends State<SetorAntarPage> {
     }
   }
 
-  void _selesai() {
-    Navigator.of(context).popUntil((route) => route.isFirst);
+  
+  
+  
+
+  Future<void> _submitSetor() async {
+    setState(() => _isSubmitting = true);
+    try {
+      final user = AuthService.getCurrentUser();
+      if (user == null) throw Exception('User tidak login');
+      
+      
+      final result = await _supabase.from('setor_sampah').insert({
+        'id_pengguna': user.id,
+        'alamat': null,
+        'id_jadwal': null,
+        'total_uang': _totalHarga,
+        'status': 'menunggu',
+        'created_at': DateTime.now().toIso8601String(),
+      }).select().single();
+      
+      final idSetor = result['id_setor'];
+      
+      
+      for (var s in _validSampah) {
+        final harga = _getHargaPerKg(s['id_jenis']);
+        await _supabase.from('detail_setor').insert({
+          'id_setor': idSetor,
+          'id_jenis': s['id_jenis'],
+          'berat': s['berat'],
+          'harga_per_kg': harga,
+          'subtotal': harga * (s['berat'] as double),
+        });
+      }
+      
+      
+      await _supabase.from('riwayat_aktivitas').insert({
+        'id_pengguna': user.id,
+        'jenis_aktivitas': 'setor_sampah',
+        'id_referensi': idSetor,
+        'judul': 'Setor Sampah',
+        'deskripsi': 'Anda melakukan setor sampah antar sendiri dengan total ${_totalBerat.toStringAsFixed(2)} kg. Menunggu verifikasi admin.',
+        'status': 'menunggu',
+        'perubahan_poin': 0,
+        'perubahan_saldo': 0,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Setor sampah berhasil! Menunggu verifikasi admin.'), backgroundColor: Colors.green),
+        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
-  // ── Build ────────────────────────────────────────────────
+  
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
@@ -134,6 +199,7 @@ class _SetorAntarPageState extends State<SetorAntarPage> {
                           ),
                         ),
                         _buildBottomButtons(),
+                        const SizedBox(height: AppConstants.paddingXL),
                       ],
                     ),
                   ),
@@ -233,44 +299,48 @@ class _SetorAntarPageState extends State<SetorAntarPage> {
       );
 
   Widget _buildBottomButtons() => Padding(
-        padding: const EdgeInsets.all(AppConstants.paddingL),
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _prevStep,
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.secondary),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppConstants.radiusXL)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: Text('Kembali',
-                    style: AppTextStyles.body.copyWith(
-                        color: AppColors.secondary, fontWeight: FontWeight.w600)),
-              ),
+    padding: const EdgeInsets.all(AppConstants.paddingL),
+    child: Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: _prevStep,
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: AppColors.secondary),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppConstants.radiusXL)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-            const SizedBox(width: AppConstants.paddingM),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _currentStep == 2 ? _selesai : _nextStep,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondary,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppConstants.radiusXL)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: Text(
-                  _currentStep == 2 ? 'Selesai' : 'Lanjut',
-                  style: AppTextStyles.buttonLabel.copyWith(color: Colors.white),
-                ),
-              ),
-            ),
-          ],
+            child: Text('Kembali',
+                style: AppTextStyles.body.copyWith(
+                    color: AppColors.secondary, fontWeight: FontWeight.w600)),
+          ),
         ),
-      );
+        const SizedBox(width: AppConstants.paddingM),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _currentStep == 2 
+                ? (_isSubmitting ? null : _submitSetor)  
+                : _nextStep,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.secondary,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppConstants.radiusXL)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+            child: _currentStep == 2 && _isSubmitting
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : Text(
+                    _currentStep == 2 ? 'Kirim Setoran' : 'Lanjut',  
+                    style: AppTextStyles.buttonLabel.copyWith(color: Colors.white),
+                  ),
+          ),
+        ),
+      ],
+    ),
+  );
 
-  // ── Step 2: Jam Operasional ──────────────────────────────
+  
   Widget _buildStepJadwal() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -392,7 +462,7 @@ class _SetorAntarPageState extends State<SetorAntarPage> {
         ],
       );
 
-  // ── Step 3: Konfirmasi ───────────────────────────────────
+  
   Widget _buildStepKonfirmasi() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
