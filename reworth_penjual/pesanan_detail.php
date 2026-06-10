@@ -98,7 +98,7 @@
     </table>
 </div>
 
-<!-- Tombol Aksi sesuai status -->
+
 <div class="d-flex gap-3 mt-4">
     <?php if ($status == 'menunggu'): ?>
         <button class="btn btn-success" onclick="konfirmasiPesanan('<?= $pesananId ?>')">
@@ -120,7 +120,7 @@
     <?php endif; ?>
 </div>
 
-<!-- Modal Tolak -->
+
 <div id="modalTolakContainer" style="display: none;">
     <div class="modal-title">Tolak Pesanan</div>
     <div class="form-group">
@@ -133,7 +133,7 @@
     </div>
 </div>
 
-<!-- Modal Kirim -->
+
 <div id="modalKirimContainer" style="display: none;">
     <div class="modal-title">Input Pengiriman</div>
     <div class="form-group">

@@ -205,7 +205,7 @@
         </div>
 
         <div class="content-area">
-            <!-- Informasi filter dan search -->
+            
             <?php if ($filterStatus != 'semua' || !empty($search)): ?>
             <div class="alert alert-info mb-3">
                 <i class="bi bi-funnel"></i> 
@@ -281,7 +281,7 @@
         </div>
     </div>
 
-    <!-- Modal Detail -->
+    
     <div class="modal-overlay" id="modalDetail">
         <div class="modal-box" style="max-width: 500px;">
             <div class="modal-title">Detail Langganan<button class="modal-close" onclick="closeModal('modalDetail')">&times;</button></div>
@@ -289,7 +289,7 @@
         </div>
     </div>
 
-    <!-- Modal Hapus -->
+    
     <div class="modal-overlay" id="modalHapus">
         <div class="modal-box" style="max-width: 400px;">
             <div class="confirm-icon"><i class="bi bi-trash3-fill"></i></div>

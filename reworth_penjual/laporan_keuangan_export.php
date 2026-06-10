@@ -50,7 +50,7 @@ function fmtNum($n) {
     return number_format((int)$n, 0, ',', '.'); 
 }
 
-// Ambil data produk
+
 $produkList = curlRequest(
     $supabaseUrl . "/rest/v1/produk?id_penjual=eq.$userId",
     'GET',
@@ -59,7 +59,7 @@ $produkList = curlRequest(
 );
 $totalProduk = count($produkList);
 
-// Ambil data pesanan (SEMUA STATUS untuk laporan lengkap)
+
 $pesananList = curlRequest(
     $supabaseUrl . "/rest/v1/pesanan?select=*,produk(*)&order=created_at.desc",
     'GET',
@@ -80,7 +80,7 @@ foreach ($pesananList as $p) {
 }
 $totalTransaksi = count($filteredPesanan);
 
-// Ambil data komisi
+
 $komisiList = curlRequest(
     $supabaseUrl . "/rest/v1/komisi?id_penjual=eq.$userId&order=created_at.desc",
     'GET',
@@ -99,7 +99,7 @@ foreach ($komisiList as $k) {
 
 $totalBersih = $totalPendapatan - $totalKomisi;
 
-// Hitung produk terlaris
+
 $produkPendapatan = [];
 foreach ($filteredPesanan as $p) {
     $nama = $p['produk']['nama_produk'] ?? 'Unknown';
@@ -218,7 +218,7 @@ arsort($produkPendapatan);
 
 <button class="print-btn" onclick="window.print()">🖨 Cetak / Simpan PDF</button>
 
-<!-- HEADER -->
+
 <div class="report-header">
     <div class="org-name">ReWorth</div>
     <div class="report-title">LAPORAN KEUANGAN PENJUAL</div>
@@ -228,7 +228,7 @@ arsort($produkPendapatan);
 <div class="divider-thick"></div>
 <div class="divider-thin" style="margin-bottom:10px;"></div>
 
-<!-- A. RINGKASAN UMUM -->
+
 <div class="section-title">A. RINGKASAN UMUM</div>
 <table class="summary-table">
     <tr class="indent"><td class="label">Nama Penjual</td><td class="value"><?= htmlspecialchars($userName) ?></td></tr>
@@ -238,7 +238,7 @@ arsort($produkPendapatan);
 </table>
 <div class="divider-thin"></div>
 
-<!-- B. ARUS KAS -->
+
 <div class="section-title">B. ARUS KAS PENJUAL</div>
 <table class="summary-table">
     <tr><td class="label" style="padding-left:6px;font-weight:bold;">Penerimaan</td><td class="value"></td></tr>
@@ -249,7 +249,7 @@ arsort($produkPendapatan);
     <tr class="total-row"><td class="label">TOTAL PENERIMAAN BERSIH</td><td class="value"><?= fmtRp($totalBersih) ?></td></tr>
 </table>
 
-<!-- C. DETAIL PESANAN -->
+
 <div class="section-title avoid-break">C. DETAIL PESANAN</div>
 <table class="data-table">
     <thead>
@@ -276,7 +276,7 @@ arsort($produkPendapatan);
             $grandKomisi += $komisiItem;
             $grandDiterima += $diterima;
             
-            // Status badge text
+
             $statusText = ucfirst($p['status'] ?? 'Unknown');
             if ($statusText == 'Menunggu') $statusText = 'Menunggu Konfirmasi';
     ?>
@@ -303,7 +303,7 @@ arsort($produkPendapatan);
     </tbody>
 </table>
 
-<!-- D. REKAP PRODUK TERLARIS -->
+
 <div class="section-title avoid-break">D. PRODUK TERLARIS (BERDASARKAN PENDAPATAN)</div>
 <table class="data-table">
     <thead>
@@ -339,7 +339,7 @@ arsort($produkPendapatan);
     </tbody>
 </table>
 
-<!-- REKAP AKHIR -->
+
 <div class="divider-thick" style="margin-top:12px;"></div>
 <table class="summary-table" style="margin-top:8px;">
     <tr class="indent"><td class="label">Total Pendapatan Kotor</td><td class="value"><?= fmtRp($totalPendapatan) ?></td></tr>
@@ -347,7 +347,7 @@ arsort($produkPendapatan);
     <tr class="total-row"><td class="label">TOTAL PENDAPATAN BERSIH</td><td class="value"><?= fmtRp($totalBersih) ?></td></tr>
 </table>
 
-<!-- TANDA TANGAN -->
+
 <div class="signature-section">
     <div class="sig-box">
         <div class="sig-title">Malang, <?= date('d F Y') ?><br>Mengetahui,<br>Penjual</div>

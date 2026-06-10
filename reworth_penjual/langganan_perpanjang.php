@@ -41,7 +41,7 @@
     $komisiPending = json_decode($getKomisiPending['response'], true);
     $hasPendingCommission = !empty($komisiPending);
 
-    // Jika ada komisi pending, redirect ke halaman komisi
+
     if ($hasPendingCommission && $_SERVER['REQUEST_METHOD'] !== 'POST') {
         $_SESSION['subscription_error'] = "Terdapat komisi yang belum dibayar. Silakan bayar komisi terlebih dahulu sebelum memperpanjang langganan.";
         header("Location: pembayaran_komisi.php");
@@ -240,7 +240,7 @@
                 <div class="card-body-inner">
                     <div class="form-section-settings" style="flex: 1;">
                         <form method="POST" enctype="multipart/form-data" id="formPerpanjang">
-                            <!-- Kolom Kiri: Informasi Langganan -->
+                            
                             <div class="field-group">
                                 <h2 class="section-title">Perpanjang Langganan</h2>
                                 <label class="field-label">Nama Toko</label>
@@ -262,7 +262,7 @@
                                 <input type="text" class="field-input" value="<?= $isExpired ? 'Kadaluarsa' : 'Aktif' ?>" readonly disabled>
                             </div>
 
-                            <!-- Informasi Tanggal Baru yang Akan Didapat -->
+                            
                             <div class="info-tanggal-baru">
                                 <p><i class="bi bi-calendar-check"></i> <strong>Setelah perpanjangan:</strong></p>
                                 <p><i class="bi bi-calendar"></i> Tanggal Mulai Baru: <strong><?= date('d F Y', strtotime($newStartDate)) ?></strong></p>
@@ -277,7 +277,7 @@
                                 </p>
                             </div>
 
-                            <!-- Kolom Kanan: QR Code & Upload Bukti -->
+                            
                             <div class="foto-section">
                                 <label class="form-label">Scan Kode QR untuk Pembayaran</label>
                                 <div class="field-group">
@@ -298,14 +298,14 @@
                                 </div>
                             </div>
 
-                            <!-- Pesan error/success -->
+                            
                             <?php if ($message): ?>
                             <div class="alert alert-<?= $messageType === 'success' ? 'success' : 'danger' ?> mt-3">
                                 <?= htmlspecialchars($message) ?>
                             </div>
                             <?php endif; ?>
 
-                            <!-- Tombol Batal dan Kirim -->
+                            
                             <div class="form-actions" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E2EDE8;">
                                 <button type="button" class="btn-cancel" onclick="window.location.href='langganan.php'">BATAL</button>
                                 <button type="submit" class="btn-submit" id="btnKirim">KIRIM</button>

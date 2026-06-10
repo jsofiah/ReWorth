@@ -61,7 +61,7 @@ function sendFCMNotification($userId, $title, $body, $supabaseUrl, $supabaseKey,
     return ['success' => $httpCode == 200, 'response' => json_decode($response, true)];
 }
 
-// Fungsi untuk cek apakah komisi suatu bulan sudah terkunci (sudah dibayar)
+
 function isCommissionLocked($penjualId, $periodeBulan, $supabaseUrl, $supabaseKey) {
     $checkKomisi = curlRequest(
         $supabaseUrl . "/rest/v1/komisi?id_penjual=eq.$penjualId&periode_bulan=eq.$periodeBulan&status_pembayaran=neq.pending",
@@ -72,11 +72,11 @@ function isCommissionLocked($penjualId, $periodeBulan, $supabaseUrl, $supabaseKe
     
     $existingKomisi = json_decode($checkKomisi['response'], true);
     
-    // Jika status sudah 'dibayar' atau 'selesai', berarti terkunci
+
     return !empty($existingKomisi);
 }
 
-// Fungsi untuk update atau insert komisi (dengan skenario pindah bulan jika sudah dibayar)
+
 function updateCommission($penjualId, $totalBayar, $supabaseUrl, $supabaseKey) {
     $komisi = $totalBayar * 0.05;
     $tanggalOrder = date('Y-m-d');
@@ -84,17 +84,17 @@ function updateCommission($penjualId, $totalBayar, $supabaseUrl, $supabaseKey) {
     $periodeBulan = $periodeBulanAsli;
     $isMoved = false;
     
-    // CEK APAKAH BULAN INI SUDAH TERKUNCI (SUDAH DIBAYAR)
+
     $isLocked = isCommissionLocked($penjualId, $periodeBulanAsli, $supabaseUrl, $supabaseKey);
     
     if ($isLocked) {
-        // Jika sudah dibayar, pindahkan ke bulan berikutnya
+
         $periodeBulan = date('Y-m', strtotime('+1 month', strtotime($tanggalOrder)));
         $isMoved = true;
         error_log("Komisi untuk penjual $penjualId dipindah dari $periodeBulanAsli ke $periodeBulan karena bulan sebelumnya sudah dibayar");
     }
     
-    // Cek apakah sudah ada record komisi untuk bulan yang dituju
+
     $checkKomisi = curlRequest(
         $supabaseUrl . "/rest/v1/komisi?id_penjual=eq.$penjualId&periode_bulan=eq.$periodeBulan",
         'GET',
@@ -148,7 +148,7 @@ if ($status === 'dikirim') {
     }
 }
 
-// Ambil data pesanan lengkap
+
 $getPesanan = curlRequest(
     $supabaseUrl . "/rest/v1/pesanan?id_pesanan=eq.$id_pesanan&select=*,produk(*)",
     'GET',
@@ -166,7 +166,7 @@ if (!$pesanan) {
 $idPengguna = $pesanan['id_pengguna'] ?? null;
 $totalBayar = $pesanan['total_bayar'] ?? 0;
 
-// Ambil nama produk
+
 $namaProduk = '';
 if (!empty($pesanan['id_produk'])) {
     $getProduk = curlRequest(
@@ -179,7 +179,7 @@ if (!empty($pesanan['id_produk'])) {
     $namaProduk = $produkData[0]['nama_produk'] ?? 'Produk';
 }
 
-// Siapkan data update
+
 $updateData = ['status' => $status];
 
 if ($status === 'dikirim') {
@@ -191,7 +191,7 @@ if ($status === 'ditolak' && !empty($alasan)) {
     $updateData['alasan_penolakan'] = $alasan;
 }
 
-// Update status pesanan
+
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $supabaseUrl . "/rest/v1/pesanan?id_pesanan=eq.$id_pesanan");
 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PATCH");
@@ -212,7 +212,7 @@ $success = ($httpCode == 200 || $httpCode == 204);
 if ($success) {
     
     if ($status === 'diproses') {
-        // 1. Update riwayat aktivitas
+
         $deskripsiRiwayat = "Pesanan {$namaProduk} senilai Rp " . number_format($totalBayar, 0, ',', '.') . " sudah dikonfirmasi dan sedang diproses";
         
         $checkRiwayat = curlRequest(
@@ -254,18 +254,18 @@ if ($success) {
             );
         }
         
-        // 2. Update komisi (DENGAN SKENARIO PINDAH BULAN)
+
         $komisiResult = updateCommission($_SESSION['id_penjual'], $totalBayar, $supabaseUrl, $supabaseKey);
         
         if ($komisiResult['is_moved']) {
             error_log("Komisi untuk order $id_pesanan masuk ke bulan {$komisiResult['periode']}");
         }
         
-        // 3. Notifikasi ke pembeli
+
         if ($idPengguna) {
             $notifikasiData = [
                 'id_pengguna' => $idPengguna,
-                'judul' => '✅ Pembayaran Dikonfirmasi',
+                'judul' => 'Pembayaran Dikonfirmasi',
                 'deskripsi' => "Pembayaran untuk pesanan {$namaProduk} telah dikonfirmasi. Pesanan Anda sedang diproses.",
                 'is_read' => false,
                 'created_at' => date('Y-m-d H:i:s')
@@ -317,7 +317,7 @@ if ($success) {
         if ($idPengguna) {
             $notifikasiData = [
                 'id_pengguna' => $idPengguna,
-                'judul' => '📦 Pesanan Dikirim',
+                'judul' => 'Pesanan Dikirim',
                 'deskripsi' => "Pesanan {$namaProduk} sedang dalam perjalanan.\nKurir: {$jasa_kirim}\nNo Resi: {$nomor_resi}",
                 'is_read' => false,
                 'created_at' => date('Y-m-d H:i:s')
@@ -385,7 +385,7 @@ if ($success) {
         if ($idPengguna) {
             $notifikasiData = [
                 'id_pengguna' => $idPengguna,
-                'judul' => '❌ Pesanan Ditolak',
+                'judul' => 'Pesanan Ditolak',
                 'deskripsi' => "Pesanan {$namaProduk} ditolak.\nAlasan: {$alasan}\n\nSilakan lakukan pemesanan ulang.",
                 'is_read' => false,
                 'created_at' => date('Y-m-d H:i:s')
@@ -453,7 +453,7 @@ if ($success) {
         if ($idPengguna) {
             $notifikasiData = [
                 'id_pengguna' => $idPengguna,
-                'judul' => '✅ Pesanan Selesai',
+                'judul' => 'Pesanan Selesai',
                 'deskripsi' => "Pesanan {$namaProduk} telah selesai. Terima kasih telah berbelanja!",
                 'is_read' => false,
                 'created_at' => date('Y-m-d H:i:s')

@@ -109,24 +109,24 @@ function getRemainingDays($userId, $supabaseUrl, $supabaseKey) {
 
 function getSidebarMenu($currentPage, $isPremium) {
     $menu = [
-        // Menu yang selalu tampil (tidak perlu premium)
+
         ['nama' => 'Dashboard', 'icon' => 'bi-grid-1x2-fill', 'link' => 'dashboard.php', 'premium_only' => false],
         
-        // Menu premium only (hanya tampil jika langganan aktif)
+
         ['nama' => 'Manajemen Produk', 'icon' => 'bi-box-seam-fill', 'link' => 'produk.php', 'premium_only' => true],
         ['nama' => 'Manajemen Pesanan', 'icon' => 'bi-bag-check-fill', 'link' => 'pesanan.php', 'premium_only' => true],
         ['nama' => 'Laporan dan Keuangan', 'icon' => 'bi-bar-chart-line-fill', 'link' => 'laporan_keuangan.php', 'premium_only' => true],
         ['nama' => 'Pengaturan Toko', 'icon' => 'bi-shop-window', 'link' => 'pengaturan_toko.php', 'premium_only' => true],
         ['nama' => 'Pengaturan Premium', 'icon' => 'bi-gem', 'link' => 'pengaturan_premium.php', 'premium_only' => true],
         
-        // Menu yang tetap tampil meskipun expired (seperti langganan dan pembayaran komisi)
+
         ['nama' => 'Langganan', 'icon' => 'bi-stars', 'link' => 'langganan.php', 'premium_only' => false],
         ['nama' => 'Pembayaran Komisi', 'icon' => 'bi-cash-coin', 'link' => 'pembayaran_komisi.php', 'premium_only' => false],
     ];
     
     $html = '';
     foreach ($menu as $item) {
-        // Jika menu premium_only dan user tidak premium, skip
+
         if ($item['premium_only'] && !$isPremium) {
             continue;
         }

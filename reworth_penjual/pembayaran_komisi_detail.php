@@ -36,7 +36,7 @@ function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
     return json_decode($response, true) ?? [];
 }
 
-// Ambil data komisi
+
 $getKomisi = curlRequest(
     $supabaseUrl . "/rest/v1/komisi?id_komisi=eq.$komisiId",
     'GET',
@@ -51,7 +51,7 @@ if (!$data) {
     exit;
 }
 
-// Cek apakah komisi milik penjual yang login
+
 if ($data['id_penjual'] != $userId) {
     echo "<p class='text-muted'>Akses ditolak</p>";
     exit;
