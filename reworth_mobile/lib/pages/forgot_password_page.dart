@@ -31,10 +31,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     setState(() => _isLoading = true);
 
     try {
-      // HAPUS redirectTo - biarkan Supabase yang handle
+      // Kirim email dengan redirect ke deep link app
       await Supabase.instance.client.auth.resetPasswordForEmail(
         _emailController.text.trim(),
-        // redirectTo: 'reworth://reset-password', // HAPUS BARIS INI
+        redirectTo: 'reworth://reset-password', // ← Sesuai dengan yang di dashboard
       );
 
       if (!mounted) return;
@@ -45,21 +45,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       });
 
     } catch (e) {
-      if (!mounted) return;
-      
-      setState(() => _isLoading = false);
-      
-      String errorMessage = e.toString();
-      // Bersihkan pesan error
-      errorMessage = errorMessage.replaceAll('Exception:', '');
-      errorMessage = errorMessage.replaceAll('AuthException', '');
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal: $errorMessage'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // ... error handling
     }
   }
 

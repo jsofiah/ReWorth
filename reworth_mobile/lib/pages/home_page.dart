@@ -47,6 +47,10 @@ class _HomePageState extends State<HomePage> {
     _NavItem(Icons.person_rounded, 'Profil'),
   ];
 
+  final PageController _bannerController = PageController();
+  int _currentBannerIndex = 0;
+
+
   static const double _barHeight = 60.0;
   static const double _labelStripHeight = 22.0;
 
@@ -408,7 +412,7 @@ class _HomePageState extends State<HomePage> {
 
                   // Card tabungan overlap di bawah header
                   Positioned(
-                    bottom: -40, // setengah card keluar ke bawah header
+                    bottom: -40,
                     left: AppConstants.paddingL,
                     right: AppConstants.paddingL,
                     child: _buildTabunganCard(),
@@ -419,16 +423,16 @@ class _HomePageState extends State<HomePage> {
             SliverToBoxAdapter(
               child: Container(
                 color: const Color(0xFFF5F5F5),
-                padding: const EdgeInsets.only(top: 56), // ruang untuk card yang overlap
+                padding: const EdgeInsets.only(top: 56),
                 child: Column(
                   children: [
                     _buildMenuGrid(),
                     const SizedBox(height: AppConstants.paddingM),
-                    _buildEventSection(),
+                    _buildRewardSection(), // MOVED: Reward section first
                     const SizedBox(height: AppConstants.paddingM),
-                    _buildRewardSection(),
+                    _buildEventSection(), // MOVED: Event section second
                     const SizedBox(height: AppConstants.paddingM),
-                    _buildProductSection(),
+                    _buildProductSection(), // MOVED: Product section third
                     const SizedBox(height: AppConstants.paddingM),
                     const SizedBox(height: 16),
                   ],
@@ -443,6 +447,7 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
 
   Widget _buildHeader() {
     return Container(
@@ -1052,17 +1057,59 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           SizedBox(
-            height: 150, // Tinggi banner landscape
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: 3,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (_, index) => _buildRewardBanner(index + 1),
+            height: 160,
+            child: PageView.builder(
+              controller: _bannerController,
+              onPageChanged: (int index) {
+                setState(() {
+                  _currentBannerIndex = index;
+                });
+              },
+              itemCount: 5, // Jumlah banner
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: _buildRewardBanner(index),
+                );
+              },
             ),
           ),
+          const SizedBox(height: 8),
+          // Dots indicator yang dinamis
+          _buildDotsIndicator(5, _currentBannerIndex),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDotsIndicator(int itemCount, int currentIndex) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        itemCount,
+        (index) => GestureDetector(
+          onTap: () {
+            _bannerController.animateToPage(
+              index,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            width: index == currentIndex ? 24 : 8,
+            height: 8,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              color: index == currentIndex 
+                  ? AppColors.secondary 
+                  : AppColors.secondary.withOpacity(0.3),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1070,23 +1117,57 @@ class _HomePageState extends State<HomePage> {
   Widget _buildRewardBanner(int index) {
     return GestureDetector(
       onTap: () => _navigate(const RewardPage()),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppConstants.radiusM),
-        child: Image.asset(
-          'assets/banner_reward/$index.png',
-          width: MediaQuery.of(context).size.width - (AppConstants.paddingL * 2),
-          height: 120,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
-            width: MediaQuery.of(context).size.width - (AppConstants.paddingL * 2),
-            height: 120,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(AppConstants.radiusM),
+      child: Container(
+        width: MediaQuery.of(context).size.width - (AppConstants.paddingL * 2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppConstants.radiusL),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
-            child: const Center(
-              child: Icon(Icons.card_giftcard_outlined, 
-                  color: AppColors.secondary, size: 32),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppConstants.radiusL),
+          child: Image.asset(
+            'assets/banner_reward/${index + 1}.png',
+            width: MediaQuery.of(context).size.width - (AppConstants.paddingL * 2),
+            height: 150,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              width: MediaQuery.of(context).size.width - (AppConstants.paddingL * 2),
+              height: 150,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.secondary,
+                    AppColors.secondary.withOpacity(0.7),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(AppConstants.radiusL),
+              ),
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.card_giftcard_outlined, 
+                        color: Colors.white, size: 40),
+                    SizedBox(height: 8),
+                    Text(
+                      'Tukar Reward Sekarang!',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -1164,121 +1245,172 @@ class _HomePageState extends State<HomePage> {
           borderRadius: BorderRadius.circular(AppConstants.radiusL),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              flex: 6,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(AppConstants.radiusL),
-                  topRight: Radius.circular(AppConstants.radiusL),
-                ),
-                child: Image.network(
-                  fotoUrl,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return Container(
-                      color: const Color(0xFFF5F5F5),
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.secondary,
+            // Image with badge for best seller
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(AppConstants.radiusL),
+                    topRight: Radius.circular(AppConstants.radiusL),
+                  ),
+                  child: SizedBox(
+                    height: 120,
+                    width: double.infinity,
+                    child: Image.network(
+                      fotoUrl,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return Container(
+                          color: const Color(0xFFF5F5F5),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.secondary,
+                            ),
+                          ),
+                        );
+                      },
+                      errorBuilder: (_, __, ___) => Container(
+                        color: const Color(0xFFF5F5F5),
+                        child: const Center(
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            color: AppColors.textHint,
+                            size: 32,
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                  errorBuilder: (_, __, ___) => Container(
-                    color: const Color(0xFFF5F5F5),
-                    child: const Center(
-                      child: Icon(
-                        Icons.image_not_supported_outlined,
-                        color: AppColors.textHint,
-                        size: 32,
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            // Info Produk
-            Expanded(
-              flex: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      product['nama_produk'] ?? '-',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.body.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Colors.amber, Colors.orange],
                       ),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    Text(
-                      _rupiah(product['harga'] ?? 0),
-                      style: AppTextStyles.label.copyWith(fontSize: 13),
-                    ),
-                    Row(
+                    child: const Row(
                       children: [
-                        ClipOval(
-                          child: Image.network(
-                            fotoPenjual,
-                            width: 20,
-                            height: 20,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              width: 20,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.3),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.store,
-                                size: 12,
-                                color: AppColors.secondary,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            product['nama_penjual'] ?? '-',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.small,
-                          ),
-                        ),
-                        const Icon(
-                          Icons.star_rounded,
-                          size: 14,
-                          color: AppColors.accent,
-                        ),
-                        const SizedBox(width: 2),
+                        Icon(Icons.emoji_events, size: 12, color: Colors.white),
+                        SizedBox(width: 4),
                         Text(
-                          (product['rating'] as double).toStringAsFixed(1),
-                          style: AppTextStyles.small.copyWith(
-                            fontWeight: FontWeight.w600,
+                          'Best Seller',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
+              ],
+            ),
+            // Info Produk
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product['nama_produk'] ?? '-',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.body.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _rupiah(product['harga'] ?? 0),
+                    style: AppTextStyles.label.copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      ClipOval(
+                        child: Image.network(
+                          fotoPenjual,
+                          width: 20,
+                          height: 20,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.3),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.store,
+                              size: 12,
+                              color: AppColors.secondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          product['nama_penjual'] ?? '-',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.small.copyWith(fontSize: 11),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 14,
+                        color: AppColors.accent,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        (product['rating'] as double).toStringAsFixed(1),
+                        style: AppTextStyles.small.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Terjual ${product['terjual']}',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: AppColors.secondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -1286,6 +1418,7 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
 
   String _rupiah(int angka) {
     final s = angka.toString();

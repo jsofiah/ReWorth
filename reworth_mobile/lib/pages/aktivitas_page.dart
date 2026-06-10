@@ -68,7 +68,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
 
   Map<String, int> _stats = {
     'Aktivitas': 0, 'Laporan': 0, 'Setor': 0,
-    'Pesanan': 0,   'Poin': 0,    'Event': 0,
+    'Pesanan': 0,   'Reward': 0,    'Event': 0,
   };
 
   Map<String, List<AktivitasItem>> _grouped = {};
@@ -233,7 +233,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
         _stats['Laporan']   = response.where((e) => e['jenis_aktivitas'] == 'lapor_sampah').length;
         _stats['Setor']     = response.where((e) => e['jenis_aktivitas'] == 'setor_sampah').length;
         _stats['Pesanan']   = response.where((e) => e['jenis_aktivitas'] == 'pesanan').length;
-        _stats['Poin']      = response.where((e) => e['jenis_aktivitas'] == 'tukar_poin').length;
+        _stats['Reward']      = response.where((e) => e['jenis_aktivitas'] == 'tukar_poin').length;
         _stats['Event']     = response.where((e) => e['jenis_aktivitas'] == 'pendaftar_event').length;
         _isLoading = false;
       });

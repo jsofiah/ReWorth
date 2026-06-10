@@ -35,6 +35,8 @@ dependencies:
   shared_preferences: ^2.0.15
   firebase_core: ^4.10.0
   firebase_messaging: ^16.3.0
+  # uni_links: ^0.5.1
+  app_links: ^7.0.0
   
 dev_dependencies:
   flutter_test:
@@ -52,6 +54,10 @@ flutter:
   - assets/banner_reward/1.png
   - assets/banner_reward/2.png
   - assets/banner_reward/3.png
+  - assets/banner_reward/4.png
+  - assets/banner_reward/5.png
+  - assets/banner_eco.png
+  - assets/
 
 flutter_launcher_icons:
   android: true

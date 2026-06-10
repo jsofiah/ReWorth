@@ -375,21 +375,301 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     final third = _leaderboard[2];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingM),
+      padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingM, vertical: AppConstants.paddingL),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // 2nd place
-          Expanded(child: _buildPodiumItem(second, false, false)),
-          // 1st place (center, taller)
-          Expanded(child: _buildPodiumItem(first, true, false)),
-          // 3rd place
-          Expanded(child: _buildPodiumItem(third, false, true)),
+          // 2nd place (kiri)
+          Expanded(child: _build3DPodiumItem(second, false, false)),
+          const SizedBox(width: 8),
+          // 1st place (tengah, lebih tinggi)
+          Expanded(child: _build3DPodiumItem(first, true, false)),
+          const SizedBox(width: 8),
+          // 3rd place (kanan)
+          Expanded(child: _build3DPodiumItem(third, false, true)),
         ],
       ),
     );
   }
+
+  Widget _build3DPodiumItem(LeaderboardEntry entry, bool isFirst, bool isThird) {
+    // Tinggi podium berdasarkan peringkat
+    final podiumHeight = isFirst ? 120.0 : isThird ? 70.0 : 90.0;
+    final circleSize = isFirst ? 70.0 : 56.0;
+    
+    final baseColor = isFirst
+        ? AppColors.accent
+        : isThird
+            ? const Color(0xFFC9F057)
+            : AppColors.secondary;
+    
+    final darkerColor = isFirst
+        ? const Color(0xFFE6A800)
+        : isThird
+            ? const Color(0xFFA8C43C)
+            : const Color(0xFF2D5A1E);
+    
+    final darkerColor2 = isFirst
+        ? const Color(0xFFCC8F00)
+        : isThird
+            ? const Color(0xFF8AA32E)
+            : const Color(0xFF1E3E14);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Crown untuk juara 1
+        if (isFirst)
+          Transform.translate(
+            offset: const Offset(0, 10),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(
+                  Icons.star_rounded,
+                  size: 32,
+                  color: Colors.amber.shade400,
+                  shadows: const [
+                    Shadow(blurRadius: 4, color: Colors.black26, offset: Offset(0, 2)),
+                  ],
+                ),
+                Positioned(
+                  top: 6,
+                  child: Text(
+                    '👑',
+                    style: TextStyle(
+                      fontSize: 20,
+                      shadows: [
+                        Shadow(blurRadius: 4, color: Colors.black.withOpacity(0.3)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        
+        const SizedBox(height: 8),
+        
+        // Avatar lingkaran dengan shadow 3D
+        Container(
+          width: circleSize,
+          height: circleSize,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                baseColor,
+                darkerColor,
+              ],
+            ),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+            border: Border.all(
+              color: Colors.white.withOpacity(0.5),
+              width: 2,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              'RW ${entry.rw.padLeft(2, '0')}',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: isFirst ? 15 : 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    blurRadius: 2,
+                    color: Colors.black.withOpacity(0.3),
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // Info teks
+        Text(
+          'RW ${entry.rw.padLeft(2, '0')}',
+          style: AppTextStyles.small.copyWith(
+            fontWeight: FontWeight.w700, 
+            color: AppColors.textPrimary,
+            fontSize: 12,
+          ),
+        ),
+        Text(
+          entry.kelurahan,
+          style: AppTextStyles.small.copyWith(
+            color: AppColors.textSecondary, 
+            fontSize: 10,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        Text(
+          '${entry.totalPoin} poin',
+          style: AppTextStyles.small.copyWith(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: baseColor,
+          ),
+        ),
+        
+        const SizedBox(height: 10),
+        
+        // Podium 3D dengan efek gradasi dan shadow
+        Container(
+          height: podiumHeight,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.25),
+                blurRadius: 10,
+                offset: const Offset(0, -4),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // Bagian depan podium (efek 3D)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        baseColor,
+                        darkerColor,
+                        darkerColor2,
+                      ],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Efek garis highlight di atas
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 10,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        Colors.white.withOpacity(0.3),
+                        Colors.white.withOpacity(0.6),
+                        Colors.white.withOpacity(0.3),
+                      ],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(100),
+                      topRight: Radius.circular(100),
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Efek garis vertikal (seperti papan kayu)
+              Positioned(
+                left: 8,
+                right: 8,
+                top: 4,
+                bottom: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(
+                    4,
+                    (index) => Container(
+                      width: 1.5,
+                      height: podiumHeight - 4,
+                      color: Colors.white.withOpacity(0.08),
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Nomor peringkat di podium
+              Center(
+                child: Container(
+                  width: isFirst ? 40 : 32,
+                  height: isFirst ? 40 : 32,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.25),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.5),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${entry.rank}',
+                      style: GoogleFonts.poppins(
+                        fontSize: isFirst ? 22 : 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 2,
+                            color: Colors.black.withOpacity(0.3),
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Efek shadow di bagian bawah podium
+              Positioned(
+                bottom: -8,
+                left: 4,
+                right: 4,
+                child: Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
 
   Widget _buildPodiumItem(LeaderboardEntry entry, bool isFirst, bool isThird) {
     final circleColor = isFirst

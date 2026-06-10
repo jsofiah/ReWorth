@@ -522,7 +522,6 @@ class _BelanjaPageState extends State<BelanjaPage> {
   Widget _buildBanner() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppConstants.paddingL),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [AppColors.primary, AppColors.lightAccent],
@@ -530,66 +529,188 @@ class _BelanjaPageState extends State<BelanjaPage> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AppConstants.radiusL),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.45),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              'ECO CAMPAIGN',
-              style: AppTextStyles.small.copyWith(
-                color: AppColors.secondary,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1,
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Daur Ulang,\nDapat Reward!',
-            style: AppTextStyles.heading1.copyWith(
-              color: AppColors.textPrimary,
-              fontSize: 24,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Setiap pembelian membantu mengurangi\nsampah dari TPA.',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Divider(
-            color: AppColors.secondary.withOpacity(0.3),
-            thickness: 1,
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              _buildStatItem('${_semuaProduk.length}', 'Produk'),
-              const SizedBox(width: 24),
-              _buildStatItem(
-                '${_semuaProduk.map((e) => e.penjual).toSet().length}',
-                'Penjual',
-              ),
-              const SizedBox(width: 24),
-              _buildStatItem(
-                '${_semuaProduk.fold<int>(0, (a, b) => a + b.terjual)}+',
-                'Terjual',
-              ),
-            ],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppConstants.radiusL),
+        child: Stack(
+          children: [
+            // Pola bulat-bulat dekoratif
+            ..._buildDecorationCircles(),
+            
+            // Gambar dari assets (bisa diganti sesuai kebutuhan)
+            Positioned(
+              right: -20,
+              bottom: 0,
+              top: 0,
+              child: Image.asset(
+                'assets/banner_eco.png', // Ganti dengan nama file gambar Anda
+                height: 200,
+                width: 200,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(), // Sembunyikan jika gambar tidak ada
+              ),
+            ),
+            
+            // Konten
+            Padding(
+              padding: const EdgeInsets.all(AppConstants.paddingL),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.45),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'ECO CAMPAIGN',
+                      style: AppTextStyles.small.copyWith(
+                        color: AppColors.secondary,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Daur Ulang,\nDapat Reward!',
+                    style: AppTextStyles.heading1.copyWith(
+                      color: AppColors.textPrimary,
+                      fontSize: 24,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Setiap pembelian\nmembantu mengurangi\nsampah dari TPA.',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Divider(
+                    color: AppColors.secondary.withOpacity(0.3),
+                    thickness: 1,
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _buildStatItem('${_semuaProduk.length}', 'Produk'),
+                      const SizedBox(width: 24),
+                      _buildStatItem(
+                        '${_semuaProduk.map((e) => e.penjual).toSet().length}',
+                        'Penjual',
+                      ),
+                      const SizedBox(width: 24),
+                      _buildStatItem(
+                        '${_semuaProduk.fold<int>(0, (a, b) => a + b.terjual)}+',
+                        'Terjual',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+
+  List<Widget> _buildDecorationCircles() {
+    return [
+      // Circle 1 - besar di pojok kiri atas
+      Positioned(
+        top: -30,
+        left: -30,
+        child: Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 139, 187, 28).withOpacity(0.5),
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+      
+      // Circle 2 - sedang di pojok kanan bawah
+      Positioned(
+        bottom: -40,
+        right: 0,
+        child: Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 139, 187, 28).withOpacity(0.4),
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+      
+      // Circle 3 - kecil di tengah kanan
+      Positioned(
+        top: 40,
+        right: 180,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 139, 187, 28).withOpacity(0.5),
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+      
+      // Circle 4 - sangat kecil
+      Positioned(
+        bottom: 50,
+        left: 60,
+        child: Container(
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 139, 187, 28).withOpacity(0.3),
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+      
+      // Circle 5 - untuk keseimbangan
+      Positioned(
+        top: 20,
+        left: 240,
+        child: Container(
+          width: 25,
+          height: 25,
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 139, 187, 28).withOpacity(0.2),
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+      
+      // Circle 6 - besar transparan di tengah
+      Positioned(
+        top: 60,
+        right: 50,
+        child: Container(
+          width: 150,
+          height: 150,
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 139, 187, 28).withOpacity(0.3),
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+    ];
   }
 
   Widget _buildStatItem(String value, String label) {

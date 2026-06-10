@@ -8,6 +8,7 @@ import '../utils/app_text_styles.dart';
 import '../utils/app_constants.dart';
 import '../utils/app_image_helper.dart';
 import '../widgets/app_avatar_stack.dart';
+import 'event_daftar_page.dart'; // Add this import
 
 class EventDetailPage extends StatefulWidget {
   final EventModel event;
@@ -20,7 +21,6 @@ class EventDetailPage extends StatefulWidget {
 class _EventDetailPageState extends State<EventDetailPage> {
   int _currentParticipants = 0;
   bool _isLoadingParticipants = true;
-  bool _isRegistering = false;
   String? _organizerName;
 
   // Constants
@@ -98,43 +98,19 @@ class _EventDetailPageState extends State<EventDetailPage> {
     }
   }
 
-  Future<void> _daftarEvent() async {
-    final supabase = Supabase.instance.client;
-    final userId = supabase.auth.currentUser?.id;
-
-    if (userId == null) {
-      _showMessage('Silakan login terlebih dahulu', isError: true);
-      return;
-    }
-
+  void _navigateToDaftarPage() {
     final maxKuota = widget.event.maxPartisipan ?? 0;
     if (_currentParticipants >= maxKuota) {
       _showMessage('Kuota peserta sudah penuh', isError: true);
       return;
     }
 
-    setState(() => _isRegistering = true);
-
-    try {
-      await supabase.from('pendaftar_event').insert({
-        'id_event': widget.event.idEvent,
-        'id_user': userId,
-        'created_at': DateTime.now().toIso8601String(),
-      });
-
-      if (mounted) {
-        setState(() {
-          _currentParticipants++;
-          _isRegistering = false;
-        });
-        _showMessage('Berhasil mendaftar ke event!');
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isRegistering = false);
-        _showMessage('Gagal mendaftar: ${e.toString()}', isError: true);
-      }
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EventDaftarPage(event: widget.event),
+      ),
+    );
   }
 
   void _showMessage(String message, {bool isError = false}) {
@@ -230,16 +206,6 @@ class _EventDetailPageState extends State<EventDetailPage> {
                 Image.network(fotoUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholder())
               else
                 _buildPlaceholder(),
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.transparent, AppColors.secondary],
-                    stops: [0.0, 0.6, 1.0],
-                  ),
-                ),
-              ),
             ],
           ),
         ),
@@ -425,18 +391,16 @@ class _EventDetailPageState extends State<EventDetailPage> {
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
-        onPressed: (isFull || _isRegistering) ? null : _daftarEvent,
+        onPressed: isFull ? null : _navigateToDaftarPage,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.secondary,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           elevation: 0,
         ),
-        child: _isRegistering
-            ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-            : Text(
-                isFull ? 'Kuota Penuh' : 'Daftar sekarang',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isFull ? Colors.grey[600] : Colors.white),
-              ),
+        child: Text(
+          isFull ? 'Kuota Penuh' : 'Daftar sekarang',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isFull ? Colors.grey[600] : Colors.white),
+        ),
       ),
     );
   }

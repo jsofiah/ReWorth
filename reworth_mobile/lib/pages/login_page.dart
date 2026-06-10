@@ -9,8 +9,6 @@ import '../widgets/app_text_field.dart';
 import '../widgets/app_primary_button.dart';
 import '../services/auth_service.dart';
 import '../services/fcm_service.dart';
-import 'forgot_password_page.dart';
-
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -110,13 +108,6 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     if (mounted) setState(() => _isLoading = false);
-  }
-
-  void _onForgotPassword() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
-    );
   }
 
   void _onDaftar() {
@@ -283,14 +274,7 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                   ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: _onForgotPassword,
-                    child: Text(
-                      'Forgot password?',
-                      style: AppTextStyles.forgotPassword,
-                    ),
-                  ),
+                  // HAPUS Spacer dan Forgot Password
                 ],
               ),
 
