@@ -1,6 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) { header("Location: ../login.php"); exit; }
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -27,7 +26,7 @@ function getSupabaseImageUrl($p){
 </head>
 <body>
 
-<!-- SIDEBAR -->
+
 <aside class="sidebar">
     <div class="sidebar-logo"><img src="img/logo.png" alt="Logo ReWorth"></div>
     <nav class="sidebar-nav">
@@ -47,7 +46,7 @@ function getSupabaseImageUrl($p){
 </aside>
 
 <div class="main-wrap">
-    <!-- TOPBAR -->
+    
     <div class="topbar">
         <div class="topbar-inner">
             <h1 class="topbar-title">Jadwal Ambil Sampah</h1>
@@ -67,7 +66,7 @@ function getSupabaseImageUrl($p){
         </div>
     </div>
 
-    <!-- FORM -->
+    
     <div class="form-wrap">
         <div class="form-card form-card-padded">
             <div class="card-header-orange card-header-rounded"><h2>Tambah Jadwal Ambil Sampah</h2></div>
@@ -78,14 +77,14 @@ function getSupabaseImageUrl($p){
                     Isi form di bawah untuk menambahkan jadwal pengambilan sampah baru.
                 </div>
 
-                <!-- Baris 1: Tanggal -->
+                
                 <div class="row-1">
                     <label class="field-label">Tanggal <span style="color:#D95D39;">*</span></label>
                     <input type="date" id="tanggal" class="field-ul" min="<?=date('Y-m-d')?>">
                     <span class="field-err" id="errTanggal">Tanggal wajib diisi</span>
                 </div>
 
-                <!-- Baris 2: Waktu Mulai & Selesai -->
+                
                 <div class="row-2">
                     <div>
                         <label class="field-label">Waktu Mulai <span style="color:#D95D39;">*</span></label>
@@ -99,14 +98,14 @@ function getSupabaseImageUrl($p){
                     </div>
                 </div>
 
-                <!-- Baris 3: Kuota -->
+                
                 <div class="row-1">
                     <label class="field-label">Kuota Slot <span style="color:#D95D39;">*</span></label>
                     <input type="number" id="kuota" class="field-ul" placeholder="Contoh: 15" min="1" max="200">
                     <span class="field-err" id="errKuota">Kuota wajib diisi (minimal 1)</span>
                 </div>
 
-            </div><!-- /fields-wrap -->
+            </div>
 
             <div class="form-actions">
                 <button type="button" class="btn-batal"

@@ -1,6 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) { header("Location: ../login.php"); exit; }
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -173,7 +172,7 @@ $canEdit     = in_array($userRole, ['bank sampah','admin','dlh']);
     </div>
 </div>
 
-<!-- Modal Hapus -->
+
 <div class="modal-overlay" id="modalHapus">
     <div class="modal-box" style="max-width:400px;">
         <div class="confirm-icon"><i class="bi bi-trash3-fill"></i></div>
@@ -197,7 +196,7 @@ const SB_URL  = '<?=$supabaseUrl?>';
 const SB_KEY  = '<?=$supabaseKey?>';
 const canEdit = <?=$canEdit?'true':'false'?>;
 
-// Semua data untuk live search
+
 const allSampahData = <?= json_encode(array_map(function($s) {
     return [
         'id'      => $s['id_jenis'] ?? '',
@@ -243,7 +242,7 @@ function renderTable(data) {
         </tr>`).join('');
 }
 
-/* ── Search live ── */
+
 let searchTimeout = null;
 document.getElementById('searchInput').addEventListener('input', function() {
     clearTimeout(searchTimeout);
@@ -258,7 +257,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
     }, 200);
 });
 
-/* ── Filter ── */
+
 function toggleFilter(){ document.getElementById('filterBox').classList.toggle('show'); }
 function applyFilter(){
     const sort = document.getElementById('sortOrder').value;
@@ -277,14 +276,14 @@ function applyFilter(){
 }
 function resetFilter(){ document.getElementById('sortOrder').value='nama_asc'; applyFilter(); }
 
-/* ── Modal helpers ── */
+
 function openModal(id){ document.getElementById(id).classList.add('show'); }
 function closeModal(id){ document.getElementById(id).classList.remove('show'); }
 document.querySelectorAll('.modal-overlay').forEach(m => {
     m.addEventListener('click', e => { if(e.target===m) m.classList.remove('show'); });
 });
 
-/* ── Hapus ── */
+
 let deletingId = null;
 function hapusSampah(id, nama){
     deletingId = id;
@@ -311,7 +310,7 @@ async function confirmHapus(){
     }
 }
 
-/* ── Toast ── */
+
 function showToast(msg, type='success'){
     const icons = { success:'bi-check-circle-fill', error:'bi-x-circle-fill' };
     const div = document.createElement('div');
