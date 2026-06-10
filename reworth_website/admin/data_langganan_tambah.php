@@ -1,10 +1,5 @@
 <?php
-    session_start();
-
-    if (!isset($_SESSION['role'])) {
-        header("Location: ../login.php");
-        exit;
-    }
+    require_once 'role_check.php';
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -111,7 +106,7 @@
         if ($httpCode === 201 || $httpCode === 200 || $httpCode === 204) {
             $logData = [
                 'id_admin' => $_SESSION['id_admin'] ?? '',
-                'aktivitas' => 'Menambahkan data langganan baru',
+                'aktivitas' => 'Menambahkan data langganan baru: ' . ($penjualList['nama_penjual'] ?? '-'),
                 'tabel_terkait' => 'langganan',
                 'id_data' => $id_penjual,
             ];

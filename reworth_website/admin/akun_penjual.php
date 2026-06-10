@@ -1,10 +1,5 @@
 <?php
-    session_start();
-
-    if (!isset($_SESSION['role'])) {
-        header("Location: ../login.php");
-        exit;
-    }
+    require_once 'role_check.php';
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -124,7 +119,12 @@
                                     <i class="bi bi-trash3"></i> Hapus
                                 </button>
                                 <?php if (($p['status'] ?? 'menunggu_verifikasi') == 'menunggu_verifikasi'): ?>
-                                    <button class="btn-aksi btn-lihat" onclick="verifikasiPenjual('<?= $p['id_penjual'] ?>')">
+                                    <button class="btn-aksi btn-verifikasi" 
+                                            onclick="verifikasiPenjual(
+                                                '<?= $p['id_penjual'] ?>', 
+                                                '<?= htmlspecialchars($p['nama_penjual'] ?? 'Penjual', ENT_QUOTES) ?>', 
+                                                '<?= htmlspecialchars($p['email'] ?? '', ENT_QUOTES) ?>'
+                                            )">
                                         <i class="bi bi-check2-circle"></i> Verifikasi
                                     </button>
                                 <?php endif; ?>
@@ -163,128 +163,3 @@
     </div>
     <?php endif; ?>
 </div>
-
-<>
-<script>
-function verifikasiPenjual(idPenjual) {
-    console.log('Tombol diklik, ID:', idPenjual);
-    
-    if (!confirm('Verifikasi penjual ini? Setelah diverifikasi, penjual dapat mengakses semua fitur.')) {
-        return;
-    }
-    
-    const btn = event.currentTarget;
-    const originalHTML = btn.innerHTML;
-    
-    btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Memproses...';
-    
-    fetch('penjual_verifikasi.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'id=' + idPenjual
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Response:', data);
-        
-        if (data.success) {
-            showToast(data.message, 'success');
-            
-            setTimeout(() => {
-                if (typeof loadTabContent === 'function') {
-                    loadTabContent('penjual', currentPage || 1);
-                } else {
-                    location.reload();
-                }
-            }, 1000);
-        } else {
-            showToast((data.message || 'Gagal verifikasi'), 'error');
-            btn.disabled = false;
-            btn.innerHTML = originalHTML;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Terjadi kesalahan server', 'error');
-        btn.disabled = false;
-        btn.innerHTML = originalHTML;
-    });
-}
-
-function showToast(message, type) {
-    let container = document.getElementById('toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'toast-container';
-        container.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 9999;
-        `;
-        document.body.appendChild(container);
-    }
-    
-    const toast = document.createElement('div');
-    toast.style.cssText = `
-        background: ${type === 'success' ? '#10b981' : '#ef4444'};
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        margin-bottom: 10px;
-        font-size: 14px;
-        font-weight: 500;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        animation: slideInRight 0.3s ease;
-        cursor: pointer;
-    `;
-    toast.innerHTML = message;
-    
-    container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.animation = 'slideOutRight 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-    
-    toast.onclick = () => {
-        toast.style.animation = 'slideOutRight 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    };
-}
-
-if (!document.getElementById('toast-animation-style')) {
-    const style = document.createElement('style');
-    style.id = 'toast-animation-style';
-    style.textContent = `
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        @keyframes slideOutRight {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const verifButtons = document.querySelectorAll('[onclick*="verifikasiPenjual"]');
-    console.log('Tombol verifikasi ditemukan:', verifButtons.length);
-});
-</script>

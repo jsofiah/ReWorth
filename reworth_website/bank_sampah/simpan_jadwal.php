@@ -1,15 +1,6 @@
 <?php
-/**
- * simpan_jadwal.php
- * Handler AJAX opsional — dipanggil dari JavaScript jika dibutuhkan.
- * Mendukung aksi: tambah, edit, hapus
- */
-session_start();
+require_once 'role_check.php';
 header('Content-Type: application/json');
-
-if (!isset($_SESSION['role'])) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']); exit;
-}
 
 $userRole = $_SESSION['role'] ?? '';
 $adminId  = $_SESSION['id_admin'] ?? null;
@@ -64,7 +55,7 @@ function logAdmin($supabaseUrl, $supabaseKey, $adminId, $aksiLog) {
     curl_close($ch);
 }
 
-// ── TAMBAH ──────────────────────────────────────────────
+
 if ($aksi === 'tambah') {
     $tanggal       = trim($input['tanggal']       ?? '');
     $waktu_mulai   = trim($input['waktu_mulai']   ?? '');
@@ -100,7 +91,7 @@ if ($aksi === 'tambah') {
     exit;
 }
 
-// ── EDIT ─────────────────────────────────────────────────
+
 if ($aksi === 'edit') {
     $id            = trim($input['id']            ?? '');
     $tanggal       = trim($input['tanggal']       ?? '');
@@ -134,14 +125,14 @@ if ($aksi === 'edit') {
     exit;
 }
 
-// ── HAPUS ────────────────────────────────────────────────
+
 if ($aksi === 'hapus') {
     $id = trim($input['id'] ?? '');
     if (!$id) {
         echo json_encode(['success' => false, 'message' => 'ID tidak ditemukan.']); exit;
     }
 
-    // Ambil data jadwal dulu untuk log
+
     $ch = curl_init($supabaseUrl . "/rest/v1/jadwal_ambil?id_jadwal=eq." . urlencode($id) . "&select=tanggal,waktu_mulai&limit=1");
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -157,7 +148,7 @@ if ($aksi === 'hapus') {
         echo json_encode(['success' => false, 'message' => 'Jadwal tidak ditemukan.']); exit;
     }
 
-    // Cek status
+
     $today = date('Y-m-d');
     if ($existResp[0]['tanggal'] < $today) {
         echo json_encode(['success' => false, 'message' => 'Jadwal yang sudah selesai tidak dapat dihapus.']); exit;

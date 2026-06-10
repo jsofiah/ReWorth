@@ -1,6 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) { header("Location: ../login.php"); exit; }
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -72,7 +71,7 @@ $s = $rows[0];
             <div class="card-header-orange card-header-rounded"><h2>Edit Jenis Sampah</h2></div>
             <div class="fields-wrap" style="padding:0;">
 
-                <!-- Info tanggal dibuat -->
+                
                 <?php if(!empty($s['created_at'])):?>
                 <div class="info-badge">
                     <i class="bi bi-clock-history"></i>
@@ -80,7 +79,7 @@ $s = $rows[0];
                 </div>
                 <?php endif;?>
 
-                <!-- Nama & Harga -->
+                
                 <div class="row-2">
                     <div>
                         <label class="field-label">Nama Jenis Sampah</label>
@@ -117,7 +116,7 @@ const SB_URL   = '<?=$supabaseUrl?>';
 const SB_KEY   = '<?=$supabaseKey?>';
 const JENIS_ID = '<?=htmlspecialchars($id)?>';
 
-// Tampilkan preview harga awal
+
 previewHarga();
 
 function previewHarga(){

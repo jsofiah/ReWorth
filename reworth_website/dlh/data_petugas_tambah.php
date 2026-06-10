@@ -1,10 +1,5 @@
 <?php
-    session_start();
-
-    if (!isset($_SESSION['role'])) {
-        header("Location: ../login.php");
-        exit;
-    }
+    require_once 'role_check.php';
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -24,7 +19,7 @@
 
         $nama_petugas = trim($_POST['nama_petugas'] ?? '');
         $no_telepon   = trim($_POST['no_telepon']   ?? '');
-        // status_aktif adalah boolean di DB
+
         $status_aktif = ($_POST['status_aktif'] ?? 'true') === 'true';
 
         if (empty($nama_petugas) || empty($no_telepon)) {
@@ -89,7 +84,7 @@
             $newData = json_decode($response, true);
             $newId   = $newData[0]['id_petugas'] ?? null;
 
-            // Log — id_data integer di DB, kirim null jika uuid
+
             $logData = [
                 'id_admin'      => $_SESSION['id_admin'],
                 'aktivitas'     => 'Menambahkan petugas baru: ' . $nama_petugas,

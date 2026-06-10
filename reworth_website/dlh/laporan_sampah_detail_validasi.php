@@ -1,10 +1,5 @@
 <?php
-    session_start();
-
-    if (!isset($_SESSION['role'])) {
-        header("Location: ../login.php");
-        exit;
-    }
+    require_once 'role_check.php';
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -24,7 +19,7 @@
         return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
     }
 
-    // Fetch detail laporan
+
     $url = $supabaseUrl . "/rest/v1/lapor_sampah?id_laporan=eq." . urlencode($id)
          . "&select=*,pengguna!lapor_sampah_id_pengguna_fkey(nama_lengkap)";
     $ch = curl_init();
@@ -45,7 +40,7 @@
         exit;
     }
 
-    // Fetch daftar petugas aktif
+
     $urlPetugas = $supabaseUrl . "/rest/v1/petugas_lapangan?status_aktif=eq.true&select=id_petugas,nama_petugas&order=nama_petugas.asc";
     $ch2 = curl_init();
     curl_setopt($ch2, CURLOPT_URL, $urlPetugas);
@@ -119,7 +114,7 @@
             <div class="detail-card">
                 <div class="detail-card-inner">
 
-                    <!-- KIRI: Info -->
+                    
                     <div class="detail-left">
                         <div class="detail-accent"></div>
                         <div class="detail-section-title">Detail Validasi</div>
@@ -156,7 +151,7 @@
                         <?php endif; ?>
                     </div>
 
-                    <!-- KANAN: Foto Sampah -->
+                    
                     <div class="detail-right">
                         <?php if ($fotoSampahUrl): ?>
                             <img src="<?= htmlspecialchars($fotoSampahUrl) ?>"
@@ -173,7 +168,7 @@
         </div>
     </div>
 
-    <!-- Modal Terima: Pilih Petugas -->
+    
     <div class="modal-overlay" id="modalTerima">
         <div class="modal-box" style="max-width:420px;padding:0;">
             <div class="modal-header-custom">
@@ -195,7 +190,7 @@
         </div>
     </div>
 
-    <!-- Modal Tolak: Alasan Penolakan -->
+    
     <div class="modal-overlay" id="modalTolak">
         <div class="modal-box" style="max-width:420px;padding:0;">
             <div class="modal-header-custom">
@@ -246,7 +241,7 @@
             if (data.success) {
                 showToast('✅ Laporan berhasil diterima!', 'success');
                 if (data.wa_link) {
-                    // Buka WhatsApp Web/Desktop
+
                     window.open(data.wa_link, '_blank');
                     showToast(
                         'WhatsApp dibuka. Pesan sudah terisi, tinggal klik Kirim.',

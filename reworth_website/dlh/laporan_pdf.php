@@ -1,17 +1,11 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) {
-    header("Location: ../login.php");
-    exit;
-}
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
 
 $dateFrom = $_GET['date_from'] ?? date('Y-m-01');
 $dateTo   = $_GET['date_to']   ?? date('Y-m-t');
-$fromTs   = $dateFrom . 'T00:00:00';
-$toTs     = $dateTo   . 'T23:59:59';
 
 $labelFrom = date('d F Y', strtotime($dateFrom));
 $labelTo   = date('d F Y', strtotime($dateTo));
@@ -35,7 +29,7 @@ $totalLaporan = count($allLaporan);
 $laporanBaru = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.menunggu");
 $totalBaru = count($laporanBaru);
 
-$laporanSelesai = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.selesai&created_at=gte." . urlencode($fromTs) . "&created_at=lte." . urlencode($toTs));
+$laporanSelesai = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/lapor_sampah?select=id_laporan&status=eq.selesai&created_at=gte." . $dateFrom . "&created_at=lte." . $dateTo . "T23:59:59");
 $totalSelesai = count($laporanSelesai);
 $persenSelesai = $totalLaporan > 0 ? round(($totalSelesai / $totalLaporan) * 100, 1) : 0;
 
@@ -56,9 +50,9 @@ $persenDitolakTotal = $totalSemua > 0 ? round((count($statusDitolakCount) / $tot
 
 $laporanList = sbGet($supabaseUrl, $supabaseKey, 
     "/rest/v1/lapor_sampah?select=*,pengguna(nama_lengkap),petugas_lapangan(nama_petugas)"
-    . "&created_at=gte=" . urlencode($fromTs) 
-    . "&created_at=lte=" . urlencode($toTs) 
-    . "&order=created_at.desc");
+        . "&created_at=gte." . $dateFrom 
+        . "&created_at=lte." . $dateTo 
+        . "&order=created_at.desc");
 
 $statusMap = ['menunggu' => 'Menunggu', 'diproses' => 'Diproses', 'selesai' => 'Selesai', 'ditolak' => 'Ditolak'];
 

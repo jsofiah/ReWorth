@@ -1,12 +1,7 @@
 <?php
-session_start();
+require_once 'role_check.php';
 
 header('Content-Type: application/json');
-
-if (!isset($_SESSION['role'])) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Method not allowed']);
@@ -24,7 +19,7 @@ if (empty($id) || empty($alasan)) {
     exit;
 }
 
-// Update laporan: status -> ditolak, set alasan_penolakan
+
 $updateData = [
     'status'           => 'ditolak',
     'alasan_penolakan' => $alasan
@@ -150,7 +145,7 @@ if ($httpCode === 200 || $httpCode === 204) {
             curl_close($chRiwayatInsert);
         }
     }
-    // Ambil id_pengguna untuk notifikasi
+
     $getLaporan = $supabaseUrl . "/rest/v1/lapor_sampah?id_laporan=eq." . urlencode($id) . "&select=id_pengguna";
     $ch2 = curl_init();
     curl_setopt($ch2, CURLOPT_URL, $getLaporan);

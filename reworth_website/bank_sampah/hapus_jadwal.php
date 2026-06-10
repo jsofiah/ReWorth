@@ -1,6 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) { header("Location: ../login.php"); exit; }
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -10,7 +9,7 @@ $userEmail = $_SESSION['email']       ?? '';
 $userRole  = $_SESSION['role']        ?? '';
 $userFoto  = $_SESSION['foto_profil'] ?? '';
 
-// Hanya role tertentu yang boleh hapus
+
 if(!in_array($userRole,['bank sampah','admin','dlh'])){
     header("Location: jadwal_ambil_sampah.php");
     exit;
@@ -42,7 +41,7 @@ $jadwal  = $dataList[0];
 $kuota   = (int)($jadwal['kuota']??0);
 $peserta = isset($jadwal['setor_sampah'])?count($jadwal['setor_sampah']):0;
 
-// Jangan izinkan hapus jadwal yang sudah selesai
+
 function stJadwal($tgl){$t=date('Y-m-d');if($tgl<$t)return 'selesai';if($tgl===$t)return 'hari_ini';return 'mendatang';}
 $st = stJadwal($jadwal['tanggal']);
 if($st==='selesai'){
@@ -72,7 +71,7 @@ $wSel     = substr($jadwal['waktu_selesai']??'',0,5);
 </head>
 <body>
 
-<!-- SIDEBAR -->
+
 <aside class="sidebar">
     <div class="sidebar-logo"><img src="img/logo.png" alt="Logo ReWorth"></div>
     <nav class="sidebar-nav">
@@ -116,14 +115,14 @@ $wSel     = substr($jadwal['waktu_selesai']??'',0,5);
             <div class="card-header-red"><h2><i class="bi bi-trash3-fill me-2"></i>Hapus Jadwal</h2></div>
             <div class="fields-wrap">
 
-                <!-- Ikon konfirmasi -->
+                
                 <div class="confirm-icon-big"><i class="bi bi-trash3-fill"></i></div>
                 <div style="text-align:center;margin-bottom:20px;">
                     <div style="font-size:17px;font-weight:700;color:#1A3C34;">Yakin ingin menghapus jadwal ini?</div>
                     <div style="font-size:13px;color:#6B8A7E;margin-top:4px;">Tindakan ini tidak dapat dibatalkan.</div>
                 </div>
 
-                <!-- Info jadwal yang akan dihapus -->
+                
                 <div class="jadwal-info-card">
                     <div class="jadwal-info-row">
                         <div class="ji-icon"><i class="bi bi-calendar3"></i></div>
@@ -148,7 +147,7 @@ $wSel     = substr($jadwal['waktu_selesai']??'',0,5);
                 </div>
 
                 <?php if($peserta>0):?>
-                <!-- Peringatan ada peserta -->
+                
                 <div class="warn-peserta">
                     <i class="bi bi-exclamation-triangle-fill" style="flex-shrink:0;margin-top:1px;"></i>
                     <span>Jadwal ini memiliki <strong><?=$peserta?> peserta terdaftar</strong>.
@@ -161,7 +160,7 @@ $wSel     = substr($jadwal['waktu_selesai']??'',0,5);
                     <span>Data jadwal yang dihapus <strong>tidak dapat dipulihkan</strong> kembali.</span>
                 </div>
 
-            </div><!-- /fields-wrap -->
+            </div>
 
             <div class="form-actions">
                 <button type="button" class="btn-batal"

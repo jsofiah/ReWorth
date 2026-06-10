@@ -1,10 +1,5 @@
 <?php
-    session_start();
-
-    if (!isset($_SESSION['role'])) {
-        header("Location: ../login.php");
-        exit;
-    }
+    require_once 'role_check.php';
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -15,7 +10,7 @@
     function getLogBankSampah($supabaseUrl, $supabaseKey, $page = 1, $per_page = 10) {
         $offset = ($page - 1) * $per_page;
         
-        // Ambil log_admin dengan join ke admin dan role, filter untuk bank sampah
+
         $url = $supabaseUrl . "/rest/v1/log_admin?select=*,admin!id_admin(nama_admin,email,id_role,role!id_role(nama_role))&order=created_at.desc&limit=$per_page&offset=$offset";
         
         $headers = [
@@ -36,7 +31,7 @@
         if ($httpCode === 200 && $response !== false) {
             $data = json_decode($response, true) ?: [];
             
-            // Filter hanya untuk role bank sampah
+
             $filtered = [];
             foreach ($data as $item) {
                 $roleName = '';

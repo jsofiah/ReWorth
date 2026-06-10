@@ -1,6 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) { header("Location: ../login.php"); exit; }
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -29,7 +28,7 @@ function sbGet($url, $key, $ep) {
 
 function formatRupiah($n) { return 'Rp' . number_format((float)($n ?? 0), 0, ',', '.'); }
 
-/* ── fetch data ── */
+
 $rows = sbGet($supabaseUrl, $supabaseKey,
     "/rest/v1/setor_sampah?id_setor=eq." . urlencode($id) .
     "&select=*,pengguna(id_pengguna,nama_lengkap,alamat_detail,saldo_tabungan),jadwal_ambil(id_jadwal,tanggal,waktu_mulai,waktu_selesai)&limit=1");
@@ -46,7 +45,7 @@ $status       = $setor['status'] ?? 'menunggu';
 $namaPenyetor = $pengguna['nama_lengkap'] ?? '-';
 $idPengguna   = $pengguna['id_pengguna']  ?? '';
 
-/* ── jadwal label ── */
+
 $jadwalLabel = '-';
 if (!empty($jadwal['tanggal'])) {
     $jadwalLabel = date('d M Y', strtotime($jadwal['tanggal']))
@@ -54,7 +53,7 @@ if (!empty($jadwal['tanggal'])) {
         . ' - ' . substr($jadwal['waktu_selesai'] ?? '', 0, 5);
 }
 
-/* ── status map ── */
+
 $statusMap = [
     'menunggu' => ['label' => 'Menunggu Konfirmasi', 'color' => '#D95D39'],
     'diproses' => ['label' => 'Diproses',            'color' => '#DBC729'],
@@ -77,7 +76,7 @@ $canEdit    = in_array($userRole, ['bank sampah', 'admin', 'dlh']) && $status !=
 </head>
 <body>
 
-<!-- SIDEBAR -->
+
 <aside class="sidebar">
     <div class="sidebar-logo">
         <img src="img/logo.png" alt="Logo ReWorth">
@@ -137,7 +136,7 @@ $canEdit    = in_array($userRole, ['bank sampah', 'admin', 'dlh']) && $status !=
 </aside>
 
 <div class="main-wrap">
-    <!-- TOPBAR -->
+    
     <div class="topbar">
         <div class="topbar-inner">
             <h1 class="topbar-title">Detail Setor Sampah</h1>
@@ -157,14 +156,14 @@ $canEdit    = in_array($userRole, ['bank sampah', 'admin', 'dlh']) && $status !=
         </div>
     </div>
 
-    <!-- CONTENT -->
+    
     <div class="form-wrap">
         <div class="detail-card">
             <div class="card-accent-bar"></div>
             <div class="card-inner">
                 <div class="card-title">Detail Setor Sampah</div>
 
-                <!-- Row 1: Nama + Jadwal -->
+                
                 <div class="row-2cols">
                     <div>
                         <label class="field-label">Nama Penyetor</label>
@@ -179,14 +178,14 @@ $canEdit    = in_array($userRole, ['bank sampah', 'admin', 'dlh']) && $status !=
                     </div>
                 </div>
 
-                <!-- Row 2: Alamat -->
+                
                 <div style="margin-bottom:28px;">
                     <label class="field-label">Alamat Setor</label>
                     <input type="text" class="field-readonly"
                         value="<?= htmlspecialchars($setor['alamat'] ?? '-') ?>" readonly>
                 </div>
 
-                <!-- Detail Setor Sampah -->
+                
                 <div class="section-label">
                     <span>Detail Setor Sampah</span>
                     <span class="total-label" id="totalLabel">
@@ -242,7 +241,7 @@ $canEdit    = in_array($userRole, ['bank sampah', 'admin', 'dlh']) && $status !=
                     </div>
                 </div>
 
-                <!-- ACTION BUTTONS -->
+                
                 <?php if ($canEdit): ?>
                 <div class="card-actions">
                     <?php if ($status === 'menunggu'): ?>
@@ -263,12 +262,12 @@ $canEdit    = in_array($userRole, ['bank sampah', 'admin', 'dlh']) && $status !=
                 </div>
                 <?php endif; ?>
 
-            </div><!-- /card-inner -->
-        </div><!-- /detail-card -->
-    </div><!-- /form-wrap -->
-</div><!-- /main-wrap -->
+            </div>
+        </div>
+    </div>
+</div>
 
-<!-- MODALS -->
+
 <div class="modal-overlay" id="modalValid">
     <div class="modal-box" style="max-width:400px;">
         <div class="confirm-icon" style="background:rgba(0,145,110,.1);">

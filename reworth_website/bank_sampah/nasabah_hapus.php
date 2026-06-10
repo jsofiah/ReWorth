@@ -1,10 +1,5 @@
 <?php
-session_start();
-
-if (!isset($_SESSION['role'])) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -23,7 +18,7 @@ if (empty($id)) {
     exit;
 }
 
-// Ambil foto profil untuk dihapus
+
 $getUrl = $supabaseUrl . "/rest/v1/pengguna?id_pengguna=eq." . $id . "&select=foto_profil";
 $headers = [
     "apikey: $supabaseKey",
@@ -54,7 +49,7 @@ if (!empty($data) && !empty($data[0]['foto_profil'])) {
     curl_close($ch);
 }
 
-// Hapus dari tabel pengguna
+
 $url = $supabaseUrl . "/rest/v1/pengguna?id_pengguna=eq." . $id;
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $url);
@@ -69,7 +64,7 @@ $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
-// Hapus dari auth Supabase
+
 $authUrl = $supabaseUrl . "/auth/v1/admin/users/" . $id;
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $authUrl);

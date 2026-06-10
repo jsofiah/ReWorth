@@ -1,6 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) { header("Location: ../login.php"); exit; }
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -21,7 +20,7 @@ function sbGet($url, $key, $ep) {
     return $c === 200 ? (json_decode($r, true) ?: []) : [];
 }
 
-// Ambil semua nasabah yang punya saldo > 0
+
 $penggunaList = sbGet($supabaseUrl, $supabaseKey,
     "/rest/v1/pengguna?select=id_pengguna,nama_lengkap,saldo_tabungan&saldo_tabungan=gt.0&order=nama_lengkap.asc");
 ?>
@@ -38,7 +37,7 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
 </head>
 <body>
 
-<!-- SIDEBAR -->
+
 <aside class="sidebar">
     <div class="sidebar-logo">
         <img src="img/logo.png" alt="Logo ReWorth">
@@ -62,7 +61,7 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
 </aside>
 
 <div class="main-wrap">
-    <!-- TOPBAR -->
+    
     <div class="topbar">
         <div class="topbar-inner">
             <h1 class="topbar-title">Penarikan Saldo</h1>
@@ -82,7 +81,7 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
         </div>
     </div>
 
-    <!-- FORM -->
+    
     <div class="form-wrap">
         <div class="form-card form-card-padded">
 
@@ -92,7 +91,7 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
 
             <div class="fields-wrap" style="padding:0;">
 
-                <!-- NAMA NASABAH (dropdown) -->
+                
                 <div class="field-group">
                     <label class="field-label">Nama Nasabah</label>
                     <div class="select-wrap">
@@ -110,7 +109,7 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
                     <div id="errNasabah" class="field-err">Nama nasabah wajib dipilih.</div>
                 </div>
 
-                <!-- JUMLAH TABUNGAN (readonly, auto-fill) -->
+                
                 <div class="field-group">
                     <label class="field-label">Jumlah Tabungan</label>
                     <input type="text" id="saldoTabungan" class="field-underline"
@@ -120,7 +119,7 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
                     </div>
                 </div>
 
-                <!-- JUMLAH PENARIKAN -->
+                
                 <div class="field-group">
                     <label class="field-label">Jumlah Penarikan</label>
                     <input type="number" id="jumlahPenarikan" class="field-underline"
@@ -133,7 +132,7 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
                     </div>
                 </div>
 
-            </div><!-- /fields-wrap -->
+            </div>
 
             <div class="form-actions">
                 <button type="button" class="btn-batal"
@@ -145,9 +144,9 @@ $penggunaList = sbGet($supabaseUrl, $supabaseKey,
                 </button>
             </div>
 
-        </div><!-- /form-card -->
-    </div><!-- /form-wrap -->
-</div><!-- /main-wrap -->
+        </div>
+    </div>
+</div>
 
 <div class="toast-container" id="toastContainer"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -159,7 +158,7 @@ function fmt(n) {
     return 'Rp' + parseFloat(n || 0).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
-/* saat nasabah dipilih → otomatis isi jumlah tabungan */
+
 function onNasabahChange(sel) {
     const opt   = sel.options[sel.selectedIndex];
     const saldo = parseFloat(opt.dataset.saldo || 0);
@@ -177,13 +176,13 @@ function onNasabahChange(sel) {
         currentSaldo = 0;
     }
 
-    // reset jumlah & warning
+
     document.getElementById('jumlahPenarikan').value = '';
     document.getElementById('warnSaldo').style.display = 'none';
     document.getElementById('errNasabah').style.display = 'none';
 }
 
-/* validasi jumlah real-time */
+
 function onJumlahChange(inp) {
     const val  = parseFloat(inp.value || 0);
     const warn = document.getElementById('warnSaldo');
@@ -193,7 +192,7 @@ function onJumlahChange(inp) {
     warn.style.display = (currentSaldo > 0 && val > currentSaldo) ? 'block' : 'none';
 }
 
-/* validasi sebelum simpan */
+
 function validate() {
     let ok = true;
     const idP    = document.getElementById('idPengguna').value;
@@ -210,7 +209,7 @@ function validate() {
     return ok;
 }
 
-/* simpan ke penarikan_simpan.php */
+
 function simpanData() {
     if (!validate()) return;
 

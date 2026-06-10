@@ -1,6 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) { header("Location: ../login.php"); exit; }
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -26,22 +25,22 @@ function fmtRp($n)  { return 'Rp ' . number_format((float)$n, 0, ',', '.'); }
 function fmtKg($n)  { return number_format((float)$n, 1, ',', '.') . ' kg'; }
 function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* FETCH DATA SEDERHANA */
-/* ═══════════════════════════════════════════════════════════ */
 
-// 1. Total Nasabah
+
+
+
+
 $penggunaList = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/pengguna?select=id_pengguna");
 $totalNasabah = count($penggunaList);
 
-// 2. Data Pengguna (untuk mapping nama)
+
 $penggunaData = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/pengguna?select=id_pengguna,nama_lengkap");
 $penggunaMap = [];
 foreach($penggunaData as $p){
     $penggunaMap[$p['id_pengguna']] = $p['nama_lengkap'];
 }
 
-// 3. Setor sampah dalam periode
+
 $setorList = sbGet($supabaseUrl, $supabaseKey,
     "/rest/v1/setor_sampah?select=id_setor,total_uang,status,created_at,id_pengguna,detail_setor(berat,jenis_sampah(nama_sampah))"
     . "&created_at=gte." . urlencode($fromTs)
@@ -63,7 +62,7 @@ foreach ($setorList as $s) {
 arsort($jenisTotals);
 $totalBerat = array_sum($jenisTotals) ?: 1;
 
-// 4. Penarikan saldo dalam periode
+
 $penarikanList = sbGet($supabaseUrl, $supabaseKey,
     "/rest/v1/penarikan_saldo?select=id_penarikan,jumlah,created_at,id_pengguna"
     . "&created_at=gte." . urlencode($fromTs)
@@ -72,16 +71,16 @@ $penarikanList = sbGet($supabaseUrl, $supabaseKey,
 
 $totalPenarikan = array_sum(array_column($penarikanList, 'jumlah'));
 
-// 5. Event aktif
+
 $eventAktif = sbGet($supabaseUrl, $supabaseKey,
     "/rest/v1/event?select=id_event&or=(status.eq.berlangsung,status.eq.akan_datang)");
 $jumlahEventAktif = count($eventAktif);
 
-// 6. Pendaftar event
+
 $pendaftarList = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/pendaftar_event?select=id_pendaftar_event");
 $jumlahPendaftar = count($pendaftarList);
 
-// 7. Hitung saldo bersih
+
 $saldoBersih = $totalNilaiSetor - $totalPenarikan;
 ?>
 <!DOCTYPE html>
@@ -306,7 +305,7 @@ body {
     <tr class="total-row"><td class="label">SALDO KAS BERSIH PERIODE INI</td><td class="value"><?= fmtRp($saldoBersih) ?></td></tr>
 </table>
 
-<!-- TANDA TANGAN -->
+
 <div class="signature-section">
     <div class="sig-box">
         <div class="sig-title">Malang, <?= date('d F Y') ?><br>Mengetahui,<br>Kepala Unit Bank Sampah</div>

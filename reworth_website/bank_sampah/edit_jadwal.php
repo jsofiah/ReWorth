@@ -1,6 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) { header("Location: ../login.php"); exit; }
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -19,14 +18,14 @@ function sbGet($url,$key,$ep){
     return $c===200?(json_decode($r,true)?:[]):[];
 }
 
-// Ambil id dari query string
+
 $idJadwal = $_GET['id'] ?? '';
 if(empty($idJadwal)){
     header("Location: jadwal_ambil_sampah.php");
     exit;
 }
 
-// Fetch data jadwal
+
 $dataList = sbGet($supabaseUrl,$supabaseKey,"/rest/v1/jadwal_ambil?id_jadwal=eq.".urlencode($idJadwal)."&select=*");
 if(empty($dataList)){
     header("Location: jadwal_ambil_sampah.php?error=notfound");
@@ -34,13 +33,13 @@ if(empty($dataList)){
 }
 $jadwal = $dataList[0];
 
-// Format nilai awal
+
 $valTanggal = htmlspecialchars($jadwal['tanggal'] ?? '');
 $valMulai   = htmlspecialchars(substr($jadwal['waktu_mulai']   ?? '08:00:00', 0, 5));
 $valSelesai = htmlspecialchars(substr($jadwal['waktu_selesai'] ?? '10:00:00', 0, 5));
 $valKuota   = (int)($jadwal['kuota'] ?? 0);
 
-// Format label tanggal
+
 $hariArr  = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 $bulanArr = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 $ts       = strtotime($jadwal['tanggal']);
@@ -61,7 +60,7 @@ $tglLabel = date('d',$ts).' '.$bulanArr[(int)date('m',$ts)].' '.date('Y',$ts);
 </head>
 <body>
 
-<!-- SIDEBAR -->
+
 <aside class="sidebar">
     <div class="sidebar-logo"><img src="img/logo.png" alt="Logo ReWorth"></div>
     <nav class="sidebar-nav">
@@ -113,14 +112,14 @@ $tglLabel = date('d',$ts).' '.$bulanArr[(int)date('m',$ts)].' '.date('Y',$ts);
                     Ubah data jadwal di bawah, lalu klik Simpan Perubahan.
                 </div>
 
-                <!-- Tanggal -->
+                
                 <div class="row-1">
                     <label class="field-label">Tanggal <span style="color:#D95D39;">*</span></label>
                     <input type="date" id="tanggal" class="field-ul" value="<?=$valTanggal?>">
                     <span class="field-err" id="errTanggal">Tanggal wajib diisi</span>
                 </div>
 
-                <!-- Waktu Mulai & Selesai -->
+                
                 <div class="row-2">
                     <div>
                         <label class="field-label">Waktu Mulai <span style="color:#D95D39;">*</span></label>
@@ -134,14 +133,14 @@ $tglLabel = date('d',$ts).' '.$bulanArr[(int)date('m',$ts)].' '.date('Y',$ts);
                     </div>
                 </div>
 
-                <!-- Kuota -->
+                
                 <div class="row-1">
                     <label class="field-label">Kuota Slot <span style="color:#D95D39;">*</span></label>
                     <input type="number" id="kuota" class="field-ul" value="<?=$valKuota?>" min="1" max="200">
                     <span class="field-err" id="errKuota">Kuota wajib diisi (minimal 1)</span>
                 </div>
 
-            </div><!-- /fields-wrap -->
+            </div>
 
             <div class="form-actions">
                 <button type="button" class="btn-batal"

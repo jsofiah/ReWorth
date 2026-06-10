@@ -1,6 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) { header("Location: ../login.php"); exit; }
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -38,7 +37,7 @@ $peserta = isset($jadwal['setor_sampah'])?count($jadwal['setor_sampah']):0;
 $sisa    = max(0,$kuota-$peserta);
 $pct     = $kuota>0?min(100,round($peserta/$kuota*100)):0;
 
-// Status
+
 function stJadwal($tgl){
     $t=date('Y-m-d');
     if($tgl<$t) return 'selesai';
@@ -50,7 +49,7 @@ $stLabel=['mendatang'=>'Mendatang','hari_ini'=>'Hari Ini','selesai'=>'Selesai'];
 $stColor=['mendatang'=>'#2980B9','hari_ini'=>'#856404','selesai'=>'#388E3C'];
 $stBg   =['mendatang'=>'#EAF4FF', 'hari_ini'=>'#FFF3CD','selesai'=>'#E8F5E9'];
 
-// Format tanggal
+
 $hariArr =['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 $bulanArr=['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 $ts       = strtotime($jadwal['tanggal']);
@@ -73,7 +72,7 @@ $wSel     = substr($jadwal['waktu_selesai']??'',0,5);
 </head>
 <body>
 
-<!-- SIDEBAR -->
+
 <aside class="sidebar">
     <div class="sidebar-logo"><img src="img/logo.png" alt="Logo ReWorth"></div>
     <nav class="sidebar-nav">
@@ -112,13 +111,13 @@ $wSel     = substr($jadwal['waktu_selesai']??'',0,5);
         </div>
     </div>
 
-    <!-- CARD ATAS – info singkat, gaya sama nasabah_lihat -->
+    
     <div class="setting-bar-wrap">
         <div class="settings-card">
             <div class="card-accent"></div>
             <div class="card-body-inner" style="display:flex;align-items:center;gap:28px;flex-wrap:wrap;">
 
-                <!-- Ikon kalender -->
+                
                 <div style="width:80px;height:80px;border-radius:20px;background:#E8F5E9;display:flex;align-items:center;justify-content:center;font-size:38px;color:#1D9E75;flex-shrink:0;">
                     <i class="bi bi-calendar2-week-fill"></i>
                 </div>
@@ -138,7 +137,7 @@ $wSel     = substr($jadwal['waktu_selesai']??'',0,5);
                     </div>
                 </div>
 
-                <!-- Summary slot -->
+                
                 <div style="display:flex;gap:20px;flex-wrap:wrap;">
                     <div style="text-align:center;">
                         <div style="font-size:28px;font-weight:800;color:#1A3C34;"><?=$kuota?></div>
@@ -159,7 +158,7 @@ $wSel     = substr($jadwal['waktu_selesai']??'',0,5);
         </div>
     </div>
 
-    <!-- CARD DETAIL -->
+    
     <div class="setting-content-area">
         <div class="settings-card password-card">
             <div class="card-accent"></div>
@@ -193,7 +192,7 @@ $wSel     = substr($jadwal['waktu_selesai']??'',0,5);
                     </div>
                 </div>
 
-                <!-- Kuota bar -->
+                
                 <div class="field-group" style="margin-top:8px;">
                     <label class="field-label">Kapasitas Terpakai (<?=$pct?>%)</label>
                     <div class="kuota-bar-big">
@@ -206,7 +205,7 @@ $wSel     = substr($jadwal['waktu_selesai']??'',0,5);
                     </div>
                 </div>
 
-                <!-- Tombol aksi -->
+                
                 <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;">
                     <a href="jadwal_ambil_sampah.php" class="btn-submit"
                        style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#6B8A7E;box-shadow:none;">
