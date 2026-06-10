@@ -1,13 +1,7 @@
 <?php
-    session_start();
+    require_once 'role_check.php';
 
     header('Content-Type: application/json');
-
-    if (!isset($_SESSION['role'])) {
-        http_response_code(401);
-        echo json_encode(["success" => false, "message" => "Unauthorized"]);
-        exit;
-    }
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -18,7 +12,7 @@
         exit;
     }
 
-    // 1. Ambil foto_profil dan nama_petugas sebelum hapus
+
     $getCh = curl_init();
     curl_setopt($getCh, CURLOPT_URL,
         $supabaseUrl . "/rest/v1/petugas_lapangan?id_petugas=eq." . urlencode($id) . "&select=foto_profil,nama_petugas"
@@ -41,7 +35,7 @@
     $fotoLama     = $rowData[0]['foto_profil']  ?? '';
     $namaPetugas  = $rowData[0]['nama_petugas'] ?? '';
 
-    // 2. Hapus foto lama dari bucket (jika ada)
+
     if (!empty($fotoLama)) {
         $delBody = json_encode(["prefixes" => [$fotoLama]]);
         $delCh   = curl_init();
@@ -58,7 +52,7 @@
         curl_close($delCh);
     }
 
-    // 3. Hapus record dari petugas_lapangan
+
     $delRecCh = curl_init();
     curl_setopt($delRecCh, CURLOPT_URL,
         $supabaseUrl . "/rest/v1/petugas_lapangan?id_petugas=eq." . urlencode($id)
@@ -76,7 +70,7 @@
     curl_close($delRecCh);
 
     if ($delCode == 204) {
-        // 4. Log — id_data integer, jadi tidak kirim uuid
+
         $logData = [
             'id_admin'      => $_SESSION['id_admin'],
             'aktivitas'     => 'Menghapus petugas: ' . $namaPetugas,

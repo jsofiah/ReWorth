@@ -1,10 +1,5 @@
 <?php
-    session_start();
-
-    if (!isset($_SESSION['role'])) {
-        header("Location: ../login.php");
-        exit;
-    }
+    require_once 'role_check.php';
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -36,7 +31,7 @@
     }
 
     function getTotalTugasPerPetugas($supabaseUrl, $supabaseKey) {
-        // lapor_sampah.id_petugas → petugas_lapangan
+
         $url = $supabaseUrl . "/rest/v1/lapor_sampah?select=id_petugas";
         $ch  = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -227,7 +222,7 @@
                             <tbody id="tableBody">
                                 <?php if (!empty($current_data)): ?>
                                     <?php foreach ($current_data as $idx => $p):
-                                        // status_aktif adalah boolean
+
                                         $isAktif    = $p['status_aktif'] === true || $p['status_aktif'] === 'true';
                                         $statusText = $isAktif ? 'Aktif' : 'Nonaktif';
                                         $statusKey  = $isAktif ? 'aktif' : 'nonaktif';
@@ -298,7 +293,7 @@
         </div>
     </div>
 
-    <!-- Modal Hapus -->
+    
     <div class="modal-overlay" id="modalHapus">
         <div class="modal-box" style="max-width:400px;">
             <div class="confirm-icon"><i class="bi bi-trash3-fill"></i></div>

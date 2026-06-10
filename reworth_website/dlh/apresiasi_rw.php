@@ -1,10 +1,5 @@
 <?php
-    session_start();
-
-    if (!isset($_SESSION['role'])) {
-        header("Location: ../login.php");
-        exit;
-    }
+    require_once 'role_check.php';
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -39,19 +34,19 @@
         return [];
     }
 
-    // Fetch apresiasi dengan join wilayah
+
     $apresiasiUrl = $supabaseUrl . "/rest/v1/apresiasi?select=*,wilayah(rw,kelurahan,kecamatan)&order=created_at.desc";
     $apresiasiList = supabaseGet($apresiasiUrl, $supabaseKey);
 
-    // Fetch wilayah untuk leaderboard (hitung poin dari setor_sampah per wilayah)
+
     $wilayahUrl = $supabaseUrl . "/rest/v1/wilayah?select=*";
     $wilayahList = supabaseGet($wilayahUrl, $supabaseKey);
 
-    // Hitung total poin per wilayah dari setor_sampah via pengguna
+
     $setorUrl = $supabaseUrl . "/rest/v1/setor_sampah?select=total_uang,pengguna(id_wilayah)&status=eq.selesai";
     $setorList = supabaseGet($setorUrl, $supabaseKey);
 
-    // Aggregate poin per wilayah
+
     $wilayahPoin = [];
     foreach ($setorList as $s) {
         $idW = $s['pengguna']['id_wilayah'] ?? null;
@@ -60,19 +55,19 @@
         }
     }
 
-    // Merge poin ke wilayah
+
     foreach ($wilayahList as &$w) {
         $w['total_poin'] = (int)($wilayahPoin[$w['id_wilayah']] ?? 0);
     }
     unset($w);
 
-    // Sort leaderboard
+
     usort($wilayahList, fn($a, $b) => $b['total_poin'] - $a['total_poin']);
 
     $lb_per_page = 20;  // leaderboard: 20 per halaman (top 3 di podium + 17 di list)
     $rv_per_page = 10;  // riwayat: 10 per halaman
 
-    // Pagination leaderboard
+
     $current_lb_page = isset($_GET['lb_page']) ? (int)$_GET['lb_page'] : 1;
     $total_lb = count($wilayahList);
     $total_lb_pages = max(1, ceil($total_lb / $lb_per_page));
@@ -81,7 +76,7 @@
     $lb_from = $total_lb > 0 ? $lb_start + 1 : 0;
     $lb_to = min($lb_start + $lb_per_page, $total_lb);
 
-    // Pagination riwayat
+
     $current_rv_page = isset($_GET['rv_page']) ? (int)$_GET['rv_page'] : 1;
     $total_rv = count($apresiasiList);
     $total_rv_pages = max(1, ceil($total_rv / $rv_per_page));
@@ -90,9 +85,9 @@
     $rv_from = $total_rv > 0 ? $rv_start + 1 : 0;
     $rv_to = min($rv_start + $rv_per_page, $total_rv);
 
-    // Top 3
+
     $top3 = array_slice($wilayahList, 0, 3);
-    // Reorder: [1]=rank1, [0]=rank2, [2]=rank3 for podium display
+
     $podium = [];
     if (isset($top3[1])) $podium[] = ['rank' => 2, 'data' => $top3[1]];
     if (isset($top3[0])) $podium[] = ['rank' => 1, 'data' => $top3[0]];
@@ -182,7 +177,7 @@
         </div>
     </div>
 
-    <!-- Action Bar -->
+    
     <div class="action-bar-wrap">
         <div class="action-bar">
             <div class="search-wrap">
@@ -227,7 +222,7 @@
         </div>
     </div>
 
-    <!-- Content -->
+    
     <div class="content-area">
         <div class="card-custom">
             <div class="tab-header">
@@ -235,7 +230,7 @@
                 <button class="tab-btn" onclick="switchTab('riwayat', this)">Riwayat Apresiasi</button>
             </div>
 
-            <!-- TAB LEADERBOARD -->
+            
             <div id="tab-leaderboard">
                 <?php if (!empty($podium)): ?>
                 <div class="podium-wrap" id="podiumWrap">
@@ -296,10 +291,10 @@
                     <div class="pagination-custom">
 
                         <?php
-                        // Smart pagination: show max 3 page numbers around current
+
                         $lb_range_start = max(1, $current_lb_page - 1);
                         $lb_range_end   = min($total_lb_pages, $current_lb_page + 1);
-                        // Adjust to always show 3 if possible
+
                         if ($lb_range_end - $lb_range_start < 2) {
                             if ($lb_range_start == 1) $lb_range_end = min(3, $total_lb_pages);
                             else $lb_range_start = max(1, $lb_range_end - 2);
@@ -319,7 +314,7 @@
                 <?php endif; ?>
             </div>
 
-            <!-- TAB RIWAYAT -->
+            
             <div id="tab-riwayat" style="display:none;">
                 <div class="table-scroll-wrapper">
                     <table class="responsive-table" id="riwayatTable">
@@ -508,7 +503,7 @@
             switchTab('riwayat', btn);
         }
 
-        // Show toast from query param
+
         const toast = params.get('toast');
         if (toast === 'tambah') showToast('Apresiasi berhasil ditambahkan!', 'success');
         if (toast === 'hapus')  showToast('Apresiasi berhasil dihapus.', 'success');

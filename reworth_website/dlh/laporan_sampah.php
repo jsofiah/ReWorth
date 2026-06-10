@@ -1,10 +1,5 @@
 <?php
-    session_start();
-
-    if (!isset($_SESSION['role'])) {
-        header("Location: ../login.php");
-        exit;
-    }
+    require_once 'role_check.php';
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -162,7 +157,7 @@
                     <button class="tab-btn <?= $activeTab === 'penanganan' ? 'active' : '' ?>" onclick="switchTab('penanganan', this)">Penanganan</button>
                 </div>
 
-                <!-- TAB VALIDASI -->
+                
                 <div class="table-wrap" id="tab-validasi" style="<?= $activeTab !== 'validasi' ? 'display:none;' : '' ?>">
                     <div class="table-scroll-wrapper">
                         <table class="responsive-table">
@@ -224,7 +219,7 @@
                     </div>
                 </div>
 
-                <!-- TAB PENANGANAN -->
+                
                 <div class="table-wrap" id="tab-penanganan" style="<?= $activeTab !== 'penanganan' ? 'display:none;' : '' ?>">
                     <div class="table-scroll-wrapper">
                         <table class="responsive-table">

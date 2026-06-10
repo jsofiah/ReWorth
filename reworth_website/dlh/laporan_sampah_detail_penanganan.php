@@ -1,10 +1,5 @@
 <?php
-    session_start();
-
-    if (!isset($_SESSION['role'])) {
-        header("Location: ../login.php");
-        exit;
-    }
+    require_once 'role_check.php';
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -97,7 +92,7 @@
             <div class="detail-card">
                 <div class="detail-card-inner <?= $buktiUrl ? 'has-bukti' : '' ?>">
 
-                    <!-- KIRI: Info -->
+                    
                     <div class="detail-left">
                         <div class="detail-accent"></div>
                         <div class="detail-section-title">Detail Penanganan</div>
@@ -150,7 +145,7 @@
                         <?php endif; ?>
                     </div>
 
-                    <!-- KANAN: Foto -->
+                    
                     <div class="detail-right">
                         <?php if ($buktiUrl): ?>
                             <div class="detail-right-bukti">
@@ -188,7 +183,7 @@
         </div>
     </div>
 
-    <!-- Modal Update Penanganan -->
+    
     <div class="modal-overlay" id="modalUpdate">
         <div class="modal-box" style="max-width:460px;padding:0;">
             <div class="modal-header-custom">

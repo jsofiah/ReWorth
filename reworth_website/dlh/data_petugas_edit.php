@@ -1,10 +1,5 @@
 <?php
-    session_start();
-
-    if (!isset($_SESSION['role'])) {
-        header("Location: ../login.php");
-        exit;
-    }
+    require_once 'role_check.php';
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -24,7 +19,7 @@
         return "https://rxzrbyqqhkxemdjbcntc.supabase.co/storage/v1/object/public/media/" . ltrim($path, '/');
     }
 
-    // Fetch current data
+
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $supabaseUrl . "/rest/v1/petugas_lapangan?id_petugas=eq." . urlencode($petugasId) . "&select=*");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -62,7 +57,7 @@
 
         if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] === UPLOAD_ERR_OK) {
 
-            // Hapus foto lama di bucket
+
             if (!empty($petugas['foto_profil'])) {
                 $delBody = json_encode(["prefixes" => [$petugas['foto_profil']]]);
                 $delCh   = curl_init();
@@ -123,7 +118,7 @@
         curl_close($patchCh);
 
         if ($patchCode === 200 || $patchCode === 204) {
-            // Log
+
             $logData = [
                 'id_admin'      => $_SESSION['id_admin'],
                 'aktivitas'     => 'Mengedit data petugas: ' . $nama_petugas,
