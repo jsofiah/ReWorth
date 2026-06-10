@@ -1,10 +1,5 @@
 <?php
-    session_start();
-
-    if (!isset($_SESSION['role'])) {
-        header("Location: ../login.php");
-        exit;
-    }
+    require_once 'role_check.php';
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -39,7 +34,7 @@
         return [];
     }
 
-    // Fetch petugas from petugas_lapangan
+
     $result  = supabaseGet($supabaseUrl, $supabaseKey,
         "/rest/v1/petugas_lapangan?id_petugas=eq." . urlencode($petugasId) . "&select=*"
     );
@@ -50,7 +45,7 @@
         exit;
     }
 
-    // Riwayat tugas dari lapor_sampah — kolom: id_laporan, jenis_sampah, lokasi, created_at, status
+
     $riwayatTugas = supabaseGet($supabaseUrl, $supabaseKey,
         "/rest/v1/lapor_sampah?id_petugas=eq." . urlencode($petugasId) .
         "&select=id_laporan,jenis_sampah,lokasi,created_at,status&order=created_at.desc"
@@ -131,9 +126,9 @@
 
         <div class="petugas-lihat-wrap">
 
-            <!-- Profil Card — overlap topbar -->
+            
             <div class="petugas-profile-card">
-                <!-- Foto berdiri sendiri di kiri card, dengan accent coklat -->
+                
                 <div class="petugas-photo-wrap">
                     <div class="petugas-photo-accent"></div>
                     <div class="petugas-photo-box">
@@ -152,7 +147,7 @@
                     </div>
                 </div>
 
-                <!-- Info petugas -->
+                
                 <div class="petugas-info">
                     <h2><?= htmlspecialchars($petugas['nama_petugas'] ?? '-') ?></h2>
                     <div class="sub-role">Petugas Lapangan &middot; DLH</div>
@@ -166,7 +161,7 @@
                 </div>
             </div>
 
-            <!-- Riwayat Tugas -->
+            
             <div class="riwayat-card">
                 <h3>Riwayat Tugas</h3>
 

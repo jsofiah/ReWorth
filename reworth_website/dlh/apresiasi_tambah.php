@@ -1,10 +1,5 @@
 <?php
-    session_start();
-
-    if (!isset($_SESSION['role'])) {
-        header("Location: ../login.php");
-        exit;
-    }
+    require_once 'role_check.php';
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -28,7 +23,7 @@
         return ($code === 200 && $res) ? (json_decode($res, true) ?: []) : [];
     }
 
-    // Handle POST
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Content-Type: application/json');
 
@@ -106,7 +101,7 @@
             $idKetuaRW = $ketuaResult[0]['id_ketua_rw'] ?? null;
 
             if ($idKetuaRW) {
-                // [4] INSERT NOTIFIKASI KE TABEL notifikasi
+
                 $notifData = [
                     'id_pengguna' => $idKetuaRW,
                     'judul' => 'Selamat! RW Anda Mendapat Apresiasi',
@@ -129,7 +124,7 @@
                 $notifHttpCode = curl_getinfo($notifCh, CURLINFO_HTTP_CODE);
                 curl_close($notifCh);
 
-                // [5] KIRIM FCM NOTIFICATION KE KETUA RW
+
                 $fcmPayload = [
                     'user_id' => $idKetuaRW,
                     'title' => 'Selamat! RW Anda Mendapat Apresiasi',
@@ -172,10 +167,10 @@
         exit;
     }
 
-    // Fetch wilayah
+
     $wilayahList = supabaseGet($supabaseUrl . "/rest/v1/wilayah?select=*&order=kecamatan.asc", $supabaseKey);
 
-    // Group wilayah by kecamatan > kelurahan > rw
+
     $grouped = [];
     foreach ($wilayahList as $w) {
         $kec = $w['kecamatan'] ?? 'Lainnya';
@@ -184,10 +179,10 @@
     }
     ksort($grouped);
 
-    // Pre-selected wilayah
+
     $preselect = $_GET['id_wilayah'] ?? '';
 
-    // Default periode = current month
+
     $defaultPeriode = date('F Y');
 ?>
 <!DOCTYPE html>
@@ -252,14 +247,14 @@
             </div>
 
             <form id="formApresiasi">
-                <!-- Judul -->
+                
                 <div class="form-group">
                     <label class="form-label">JUDUL APRESIASI</label>
                     <input type="text" class="form-control-custom" id="judul_apresiasi" name="judul_apresiasi"
                         placeholder="Masukkan judul" required>
                 </div>
 
-                <!-- Kecamatan & Kelurahan -->
+                
                 <div class="row-2cols">
                     <div class="form-group">
                         <label class="form-label">WILAYAH KECAMATAN</label>
@@ -278,7 +273,7 @@
                     </div>
                 </div>
 
-                <!-- RW & Periode -->
+                
                 <div class="row-2cols">
                     <div class="form-group">
                         <label class="form-label">WILAYAH RW</label>
@@ -293,7 +288,7 @@
                     </div>
                 </div>
 
-                <!-- Deskripsi -->
+                
                 <div class="form-group">
                     <label class="form-label">DESKRIPSI APRESIASI</label>
                     <textarea class="form-control-custom" id="deskripsi" name="deskripsi" rows="4"
@@ -359,9 +354,9 @@
         }
     }
 
-    // Auto-select if preselect param exists
+
     if (preselect) {
-        // Find which kec/kel this wilayah belongs to
+
         for (const kec in grouped) {
             for (const kel in grouped[kec]) {
                 const found = grouped[kec][kel].find(w => w.id_wilayah === preselect);

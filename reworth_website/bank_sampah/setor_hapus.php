@@ -1,11 +1,7 @@
 <?php
-session_start();
+require_once 'role_check.php';
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['role'])) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized.']);
-    exit;
-}
 
 $allowedRoles = ['bank sampah', 'admin', 'dlh'];
 if (!in_array($_SESSION['role'], $allowedRoles)) {
@@ -25,7 +21,7 @@ if (empty($id)) {
     exit;
 }
 
-/* ───────── helper request ───────── */
+
 function supabaseRequest($url, $key, $endpoint, $method = 'GET', $body = null, $extra = []) {
     $headers = array_merge([
         "apikey: $key",
@@ -48,7 +44,7 @@ function supabaseRequest($url, $key, $endpoint, $method = 'GET', $body = null, $
     return ['code' => $code, 'body' => json_decode($res, true)];
 }
 
-/* ───────── hapus setor_sampah (detail_setor terhapus cascade) ───────── */
+
 $deleteResult = supabaseRequest(
     $supabaseUrl, $supabaseKey,
     "/rest/v1/setor_sampah?id_setor=eq." . urlencode($id),
@@ -57,7 +53,7 @@ $deleteResult = supabaseRequest(
     ['Prefer: return=minimal']
 );
 
-// 204 = No Content = sukses DELETE
+
 if (!in_array($deleteResult['code'], [200, 204])) {
     echo json_encode([
         'success' => false,
@@ -66,7 +62,7 @@ if (!in_array($deleteResult['code'], [200, 204])) {
     exit;
 }
 
-/* ───────── tulis log_admin ───────── */
+
 if (!empty($idAdmin)) {
     supabaseRequest(
         $supabaseUrl, $supabaseKey,

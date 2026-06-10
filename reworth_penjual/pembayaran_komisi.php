@@ -43,7 +43,7 @@ function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
     return ['response' => $response, 'httpCode' => $httpCode];
 }
 
-// Ambil data komisi untuk penjual ini
+
 $getKomisi = curlRequest(
     $supabaseUrl . "/rest/v1/komisi?id_penjual=eq.$userId&order=periode_bulan.desc",
     'GET',
@@ -53,7 +53,7 @@ $getKomisi = curlRequest(
 
 $komisiList = json_decode($getKomisi['response'], true) ?? [];
 
-// Hitung total komisi yang belum dibayar (pending)
+
 $totalPending = 0;
 foreach ($komisiList as $k) {
     if ($k['status_pembayaran'] == 'pending') {
@@ -61,7 +61,7 @@ foreach ($komisiList as $k) {
     }
 }
 
-// Fungsi untuk mendapatkan badge status
+
 function getStatusBadge($status) {
     switch($status) {
         case 'pending':
@@ -75,13 +75,13 @@ function getStatusBadge($status) {
     }
 }
 
-// Fungsi untuk format rupiah
+
 function formatRupiah($angka) {
     if (empty($angka)) return 'Rp 0';
     return 'Rp ' . number_format($angka, 0, ',', '.');
 }
 
-// Pagination
+
 $per_page = 10;
 $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $total_data = count($komisiList);
@@ -155,7 +155,7 @@ unset($_SESSION['subscription_error']);
             </div>
             <?php endif; ?>
 
-            <!-- Total Komisi yang Harus Dibayar -->
+            
             <div class="total-pending-card">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -166,7 +166,7 @@ unset($_SESSION['subscription_error']);
                 </div>
             </div>
 
-            <!-- Tabel Riwayat Komisi -->
+            
             <div class="card-custom">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -253,7 +253,7 @@ unset($_SESSION['subscription_error']);
         </div>
     </div>
 
-    <!-- Modal Bayar Komisi -->
+    
     <div id="modalBayar" class="modal-container">
         <div class="modal-title">Bayar Komisi</div>
         <form id="formBayarKomisi" enctype="multipart/form-data">
@@ -284,7 +284,7 @@ unset($_SESSION['subscription_error']);
         </form>
     </div>
 
-    <!-- Modal Bayar Semua Komisi -->
+    
     <div id="modalBayarSemua" class="modal-container">
         <div class="modal-title">Bayar Semua Komisi</div>
         <form id="formBayarSemua" enctype="multipart/form-data">
@@ -310,7 +310,7 @@ unset($_SESSION['subscription_error']);
         </form>
     </div>
 
-    <!-- Modal Detail Komisi -->
+    
     <div class="modal-overlay" id="modalDetail">
         <div class="modal-box" style="max-width: 500px;">
             <div class="modal-title">Detail Komisi <button class="modal-close" onclick="closeModal('modalDetail')">&times;</button></div>
@@ -384,7 +384,7 @@ unset($_SESSION['subscription_error']);
             }
         }
 
-        // Submit bayar komisi per ID
+
         document.getElementById('formBayarKomisi')?.addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -416,7 +416,7 @@ unset($_SESSION['subscription_error']);
             }
         });
 
-        // Submit bayar semua komisi
+
         document.getElementById('formBayarSemua')?.addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -477,7 +477,7 @@ unset($_SESSION['subscription_error']);
             setTimeout(() => div.remove(), 3500);
         }
 
-        // Close modal when clicking overlay
+
         document.querySelectorAll('.modal-overlay').forEach(modal => {
             modal.addEventListener('click', function(e) {
                 if (e.target === this) {
@@ -486,7 +486,7 @@ unset($_SESSION['subscription_error']);
             });
         });
 
-        // Spin animation style
+
         const style = document.createElement('style');
         style.textContent = `.spin { animation: spin 1s linear infinite; } @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
         document.head.appendChild(style);

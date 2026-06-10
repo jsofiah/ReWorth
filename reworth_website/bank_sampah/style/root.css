@@ -1236,7 +1236,6 @@ tbody td {
     }
 }
 
-/* --- EXTRACTED ROOT STYLES --- */
 .poin-val  { color:#DBC729; font-weight:700; }
 .saldo-val { color:#D95D39; font-weight:700; }
 .aksi-wrap { display:flex; gap:6px; flex-wrap:wrap; }
@@ -1244,10 +1243,7 @@ tbody td {
 .harga-val { color: var(--green); font-weight: 700; }
 .aksi-wrap { display: flex; gap: 6px; flex-wrap: wrap; }
 
-/* ═══════════════════════════════════
-   SUMMARY CARDS — ditaruh di bawah
-   search bar, full row, tidak kepotong
-═══════════════════════════════════ */
+
 .summary-row {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -1279,9 +1275,6 @@ tbody td {
 .sum-info span  {display:block;font-size:11px;color:#6B8A7E;margin-bottom:2px;}
 .sum-info strong{font-size:22px;font-weight:800;color:#1A3C34;line-height:1;}
 
-/* ═══════════════════════════════════
-   TABLE HELPERS
-═══════════════════════════════════ */
 .badge-status{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;}
 .badge-mendatang{background:#EAF4FF;color:#2980B9;}
 .badge-hari_ini {background:#FFF3CD;color:#856404;}
@@ -1507,7 +1500,6 @@ tbody td {
         .td-jadwal { font-size: 12px; line-height: 1.5; }
         .aksi-wrap { display: flex; gap: 8px; flex-wrap: wrap; }
 
-/* --- DASHBOARD STYLES --- */
 .stats-grid.dashboard-stats {
             grid-template-columns: repeat(4, 1fr);
         }
@@ -1525,7 +1517,6 @@ tbody td {
             box-shadow: 0 4px 14px rgba(240, 165, 0, 0.2);
         }
         
-        /* Quick access grid */
         .qa-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1558,7 +1549,6 @@ tbody td {
             color: var(--green);
         }
         
-        /* Aktivitas list */
         .aktivitas-list {
             display: flex;
             flex-direction: column;

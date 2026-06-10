@@ -1,12 +1,6 @@
 <?php
-session_start();
-
+require_once 'role_check.php';
 header('Content-Type: application/json');
-
-if (!isset($_SESSION['role'])) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Method not allowed']);
@@ -116,7 +110,7 @@ if ($httpCode === 200 || $httpCode === 204) {
     $idPenggunaRiwayat = $laporanRiwayat['id_pengguna'] ?? null;
 
     if ($idPenggunaRiwayat) {
-        // Cek apakah sudah ada riwayat dengan id_referensi dan jenis_aktivitas ini
+
         $checkRiwayat = $supabaseUrl . "/rest/v1/riwayat_aktivitas?id_referensi=eq." . urlencode($id) 
                       . "&jenis_aktivitas=eq.lapor_sampah&select=id_riwayat";
         $chCheck = curl_init();

@@ -42,14 +42,14 @@ function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
     return ['response' => $response, 'httpCode' => $httpCode];
 }
 
-// Ambil parameter filter
+
 $dateFrom = $_GET['date_from'] ?? date('Y-m-01');
 $dateTo = $_GET['date_to'] ?? date('Y-m-d');
 
 $labelFrom = date('d M Y', strtotime($dateFrom));
 $labelTo = date('d M Y', strtotime($dateTo));
 
-// Ambil semua produk penjual
+
 $getProduk = curlRequest(
     $supabaseUrl . "/rest/v1/produk?id_penjual=eq.$userId",
     'GET',
@@ -59,7 +59,7 @@ $getProduk = curlRequest(
 $produkList = json_decode($getProduk['response'], true) ?? [];
 $totalProduk = count($produkList);
 
-// Ambil SEMUA pesanan (termasuk yang belum selesai) untuk filter
+
 $getPesanan = curlRequest(
     $supabaseUrl . "/rest/v1/pesanan?select=*,produk(*)&order=created_at.desc",
     'GET',
@@ -68,12 +68,12 @@ $getPesanan = curlRequest(
 );
 $semuaPesanan = json_decode($getPesanan['response'], true) ?? [];
 
-// Filter pesanan berdasarkan produk penjual dan tanggal
+
 $pesananList = [];
 foreach ($semuaPesanan as $p) {
-    // Cek apakah produk milik penjual ini
+
     if ($p['produk'] && $p['produk']['id_penjual'] == $userId) {
-        // Filter berdasarkan tanggal (gunakan created_at atau tanggal_selesai)
+
         $tglPesanan = substr($p['created_at'], 0, 10);
         if ($tglPesanan >= $dateFrom && $tglPesanan <= $dateTo) {
             $pesananList[] = $p;
@@ -81,14 +81,14 @@ foreach ($semuaPesanan as $p) {
     }
 }
 
-// Hitung total pendapatan dari SEMUA pesanan (termasuk yang belum selesai)
+
 $totalPendapatan = 0;
 foreach ($pesananList as $p) {
     $totalPendapatan += $p['total_bayar'];
 }
 $totalTransaksi = count($pesananList);
 
-// Ambil komisi penjual
+
 $getKomisi = curlRequest(
     $supabaseUrl . "/rest/v1/komisi?id_penjual=eq.$userId&order=created_at.desc",
     'GET',
@@ -97,7 +97,7 @@ $getKomisi = curlRequest(
 );
 $komisiList = json_decode($getKomisi['response'], true) ?? [];
 
-// Filter komisi berdasarkan tanggal
+
 $komisiPeriode = [];
 $totalKomisi = 0;
 foreach ($komisiList as $k) {
@@ -110,7 +110,7 @@ foreach ($komisiList as $k) {
 
 $totalBersih = $totalPendapatan - $totalKomisi;
 
-// Hitung pendapatan per bulan (untuk grafik)
+
 $monthlyIncome = array_fill(1, 12, 0);
 foreach ($pesananList as $p) {
     $m = (int)date('n', strtotime($p['created_at']));
@@ -129,7 +129,7 @@ for ($m = 1; $m <= $curMonth; $m++) {
 function fmtRp($n) { return 'Rp ' . number_format((float)$n, 0, ',', '.'); }
 function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
 
-// Debug: log jumlah data
+
 error_log("Total Pesanan: " . count($pesananList));
 error_log("Total Pendapatan: " . $totalPendapatan);
 error_log("Date Range: $dateFrom - $dateTo");
@@ -200,13 +200,13 @@ error_log("Date Range: $dateFrom - $dateTo");
         </div>
 
         <div class="content-area">
-            <!-- Info periode -->
+            
             <div class="alert alert-info mb-4">
                 <i class="bi bi-info-circle"></i>
                 Menampilkan data periode <strong><?= $labelFrom ?> – <?= $labelTo ?></strong>
             </div>
 
-            <!-- Statistik -->
+            
             <div class="row mb-4">
                 <div class="col-md-3 mb-3">
                     <div class="card-custom p-3">
@@ -244,7 +244,7 @@ error_log("Date Range: $dateFrom - $dateTo");
                 </div>
             </div>
 
-            <!-- Grafik Pendapatan -->
+            
             <div class="card-custom mb-4">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-3"><i class="bi bi-graph-up"></i> Grafik Pendapatan per Bulan</h5>
@@ -252,7 +252,7 @@ error_log("Date Range: $dateFrom - $dateTo");
                 </div>
             </div>
 
-            <!-- Tabel Riwayat Transaksi -->
+            
             <div class="card-custom">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-3"><i class="bi bi-clock-history"></i> Riwayat Transaksi</h5>

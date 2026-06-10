@@ -1,10 +1,5 @@
 <?php
-session_start();
-
-if (!isset($_SESSION['role'])) {
-    header("Location: ../login.php");
-    exit;
-}
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -142,7 +137,7 @@ $show_to     = min($offset + $per_page, $total);
             </div>
 
             <?php if (in_array($userRole, ['bank sampah', 'dlh', 'admin'])): ?>
-            <!-- ✅ PERUBAHAN 1: redirect ke halaman tambah, bukan buka modal -->
+            
             <button class="btn-tambah" onclick="window.location.href='penarikan_tambah.php'">
                 <i class="bi bi-plus-lg"></i> Tambah Penarikan
             </button>
@@ -218,13 +213,13 @@ $show_to     = min($offset + $per_page, $total);
     </div>
 </div>
 
-<!-- ✅ PERUBAHAN 2: modal tambah dihapus sepenuhnya -->
+
 
 <div class="toast-container" id="toastContainer"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-/* ── toast ── */
+
 function showToast(msg, type = 'success') {
     const icons = { success:'bi-check-circle-fill', error:'bi-x-circle-fill', info:'bi-info-circle-fill' };
     const div = document.createElement('div');
@@ -234,7 +229,7 @@ function showToast(msg, type = 'success') {
     setTimeout(() => div.remove(), 3500);
 }
 
-/* ── search ── */
+
 document.getElementById('searchInput').addEventListener('input', function() {
     const q = this.value.toLowerCase();
     document.querySelectorAll('#tableBody tr').forEach(row => {
@@ -243,7 +238,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
     updateRowNumbers();
 });
 
-/* ── filter ── */
+
 function toggleFilter() { document.getElementById('filterBox').classList.toggle('show'); }
 
 function applyFilter() {

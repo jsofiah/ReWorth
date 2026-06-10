@@ -28,28 +28,28 @@ function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
 
 $userId = $_SESSION['id_penjual'];
 
-// Upload bukti pembayaran ke storage (pakai metode POST seperti upload event)
+
 function uploadBukti($file, $userId) {
     global $supabaseUrl, $supabaseKey;
     
-    // Validasi file
+
     if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
         return ['success' => false, 'message' => 'File tidak valid'];
     }
     
-    // Validasi tipe file
+
     $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
     $fileType = mime_content_type($file['tmp_name']);
     if (!in_array($fileType, $allowedTypes)) {
         return ['success' => false, 'message' => 'Tipe file tidak didukung. Gunakan JPG, PNG, atau WEBP'];
     }
     
-    // Validasi ukuran file (max 5MB)
+
     if ($file['size'] > 5 * 1024 * 1024) {
         return ['success' => false, 'message' => 'Ukuran file terlalu besar. Maksimal 5MB'];
     }
     
-    // Generate filename
+
     $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     $filename = 'komisi/' . $userId . '_' . time() . '_' . rand(1000, 9999) . '.' . $extension;
     
@@ -90,7 +90,7 @@ function uploadBukti($file, $userId) {
 }
 
 if (isset($_POST['bayar_semua'])) {
-    // Bayar semua komisi yang pending
+
     if (!isset($_FILES['bukti_pembayaran']) || $_FILES['bukti_pembayaran']['error'] !== UPLOAD_ERR_OK) {
         echo json_encode(['success' => false, 'message' => 'Harap upload bukti pembayaran']);
         exit;
@@ -104,7 +104,7 @@ if (isset($_POST['bayar_semua'])) {
     
     $buktiPath = $uploadResult['filename'];
     
-    // Update semua komisi dengan status pending
+
     $updateData = [
         'status_pembayaran' => 'dibayar',
         'tanggal_pembayaran' => date('Y-m-d'),
@@ -129,7 +129,7 @@ if (isset($_POST['bayar_semua'])) {
     }
     
 } else {
-    // Bayar satu komisi berdasarkan ID
+
     $komisiId = $_POST['komisi_id'] ?? '';
     
     if (empty($komisiId)) {

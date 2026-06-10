@@ -1,5 +1,5 @@
 <?php
-    session_start();
+    require_once 'role_check.php';
 
     header('Content-Type: application/json');
 

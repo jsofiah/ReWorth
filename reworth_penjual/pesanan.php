@@ -42,7 +42,7 @@ function curlRequest($url, $method = 'GET', $data = null, $headers = []) {
     return ['response' => $response, 'httpCode' => $httpCode];
 }
 
-// Ambil semua pesanan untuk filter client-side
+
 $getPesanan = curlRequest(
     $supabaseUrl . "/rest/v1/pesanan?select=*,produk(*),pengguna(*)&order=created_at.desc",
     'GET',
@@ -52,7 +52,7 @@ $getPesanan = curlRequest(
 
 $semuaPesanan = json_decode($getPesanan['response'], true) ?? [];
 
-// Filter hanya pesanan dari produk penjual ini
+
 $pesananList = [];
 foreach ($semuaPesanan as $p) {
     if ($p['produk'] && $p['produk']['id_penjual'] == $userId) {
@@ -60,11 +60,11 @@ foreach ($semuaPesanan as $p) {
     }
 }
 
-// Ambil nilai filter dari GET
+
 $filterStatus = $_GET['status'] ?? 'semua';
 $search = $_GET['search'] ?? '';
 
-// Fungsi untuk mendapatkan status badge
+
 function getStatusBadge($status) {
     $status = strtolower($status);
     
@@ -83,7 +83,7 @@ function getStatusBadge($status) {
     }
 }
 
-// Helper untuk escape HTML
+
 function escapeHtml($str) {
     return htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
 }
@@ -187,11 +187,11 @@ function escapeHtml($str) {
                             <?php 
                             $no = 1;
                             foreach ($pesananList as $p):
-                                // Filter status
+
                                 if ($filterStatus !== 'semua' && !empty($filterStatus)) {
                                     if ($p['status'] !== $filterStatus) continue;
                                 }
-                                // Filter search
+
                                 if (!empty($search)) {
                                     $namaPembeli = strtolower($p['pengguna']['nama_lengkap'] ?? '');
                                     $namaProduk = strtolower($p['produk']['nama_produk'] ?? '');
@@ -250,7 +250,7 @@ function escapeHtml($str) {
         </div>
     </div>
 
-    <!-- Modal Detail Pesanan -->
+    
     <div class="modal-overlay" id="modalDetail">
         <div class="modal-box" style="max-width: 550px;">
             <div class="modal-title">Detail Pesanan <button class="modal-close" onclick="closeModal('modalDetail')">&times;</button></div>
@@ -261,7 +261,7 @@ function escapeHtml($str) {
         </div>
     </div>
 
-    <!-- Modal Kirim -->
+    
     <div id="modalKirimContainer" class="modal-container">
         <div class="modal-title">Input Pengiriman</div>
         <div class="form-group">
@@ -287,7 +287,7 @@ function escapeHtml($str) {
         </div>
     </div>
 
-    <!-- Modal Tolak -->
+    
     <div id="modalTolakContainer" class="modal-container">
         <div class="modal-title">Tolak Pesanan</div>
         <div class="form-group">
@@ -358,12 +358,12 @@ function escapeHtml($str) {
             }
         }
 
-        // Search realtime (client-side)
+
         function attachSearchListener() {
             const searchInput = document.getElementById('searchInput');
             if (!searchInput) return;
             
-            // Set initial value
+
             if (currentFilters.search) {
                 searchInput.value = currentFilters.search;
             }
@@ -378,7 +378,7 @@ function escapeHtml($str) {
                 let no = 1;
                 
                 rows.forEach(row => {
-                    // Skip empty state row
+
                     if (row.cells.length === 1 && row.textContent.includes('Belum ada pesanan')) {
                         return;
                     }
@@ -396,7 +396,7 @@ function escapeHtml($str) {
                     }
                 });
                 
-                // Show empty message if no results
+
                 const emptyRow = tbody.querySelector('.empty-row');
                 if (visibleCount === 0 && !emptyRow) {
                     const tr = document.createElement('tr');
@@ -524,7 +524,7 @@ function escapeHtml($str) {
             setTimeout(() => div.remove(), 3500);
         }
 
-        // Tutup modal jika klik overlay
+
         document.querySelectorAll('.modal-overlay').forEach(modal => {
             modal.addEventListener('click', function(e) {
                 if (e.target === this) {
@@ -533,7 +533,7 @@ function escapeHtml($str) {
             });
         });
 
-        // Close filter when clicking outside
+
         document.addEventListener('click', function(e) {
             const filterBox = document.getElementById('filterBox');
             const filterBtn = document.querySelector('.btn-filter');
@@ -542,7 +542,7 @@ function escapeHtml($str) {
             }
         });
 
-        // Initialize
+
         document.addEventListener('DOMContentLoaded', function() {
             initFilters();
             updateFilterBadge();

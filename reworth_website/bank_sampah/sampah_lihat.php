@@ -1,6 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) { header("Location: ../login.php"); exit; }
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -26,7 +25,7 @@ function sbGet($url, $key, $ep) {
 }
 function formatRupiah($n) { return 'Rp ' . number_format((float)($n ?? 0), 0, ',', '.'); }
 
-/* ── fetch jenis sampah ── */
+
 $rows = sbGet($supabaseUrl, $supabaseKey,
     "/rest/v1/jenis_sampah?id_jenis=eq." . urlencode($id) . "&select=*&limit=1");
 if (empty($rows)) { header("Location: data_sampah.php"); exit; }
@@ -70,7 +69,7 @@ $tanggalDiubah  = !empty($s['updated_at'])  ? date('d M Y', strtotime($s['update
 </aside>
 
 <div class="main-wrap">
-    <!-- Topbar -->
+    
     <div class="topbar">
         <div class="topbar-inner">
             <h1 class="topbar-title">Data Sampah</h1>
@@ -95,20 +94,20 @@ $tanggalDiubah  = !empty($s['updated_at'])  ? date('d M Y', strtotime($s['update
             <div class="card-accent-bar"></div>
             <div class="card-inner">
 
-                <!-- Judul -->
+                
                 <div class="card-title"><?= htmlspecialchars($s['nama_sampah'] ?? '-') ?></div>
                 <div class="card-subtitle">
                     <i class="bi bi-trash-fill me-1"></i> Detail Jenis Sampah
                 </div>
 
-                <!-- Harga badge -->
+                
                 <div class="harga-badge">
                     <i class="bi bi-tag-fill"></i>
                     <?= formatRupiah($s['harga_per_kg'] ?? 0) ?>
                     <small>/ kg</small>
                 </div>
 
-                <!-- Info dasar -->
+                
                 <div class="section-label"><i class="bi bi-info-circle-fill"></i> Informasi Sampah</div>
                 <div class="row-2cols">
                     <div>
@@ -132,19 +131,19 @@ $tanggalDiubah  = !empty($s['updated_at'])  ? date('d M Y', strtotime($s['update
                     </div>
                 </div>
 
-                <!-- Actions -->
+                
                 <div class="card-actions">
                     <button class="btn-back" onclick="window.location.href='data_sampah.php'">
                         <i class="bi bi-arrow-left me-1"></i> KEMBALI
                     </button>
                 </div>
 
-            </div><!-- /card-inner -->
-        </div><!-- /detail-card -->
-    </div><!-- /form-wrap -->
-</div><!-- /main-wrap -->
+            </div>
+        </div>
+    </div>
+</div>
 
-<!-- ── Modal Hapus ── -->
+
 <div class="modal-overlay" id="modalHapus">
     <div class="modal-box" style="max-width:400px;">
         <div class="confirm-icon"><i class="bi bi-trash3-fill"></i></div>
@@ -170,14 +169,14 @@ const SB_URL   = <?= json_encode($supabaseUrl) ?>;
 const SB_KEY   = <?= json_encode($supabaseKey) ?>;
 const JENIS_ID = <?= json_encode($id) ?>;
 
-/* ── modals ── */
+
 function openModal(id)  { document.getElementById(id).classList.add('show'); }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 document.querySelectorAll('.modal-overlay').forEach(m =>
     m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); })
 );
 
-/* ── hapus ── */
+
 async function confirmHapus() {
     const btn = document.getElementById('btnConfirmHapus');
     btn.disabled = true;
@@ -205,7 +204,7 @@ async function confirmHapus() {
     }
 }
 
-/* ── toast ── */
+
 function showToast(msg, type = 'success') {
     const icons = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill' };
     const div   = document.createElement('div');

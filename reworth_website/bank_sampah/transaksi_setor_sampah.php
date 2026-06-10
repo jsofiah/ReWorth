@@ -1,10 +1,5 @@
 <?php
-session_start();
-
-if (!isset($_SESSION['role'])) {
-    header("Location: ../login.php");
-    exit;
-}
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -57,7 +52,7 @@ function formatRupiah($num) {
     return 'Rp' . number_format((float)($num ?? 0), 0, ',', '.');
 }
 
-/* ── fetch ── */
+
 $allTransaksi = supabaseGet(
     $supabaseUrl, $supabaseKey,
     "/rest/v1/setor_sampah?select=*,pengguna(nama_lengkap,alamat_detail),jadwal_ambil(tanggal,waktu_mulai,waktu_selesai)&order=created_at.desc"
@@ -71,7 +66,7 @@ $allTransaksi = array_values(
     array_filter($allTransaksi, fn($t) => ($t['status'] ?? '') !== 'menunggu')
 );
 
-/* ── pagination ── */
+
 $per_page = 10;
 
 $cur_verif_page    = max(1, (int)($_GET['verif_page'] ?? 1));
@@ -90,7 +85,7 @@ $cur_all         = array_slice($allTransaksi, $all_start, $per_page);
 $all_from        = $total_all > 0 ? $all_start + 1 : 0;
 $all_to          = min($all_start + $per_page, $total_all);
 
-/* ── jadwal list untuk filter ── */
+
 $jadwalList = [];
 foreach ($allTransaksi as $t) {
     if (!empty($t['jadwal_ambil']['tanggal'])) {
@@ -118,7 +113,7 @@ foreach ($allTransaksi as $t) {
     </head>
 <body>
 
-<!-- SIDEBAR -->
+
 <aside class="sidebar">
     <div class="sidebar-logo">
         <img src="img/logo.png" alt="Logo ReWorth">
@@ -269,7 +264,7 @@ foreach ($allTransaksi as $t) {
                 <button class="tab-btn"        onclick="switchTab('semua', this)">Semua Transaksi</button>
             </div>
 
-            <!-- TAB VERIFIKASI -->
+            
             <div id="tab-verifikasi">
                 <div class="table-scroll-wrapper">
                     <table class="responsive-table">
@@ -350,7 +345,7 @@ foreach ($allTransaksi as $t) {
                 </div>
             </div>
 
-            <!-- TAB SEMUA TRANSAKSI -->
+            
             <div id="tab-semua" style="display:none;">
                 <div class="table-scroll-wrapper">
                     <table class="responsive-table">

@@ -1,9 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) {
-    header("Location: ../login.php");
-    exit;
-}
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -106,7 +102,7 @@ function formatTanggal($date) {
         </div>
     </div>
 
-    <!-- Stat Cards -->
+    
     <div class="action-bar-wrap">
         <div class="db-stats-row">
             <div class="db-stat-card">
@@ -156,7 +152,7 @@ function formatTanggal($date) {
     <div class="content-area">
         <div class="db-main-grid">
 
-            <!-- Laporan butuh konfirmasi -->
+            
             <div class="card-custom db-laporan-card">
                 <div class="db-card-header">
                     <div class="db-card-title">
@@ -188,7 +184,7 @@ function formatTanggal($date) {
                 <?php endif; ?>
             </div>
 
-            <!-- Quick Access -->
+            
             <div class="card-custom db-quick-card">
                 <div class="db-card-header">
                     <div class="db-card-title">
@@ -225,7 +221,7 @@ function formatTanggal($date) {
             </div>
         </div>
 
-        <!-- Aktivitas Terbaru -->
+        
         <div class="card-custom db-aktivitas-card">
             <div class="db-card-header">
                 <div class="db-card-title">

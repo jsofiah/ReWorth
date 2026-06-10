@@ -1,6 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) { header("Location: ../login.php"); exit; }
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -35,7 +34,7 @@ $jenisList  = sbGet($supabaseUrl,$supabaseKey,"/rest/v1/jenis_sampah?select=id_j
     </head>
 <body>
 
-<!-- SIDEBAR -->
+
 <aside class="sidebar">
     <div class="sidebar-logo">
         <img src="img/logo.png" alt="Logo ReWorth">
@@ -104,7 +103,7 @@ $jenisList  = sbGet($supabaseUrl,$supabaseKey,"/rest/v1/jenis_sampah?select=id_j
 </aside>
 
 <div class="main-wrap">
-    <!-- TOPBAR -->
+    
     <div class="topbar">
         <div class="topbar-inner">
             <h1 class="topbar-title">Tambah Transaksi Setor Sampah</h1>
@@ -123,14 +122,14 @@ $jenisList  = sbGet($supabaseUrl,$supabaseKey,"/rest/v1/jenis_sampah?select=id_j
         </div>
     </div>
 
-    <!-- FORM -->
+    
     <div class="form-wrap">
         <div class="form-section-inner">
             <div class="inside-header">
                 <h2>Tambah Transaksi Setor Sampah</h2>
             </div>
 
-            <!-- Row 1: Nama Penyetor + Jadwal -->
+            
             <div class="row-2cols">
                 <div>
                     <div class="form-label">NAMA PENYETOR</div>
@@ -161,7 +160,7 @@ $jenisList  = sbGet($supabaseUrl,$supabaseKey,"/rest/v1/jenis_sampah?select=id_j
                 </div>
             </div>
 
-            <!-- Row 2: Alamat Setor -->
+            
             <div style="margin-bottom:26px;">
                 <div class="form-label">ALAMAT SETOR</div>
                 <input type="text" id="alamatSetor" class="field-underline"
@@ -169,7 +168,7 @@ $jenisList  = sbGet($supabaseUrl,$supabaseKey,"/rest/v1/jenis_sampah?select=id_j
                 <div id="errAlamat" class="err-msg" style="display:none;color:#D95D39;font-size:12px;margin-top:4px;">Alamat setor wajib diisi.</div>
             </div>
 
-            <!-- Detail Setor -->
+            
             <div class="section-label">
                 <span>DETAIL SETOR SAMPAH</span>
                 <span class="total-label">Total Uang: <span id="totalUang">Rp0</span></span>
@@ -184,7 +183,7 @@ $jenisList  = sbGet($supabaseUrl,$supabaseKey,"/rest/v1/jenis_sampah?select=id_j
                     <span></span>
                 </div>
                 <div class="detail-body" id="detailBody">
-                    <!-- rows injected by JS -->
+                    
                 </div>
             </div>
 
@@ -192,7 +191,7 @@ $jenisList  = sbGet($supabaseUrl,$supabaseKey,"/rest/v1/jenis_sampah?select=id_j
                 <i class="bi bi-plus-lg"></i> Tambah Item
             </button>
 
-            <!-- Actions -->
+            
             <div class="form-actions">
                 <button type="button" class="btn-batal" onclick="window.location.href='transaksi_setor_sampah.php'">
                     BATAL
@@ -205,26 +204,26 @@ $jenisList  = sbGet($supabaseUrl,$supabaseKey,"/rest/v1/jenis_sampah?select=id_j
     </div>
 </div>
 
-<!-- TOAST -->
+
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
 const JENIS_LIST = <?= json_encode($jenisList) ?>;
 
-/* ── jenis map: id → {nama, harga} ── */
+
 const jenisMap = {};
 JENIS_LIST.forEach(j => {
     jenisMap[j.id_jenis] = { nama: j.nama_sampah, harga: parseFloat(j.harga_per_kg) };
 });
 
-/* ── auto-fill alamat from pengguna ── */
+
 function onPenggunaChange(sel) {
     const opt    = sel.options[sel.selectedIndex];
     const alamat = opt.dataset.alamat || '';
     document.getElementById('alamatSetor').value = alamat;
 }
 
-/* ── add row ── */
+
 let rowIdx = 0;
 function addRow(jenisId='', berat='', hargaPerKg='', subtotal='') {
     rowIdx++;
@@ -234,7 +233,7 @@ function addRow(jenisId='', berat='', hargaPerKg='', subtotal='') {
     div.className = 'detail-row';
     div.id = `row-${ri}`;
 
-    // options HTML
+
     let opts = '<option value="">Pilih jenis sampah...</option>';
     JENIS_LIST.forEach(j => {
         const sel = j.id_jenis === jenisId ? ' selected' : '';
@@ -260,7 +259,7 @@ function addRow(jenisId='', berat='', hargaPerKg='', subtotal='') {
 
     document.getElementById('detailBody').appendChild(div);
 
-    // if pre-filling, set harga immediately
+
     if (jenisId && jenisMap[jenisId]) {
         document.getElementById(`harga-${ri}`).value = fmt(jenisMap[jenisId].harga);
     }
@@ -315,7 +314,7 @@ function calcTotal() {
 function fmt(n)   { return parseFloat(n||0).toLocaleString('id-ID',{minimumFractionDigits:0,maximumFractionDigits:3}); }
 function unFmt(s) { return parseFloat((s||'0').replace(/\./g,'').replace(',','.')) || 0; }
 
-/* ── validate ── */
+
 function validate() {
     let ok = true;
     const idP = document.getElementById('idPengguna').value;
@@ -333,7 +332,7 @@ function validate() {
     return ok;
 }
 
-/* ── collect detail rows ── */
+
 function collectDetails() {
     const rows = document.querySelectorAll('.detail-row');
     const details = [];
@@ -353,7 +352,7 @@ function collectDetails() {
     return details;
 }
 
-/* ── SIMPAN ── */
+
 function simpanData() {
     if (!validate()) return;
 
@@ -405,7 +404,7 @@ function showToast(msg, type='success') {
     setTimeout(() => div.remove(), 3500);
 }
 
-// init 1 baris kosong
+
 addRow();
 </script>
 </body>

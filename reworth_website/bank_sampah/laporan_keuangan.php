@@ -1,6 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) { header("Location: ../login.php"); exit; }
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -9,7 +8,7 @@ $userName  = $_SESSION['nama_admin']  ?? 'User';
 $userEmail = $_SESSION['email']       ?? 'user@example.com';
 $userFoto  = $_SESSION['foto_profil'] ?? '';
 
-/* ══ FILTER TANGGAL ══ */
+
 $dateFrom = $_GET['date_from'] ?? date('Y-01-01');
 $dateTo   = $_GET['date_to']   ?? date('Y-12-31');
 
@@ -31,7 +30,7 @@ function sbGet($url, $key, $ep) {
     return $c === 200 ? (json_decode($r, true) ?: []) : [];
 }
 
-/* ══ FETCH DATA ══ */
+
 $penggunaList     = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/pengguna?select=id_pengguna");
 $totalNasabah     = count($penggunaList);
 
@@ -98,13 +97,13 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
     <link rel="stylesheet" href="style/root.css">
     <link rel="stylesheet" href="style/form.css">
 
-    <!-- Flatpickr -->
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     </head>
 <body>
 
-<!-- SIDEBAR -->
+
 <aside class="sidebar">
     <div class="sidebar-logo"><img src="img/logo.png" alt="Logo ReWorth"></div>
     <nav class="sidebar-nav">
@@ -125,7 +124,7 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
 
 <div class="main-wrap">
 
-    <!-- TOPBAR -->
+    
     <div class="topbar">
         <div class="topbar-inner">
             <h1 class="topbar-title">Laporan &amp; Analitik</h1>
@@ -145,7 +144,7 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
         </div>
     </div>
 
-    <!-- ACTION BAR -->
+    
     <div class="action-bar-wrap">
         <form method="GET" action="" class="laporan-bar" id="filterForm">
 
@@ -174,10 +173,10 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
     </button>
     </div>
 
-    <!-- CONTENT -->
+    
     <div class="content-area">
 
-        <!-- Info hint -->
+        
         <div class="pdf-hint" style="margin-bottom:16px;">
             <i class="bi bi-info-circle-fill" style="color:var(--green);font-size:16px;"></i>
             Menampilkan data periode
@@ -186,7 +185,7 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
             untuk laporan resmi yang bisa dicetak.
         </div>
 
-        <!-- STATS ROW 1 -->
+        
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-label">Total Nasabah</div>
@@ -202,7 +201,7 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
             </div>
         </div>
 
-        <!-- STATS ROW 2 -->
+        
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-label">Total Nilai Setor</div>
@@ -218,7 +217,7 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
             </div>
         </div>
 
-        <!-- CHARTS -->
+        
         <div class="charts-grid">
 
             <div class="chart-card">
@@ -261,16 +260,16 @@ function fmtNum($n) { return number_format((int)$n, 0, ',', '.'); }
         </div>
             </div>
 
-        </div><!-- /charts-grid -->
-    </div><!-- /content-area -->
-</div><!-- /main-wrap -->
+        </div>
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
 
-/* ── Bar Chart ── */
+
 new Chart(document.getElementById('trendChart').getContext('2d'), {
     type: 'bar',
     data: {
@@ -302,7 +301,7 @@ new Chart(document.getElementById('trendChart').getContext('2d'), {
     }
 });
 
-/* ── Export PDF → buka laporan_pdf.php di tab baru ── */
+
 function exportPDF() {
     const from = document.querySelector('input[name="date_from"]').value;
     const to   = document.querySelector('input[name="date_to"]').value;

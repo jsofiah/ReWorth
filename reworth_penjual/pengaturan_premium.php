@@ -149,7 +149,7 @@
         <div class="content-area">
             <br>
 
-            <!-- INFORMASI LANGGANAN SAAT INI -->
+            
             <div class="card-custom mb-4">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-4">Informasi Langganan Saat Ini</h5>
@@ -182,7 +182,7 @@
                 </div>
             </div>
 
-            <!-- PENGATURAN PREMIUM -->
+            
             <div class="card-custom mb-4">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-4">Pengaturan Akun Premium</h5>
@@ -201,7 +201,7 @@
                             <div class="text-muted small mt-1">Notifikasi peringatan akan muncul di halaman Langganan</div>
                         </div>
 
-                        <!-- METODE PEMBAYARAN (QRIS) -->
+                        
                         <div class="form-group">
                             <label class="form-label">Metode Pembayaran</label>
                             <div class="alert alert-info">

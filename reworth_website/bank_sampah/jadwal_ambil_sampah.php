@@ -1,6 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['role'])) { header("Location: ../login.php"); exit; }
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -34,7 +33,7 @@ foreach($allJadwal as $j){
 $hariArr =['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 $bulanArr=['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
-// Server-side filtering
+
 $f_st   = $_GET['status'] ?? '';
 $f_sesi = $_GET['sesi'] ?? '';
 $f_sort = $_GET['sort'] ?? 'tanggal_asc';
@@ -91,7 +90,7 @@ function buildUrl($p){
 </head>
 <body>
 
-<!-- SIDEBAR -->
+
 <aside class="sidebar">
     <div class="sidebar-logo"><img src="img/logo.png" alt="Logo ReWorth"></div>
     <nav class="sidebar-nav">
@@ -112,7 +111,7 @@ function buildUrl($p){
 
 <div class="main-wrap">
 
-    <!-- TOPBAR -->
+    
     <div class="topbar">
         <div class="topbar-inner">
             <h1 class="topbar-title">Jadwal Ambil Sampah</h1>
@@ -132,7 +131,7 @@ function buildUrl($p){
         </div>
     </div>
 
-    <!-- ACTION BAR + SUMMARY (semua dalam content-area, tidak terpotong) -->
+    
     <div class="action-bar-wrap">
         <div class="action-bar">
             <div class="search-wrap">
@@ -181,7 +180,7 @@ function buildUrl($p){
         </div>
     </div>
 
-    <!-- SUMMARY CARDS — di bawah search bar, full width, tidak kepotong -->
+    
     <div class="content-area" style="padding-top:0;padding-bottom:0;">
         <div class="summary-row">
             <div class="summary-card">
@@ -207,7 +206,7 @@ function buildUrl($p){
         </div>
     </div>
 
-    <!-- TABEL -->
+    
     <div class="content-area" style="padding-top:0;">
         <div class="card-custom">
             <div class="table-wrap">
@@ -220,7 +219,7 @@ function buildUrl($p){
                             <col style="width:145px;">
                             <col style="width:145px;">
                             <col style="width:115px;">
-                            <col><!-- Aksi: sisa ruang -->
+                            <col>
                         </colgroup>
                         <thead>
                             <tr>
@@ -251,10 +250,10 @@ function buildUrl($p){
                             $stIco   = ['mendatang'=>'bi-clock','hari_ini'=>'bi-calendar2-check','selesai'=>'bi-check-circle-fill'];
                             $idEnc   = urlencode($j['id_jadwal']);
 
-                            // ─── PERBAIKAN: hapus tampil untuk SEMUA jadwal
-                            // (selesai = tidak bisa dihapus karena sudah lewat, tapi
-                            //  untuk keperluan demo/dev bisa diakses; di hapus_jadwal.php
-                            //  sudah ada guard server-side yang blok hapus jadwal selesai)
+
+
+
+
                             $bolehHapus = in_array($userRole,['bank sampah','admin','dlh']);
                         ?>
                         <tr data-tanggal="<?=$j['tanggal']?>"
@@ -291,18 +290,18 @@ function buildUrl($p){
                             </td>
                             <td>
                                 <div class="d-flex gap-2 flex-wrap">
-                                    <!-- Lihat: selalu tampil -->
+                                    
                                     <a href="lihat_jadwal.php?id=<?=$idEnc?>"
                                        class="btn-aksi btn-lihat" style="text-decoration:none;">
                                         <i class="bi bi-file-earmark-text"></i> Lihat
                                     </a>
                                     <?php if($bolehHapus):?>
-                                    <!-- Edit: selalu tampil -->
+                                    
                                     <a href="edit_jadwal.php?id=<?=$idEnc?>"
                                        class="btn-aksi btn-edit" style="text-decoration:none;">
                                         <i class="bi bi-pencil-square"></i> Edit
                                     </a>
-                                    <!-- Hapus: tampil untuk SEMUA status, guard ada di hapus_jadwal.php -->
+                                    
                                     <a href="hapus_jadwal.php?id=<?=$idEnc?>"
                                        class="btn-aksi btn-hapus" style="text-decoration:none;">
                                         <i class="bi bi-trash3"></i> Hapus
@@ -346,7 +345,7 @@ function buildUrl($p){
         </div>
     </div>
 
-</div><!-- /main-wrap -->
+</div>
 
 <div class="toast-container" id="toastContainer"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -360,13 +359,13 @@ function showToast(msg, type='success'){
     setTimeout(()=>d.remove(),3500);
 }
 
-// Toast dari redirect
+
 const urlP=new URLSearchParams(location.search);
 if(urlP.get('success')==='1')         showToast('Jadwal berhasil disimpan!','success');
 if(urlP.get('deleted')==='1')         showToast('Jadwal berhasil dihapus.','success');
 if(urlP.get('error')==='cannot_delete') showToast('Jadwal selesai tidak bisa dihapus.','error');
 
-/* ── Filter & Search Server-Side ── */
+
 document.getElementById('searchInput').addEventListener('keypress', function(e){
     if(e.key === 'Enter') applyFilter();
 });

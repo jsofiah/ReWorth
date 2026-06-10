@@ -1,10 +1,5 @@
 <?php
-    session_start();
-
-    if (!isset($_SESSION['role'])) {
-        header("Location: ../login.php");
-        exit;
-    }
+    require_once 'role_check.php';
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -263,7 +258,7 @@
     </div>
 </div>
 
-<!-- Modal Hapus -->
+
 <div class="modal-overlay" id="modalHapus">
     <div class="modal-box" style="max-width:400px;">
         <div class="confirm-icon"><i class="bi bi-trash3-fill"></i></div>
@@ -290,7 +285,7 @@ document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click
 function lihatNasabah(id){window.location.href='nasabah_lihat.php?id='+id;}
 function editNasabah(id){window.location.href='nasabah_edit.php?id='+id;}
 
-// Semua data untuk live search
+
 const allNasabahData = <?= json_encode(array_map(function($p) {
     return [
         'id'        => $p['id_pengguna'] ?? '',

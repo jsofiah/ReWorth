@@ -1,10 +1,5 @@
 <?php
-session_start();
-
-if (!isset($_SESSION['role'])) {
-    header("Location: ../login.php");
-    exit;
-}
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -30,7 +25,7 @@ function sbGet($url, $key, $ep) {
     return $c === 200 ? (json_decode($r, true) ?: []) : [];
 }
 
-// 1. Fetch jumlah event
+
 function getEventsWithFilter($supabaseUrl, $supabaseKey, $role = '', $userId = '') {
     $baseUrl = $supabaseUrl . "/rest/v1/event?select=*,admin!inner(nama_admin,email,id_role,role!inner(nama_role))&order=tanggal.desc";
     
@@ -65,19 +60,19 @@ function getEventsWithFilter($supabaseUrl, $supabaseKey, $role = '', $userId = '
 $eventsBankSampah = getEventsWithFilter($supabaseUrl, $supabaseKey, 'bank sampah');
 $totalEventBankSampah = count($eventsBankSampah);
 
-// 2. Fetch jumlah transaksi setor
+
 $setor = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/setor_sampah?select=id_setor&status=eq.selesai");
 $totalSetor = count($setor);
 
-// 3. Fetch jumlah data nasabah
+
 $nasabah = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/pengguna?select=id_pengguna");
 $totalNasabah = count($nasabah);
 
-// 4. Fetch jumlah data setor menunggu konfirmasi
+
 $menunggu = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/setor_sampah?select=id_setor&status=in.(menunggu)");
 $totalMenunggu = count($menunggu);
 
-// 5. Fetch 5 aktivitas terbaru (Transaksi Setor Sampah)
+
 $aktivitas = sbGet($supabaseUrl, $supabaseKey, "/rest/v1/log_admin?select=*,admin(nama_admin)&id_admin=eq.$userId&order=created_at.desc&limit=5");
 
 
@@ -149,7 +144,7 @@ function formatTanggalIndonesia($date) {
         </div>
 
         <div class="action-bar-wrap" style="padding: 24px;">
-            <!-- Top Stats -->
+            
             <div class="stats-grid dashboard-stats">
                 <div class="stat-card">
                     <div class="stat-label">Jumlah Nasabah</div>
@@ -170,9 +165,9 @@ function formatTanggalIndonesia($date) {
                 </div>
             </div>
 
-            <!-- Bottom Sections -->
+            
             <div class="charts-grid">
-                <!-- Quick Access -->
+                
                 <div class="chart-card">
                     <div class="chart-title"><i class="bi bi-lightning-charge-fill me-2" style="color:#FFB347;"></i>Quick Access</div>
                     <div class="qa-grid">
@@ -191,7 +186,7 @@ function formatTanggalIndonesia($date) {
                     </div>
                 </div>
 
-                <!-- Aktivitas Terbaru -->
+                
                 <div class="chart-card">
                     <div class="chart-title"><i class="bi bi-activity me-2" style="color:var(--green);"></i>Aktivitas Admin Terbaru</div>
                     <div class="aktivitas-list">

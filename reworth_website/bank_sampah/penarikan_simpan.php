@@ -3,11 +3,7 @@ error_reporting(0);
 ini_set('display_errors', 0);
 header('Content-Type: application/json');
 
-session_start();
-if (!isset($_SESSION['role'])) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
+require_once 'role_check.php';
 
 $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
 $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";
@@ -40,7 +36,7 @@ if ($jumlah_penarikan > $saldo_lama) {
 
 $saldo_baru = $saldo_lama - $jumlah_penarikan;
 
-// 1. Update saldo di tabel pengguna
+
 $ch = curl_init();
 curl_setopt_array($ch, [
     CURLOPT_URL            => $supabaseUrl . "/rest/v1/pengguna?id_pengguna=eq." . urlencode($id_pengguna),
@@ -66,7 +62,7 @@ if ($httpCode < 200 || $httpCode >= 300) {
     exit;
 }
 
-// 2. Insert ke tabel penarikan_saldo
+
 $ch2 = curl_init();
 curl_setopt_array($ch2, [
     CURLOPT_URL            => $supabaseUrl . "/rest/v1/penarikan_saldo",

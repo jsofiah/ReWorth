@@ -1,16 +1,7 @@
 <?php
-    session_start();
-
+    require_once 'role_check.php';
     header('Content-Type: application/json');
 
-    if (!isset($_SESSION['role'])) {
-        http_response_code(401);
-        echo json_encode([
-            "success" => false,
-            "message" => "Unauthorized"
-        ]);
-        exit;
-    }
 
     $supabaseUrl = "https://rxzrbyqqhkxemdjbcntc.supabase.co";
     $supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4enJieXFxaGt4ZW1kamJjbnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTU5ODUsImV4cCI6MjA5MDc5MTk4NX0.F9r_81C1dIvhlMoyEmxnVtAzIby_66kTlXc0wBRjpmQ";

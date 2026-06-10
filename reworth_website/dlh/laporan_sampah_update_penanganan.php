@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once 'role_check.php';
+
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['role'])) { echo json_encode(['success'=>false,'message'=>'Unauthorized']); exit; }
@@ -15,7 +16,7 @@ if (!isset($_FILES['bukti_penanganan']) || $_FILES['bukti_penanganan']['error'] 
     echo json_encode(['success'=>false,'message'=>'File bukti penanganan tidak valid']); exit;
 }
 
-// Hapus bukti lama di bucket jika ada
+
 $getLaporan = $supabaseUrl . "/rest/v1/lapor_sampah?id_laporan=eq." . urlencode($id) . "&select=bukti_penanganan";
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $getLaporan);
@@ -34,7 +35,7 @@ if (!empty($oldBukti)) {
     curl_exec($delCh); curl_close($delCh);
 }
 
-// Upload file bukti baru
+
 $file     = $_FILES['bukti_penanganan'];
 $filename = 'lapor_sampah/' . time() . '_' . preg_replace('/[^A-Za-z0-9.\-_]/', '', $file['name']);
 $uploadUrl = $supabaseUrl . "/storage/v1/object/media/" . $filename;
@@ -59,7 +60,7 @@ if ($upCode !== 200 && $upCode !== 201) {
     echo json_encode(['success'=>false,'message'=>'Upload foto gagal','debug'=>$upRes]); exit;
 }
 
-// Update laporan: bukti_penanganan + status → selesai
+
 $updateData = ['bukti_penanganan' => $filename, 'status' => 'selesai'];
 $patchUrl   = $supabaseUrl . "/rest/v1/lapor_sampah?id_laporan=eq." . urlencode($id);
 
@@ -113,7 +114,7 @@ if ($pCode === 200 || $pCode === 204) {
         $namaPetugas = $petugasData[0]['nama_petugas'] ?? 'Petugas Lapangan';
     }
 
-    // [1] INSERT KE log_admin
+
     $logData = [
         'id_admin' => $_SESSION['id_admin'] ?? '',
         'aktivitas' => 'Menyelesaikan laporan sampah - Jenis: ' . $jenisSampah . ', Lokasi: ' . $lokasiLaporan . ' (Poin +20 untuk pengguna)',
@@ -135,9 +136,9 @@ if ($pCode === 200 || $pCode === 204) {
     curl_exec($chLogInsert);
     curl_close($chLogInsert);
 
-    // [2] UPDATE KE riwayat_aktivitas + tambah poin 20
+
     if ($idPenggunaRiwayat) {
-        // Cek apakah sudah ada riwayat dengan id_referensi ini
+
         $checkRiwayat = $supabaseUrl . "/rest/v1/riwayat_aktivitas?id_referensi=eq." . urlencode($id) 
                     . "&select=id_riwayat,status,deskripsi";
         $chCheck = curl_init();
@@ -159,17 +160,17 @@ if ($pCode === 200 || $pCode === 204) {
         $newDeskripsi = 'Laporan sampah ' . $jenisSampah . ' di ' . $lokasiLaporan . ' telah selesai ditangani oleh petugas lapangan (' . $namaPetugas . ').';
         
         if (!empty($existingRiwayat)) {
-            // UPDATE jika sudah ada - Gunakan id_riwayat yang ditemukan
+
             $idRiwayat = $existingRiwayat[0]['id_riwayat'];
             
-            // Data yang akan diupdate
+
             $riwayatUpdateData = [
                 'status' => 'selesai',
                 'deskripsi' => $newDeskripsi,
                 'perubahan_poin' => 20
             ];
             
-            // Gunakan PATCH dengan URL yang benar
+
             $updateRiwayatUrl = $supabaseUrl . "/rest/v1/riwayat_aktivitas?id_riwayat=eq." . $idRiwayat;
             
             $chRiwayatUpdate = curl_init();
@@ -194,7 +195,7 @@ if ($pCode === 200 || $pCode === 204) {
             error_log("UPDATE RIWAYAT - Response: " . $updateResult);
             error_log("UPDATE RIWAYAT - Error: " . $updateError);
             
-            // Verifikasi update berhasil
+
             $verifyUrl = $supabaseUrl . "/rest/v1/riwayat_aktivitas?id_riwayat=eq." . $idRiwayat;
             $chVerify = curl_init();
             curl_setopt($chVerify, CURLOPT_URL, $verifyUrl);
@@ -211,7 +212,7 @@ if ($pCode === 200 || $pCode === 204) {
             error_log("RIWAYAT TIDAK DITEMUKAN untuk id_referensi: " . $id);
             error_log("Mencoba INSERT riwayat baru...");
             
-            // INSERT jika belum ada
+
             $riwayatInsertData = [
                 'id_pengguna' => $idPenggunaRiwayat,
                 'jenis_aktivitas' => 'lapor_sampah',
@@ -242,8 +243,8 @@ if ($pCode === 200 || $pCode === 204) {
             error_log("INSERT RIWAYAT - Response: " . $insertResult);
         }
         
-        // [3] UPDATE poin pengguna (+20)
-        // Ambil poin saat ini terlebih dahulu
+
+
         $getPoinUrl = $supabaseUrl . "/rest/v1/pengguna?id_pengguna=eq." . $idPenggunaRiwayat . "&select=poin";
         $chGetPoin = curl_init();
         curl_setopt($chGetPoin, CURLOPT_URL, $getPoinUrl);
@@ -286,7 +287,7 @@ if ($pCode === 200 || $pCode === 204) {
         error_log("UPDATE POIN - Response: " . $poinUpdateResult);
         error_log("UPDATE POIN - Error: " . $poinUpdateError);
         
-        // Verifikasi poin setelah update
+
         $verifyPoinUrl = $supabaseUrl . "/rest/v1/pengguna?id_pengguna=eq." . $idPenggunaRiwayat . "&select=poin";
         $chVerifyPoin = curl_init();
         curl_setopt($chVerifyPoin, CURLOPT_URL, $verifyPoinUrl);
@@ -300,7 +301,7 @@ if ($pCode === 200 || $pCode === 204) {
         error_log("VERIFY POIN AFTER UPDATE: " . $verifyPoinResult);
     }
     
-    // Kirim notifikasi ke pengguna
+
     $getLaporan2 = $supabaseUrl . "/rest/v1/lapor_sampah?id_laporan=eq." . urlencode($id) . "&select=id_pengguna,lokasi,jenis_sampah";
     $ch2 = curl_init();
     curl_setopt($ch2, CURLOPT_URL, $getLaporan2);
@@ -313,7 +314,7 @@ if ($pCode === 200 || $pCode === 204) {
     $jenisSampahNotif = $data2[0]['jenis_sampah'] ?? 'sampah';
 
     if ($idPengguna) {
-        // Notifikasi database dengan judul dan deskripsi baru
+
         $notif = [
             'id_pengguna' => $idPengguna,
             'judul'       => '+20 Poin!',
@@ -329,7 +330,7 @@ if ($pCode === 200 || $pCode === 204) {
         curl_exec($nCh); 
         curl_close($nCh);
 
-        // FCM Notification
+
         $fcmPayload = [
             'user_id' => $idPengguna,
             'title'   => '+20 Poin!',

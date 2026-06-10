@@ -52,7 +52,7 @@ $tanggalMulai = $currentLangganan['tanggal_mulai'] ?? '';
 $tanggalSelesai = $currentLangganan['tanggal_selesai'] ?? '';
 $hariTersisa = getRemainingDays($userId, $supabaseUrl, $supabaseKey);
 
-// CEK KOMISI YANG BELUM DIBAYAR (PENDING)
+
 $getKomisiPending = curlRequest(
     $supabaseUrl . "/rest/v1/komisi?id_penjual=eq.$userId&status_pembayaran=eq.pending",
     'GET',
@@ -81,7 +81,7 @@ if (!$subscriptionStatus['has_any_subscription']) {
     $warningType = "warning";
 }
 
-// Pesan komisi pending
+
 if ($hasPendingCommission) {
     $komisiWarning = "Terdapat komisi yang belum dibayar sebesar <strong>" . number_format($totalKomisiPending, 0, ',', '.') . "</strong>. Silakan bayar komisi terlebih dahulu sebelum memperpanjang langganan.";
 }
@@ -168,7 +168,7 @@ unset($_SESSION['subscription_error']);
             </div>
             <?php endif; ?>
 
-            <!-- Status Langganan -->
+            
             <div class="card-custom card-with-accent langganan-card">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-4">Status Langganan</h5>
@@ -215,7 +215,7 @@ unset($_SESSION['subscription_error']);
                 </div>
             </div>
 
-            <!-- Info Paket -->
+            
             <div class="card-custom mt-4">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-3">Paket Langganan</h5>
